@@ -10,7 +10,10 @@ import {
   STRAVA_OAUTH_STATE_COOKIE_PATH,
 } from './oauthState.js'
 import {
+  clearStravaTokenCookie,
   createStravaTokenCookie,
+  isStravaTokenNearExpiry,
+  readStravaTokenCookie,
   type StravaTokenBundle,
 } from './tokenCookie.js'
 
@@ -29,6 +32,35 @@ type StravaTokenExchangeResponse = {
     id?: number
   }
 }
+
+type StravaDisconnectedReason =
+  | 'missing_token'
+  | 'invalid_token'
+  | 'insufficient_scope'
+  | 'configuration_error'
+  | 'refresh_failed'
+
+type StravaConnectionStatus =
+  | {
+      connected: true
+      grantedScopes: string[]
+      refreshed: boolean
+    }
+  | {
+      connected: false
+      reason: StravaDisconnectedReason
+    }
+
+type ValidTokenResult =
+  | {
+      ok: true
+      tokenBundle: StravaTokenBundle
+      refreshed: boolean
+    }
+  | {
+      ok: false
+      reason: StravaDisconnectedReason
+    }
 
 export function createStravaAuthorizationUrl(
   config: Pick<StravaOAuthConfig, 'clientId' | 'redirectUri'>,
@@ -88,6 +120,48 @@ export async function exchangeAuthorizationCode(
   return parseStravaTokenExchangeResponse(await response.json())
 }
 
+export async function refreshAccessToken(
+  tokenBundle: StravaTokenBundle,
+  config: StravaOAuthConfig,
+  fetchImplementation: FetchLike = fetch,
+): Promise<StravaTokenBundle> {
+  const body = new URLSearchParams({
+    client_id: config.clientId,
+    client_secret: config.clientSecret,
+    grant_type: 'refresh_token',
+    refresh_token: tokenBundle.refreshToken,
+  })
+
+  const response = await fetchImplementation(STRAVA_TOKEN_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body,
+  })
+
+  if (!response.ok) {
+    throw new Error('Strava token refresh failed')
+  }
+
+  const refreshResponse = parseStravaTokenExchangeResponse(await response.json())
+  const responseScopes = parseGrantedScopes(refreshResponse.scope)
+  const grantedScopes = responseScopes.length > 0 ? responseScopes : tokenBundle.grantedScopes
+
+  if (!hasRequiredStravaScope(grantedScopes)) {
+    throw new Error('Strava token refresh returned insufficient scope')
+  }
+
+  return {
+    accessToken: refreshResponse.access_token,
+    refreshToken: refreshResponse.refresh_token,
+    expiresAt: refreshResponse.expires_at,
+    grantedScopes,
+    athleteId: refreshResponse.athlete?.id ?? tokenBundle.athleteId,
+    createdAt: tokenBundle.createdAt,
+  }
+}
+
 export function parseStravaTokenExchangeResponse(
   value: unknown,
 ): StravaTokenExchangeResponse {
@@ -126,6 +200,94 @@ export function parseStravaTokenExchangeResponse(
     scope: candidate.scope,
     athlete: candidate.athlete,
   }
+}
+
+export async function getValidStravaTokenBundle(
+  request: IncomingMessage,
+  response: ServerResponse,
+  options: {
+    nowSeconds?: number
+    fetchImplementation?: FetchLike
+  } = {},
+): Promise<ValidTokenResult> {
+  let config: StravaOAuthConfig
+
+  try {
+    config = getStravaOAuthConfig()
+  } catch {
+    return { ok: false, reason: 'configuration_error' }
+  }
+
+  const tokenBundle = readStravaTokenCookie(
+    request.headers.cookie,
+    config.tokenCookieSecret,
+  )
+
+  if (!tokenBundle) {
+    const hasTokenCookie = request.headers.cookie?.includes('strava_token=')
+    if (hasTokenCookie) {
+      response.setHeader('Set-Cookie', clearStravaTokenCookie())
+      return { ok: false, reason: 'invalid_token' }
+    }
+
+    return { ok: false, reason: 'missing_token' }
+  }
+
+  if (!hasRequiredStravaScope(tokenBundle.grantedScopes)) {
+    response.setHeader('Set-Cookie', clearStravaTokenCookie())
+    return { ok: false, reason: 'insufficient_scope' }
+  }
+
+  if (!isStravaTokenNearExpiry(tokenBundle, options.nowSeconds)) {
+    return { ok: true, tokenBundle, refreshed: false }
+  }
+
+  try {
+    const refreshedTokenBundle = await refreshAccessToken(
+      tokenBundle,
+      config,
+      options.fetchImplementation,
+    )
+
+    response.setHeader(
+      'Set-Cookie',
+      createStravaTokenCookie(refreshedTokenBundle, config.tokenCookieSecret),
+    )
+
+    return { ok: true, tokenBundle: refreshedTokenBundle, refreshed: true }
+  } catch {
+    response.setHeader('Set-Cookie', clearStravaTokenCookie())
+    return { ok: false, reason: 'refresh_failed' }
+  }
+}
+
+export async function handleStravaStatus(
+  request: IncomingMessage,
+  response: ServerResponse,
+): Promise<void> {
+  const tokenResult = await getValidStravaTokenBundle(request, response)
+
+  if (!tokenResult.ok) {
+    sendJson(response, {
+      connected: false,
+      reason: tokenResult.reason,
+    } satisfies StravaConnectionStatus)
+    return
+  }
+
+  sendJson(response, {
+    connected: true,
+    grantedScopes: tokenResult.tokenBundle.grantedScopes,
+    refreshed: tokenResult.refreshed,
+  } satisfies StravaConnectionStatus)
+}
+
+export async function handleStravaDisconnect(
+  _request: IncomingMessage,
+  response: ServerResponse,
+): Promise<void> {
+  response.setHeader('Set-Cookie', clearStravaTokenCookie())
+  sendJson(response, { disconnected: true })
 }
 
 export async function handleStravaOAuthStart(
@@ -224,4 +386,10 @@ function redirect(response: ServerResponse, location: string): void {
   response.statusCode = 302
   response.setHeader('Location', location)
   response.end()
+}
+
+function sendJson(response: ServerResponse, body: unknown): void {
+  response.statusCode = 200
+  response.setHeader('Content-Type', 'application/json')
+  response.end(JSON.stringify(body))
 }

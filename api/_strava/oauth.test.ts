@@ -1,13 +1,17 @@
 import type { IncomingHttpHeaders, IncomingMessage, ServerResponse } from 'node:http'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { parseCookies } from './cookies.js'
 import {
   createStravaAuthorizationUrl,
   exchangeAuthorizationCode,
+  getValidStravaTokenBundle,
+  handleStravaDisconnect,
   handleStravaOAuthCallback,
+  handleStravaStatus,
   hasRequiredStravaScope,
   parseGrantedScopes,
   parseStravaTokenExchangeResponse,
+  refreshAccessToken,
   REQUIRED_STRAVA_SCOPE,
   STRAVA_TOKEN_URL,
 } from './oauth.js'
@@ -19,8 +23,10 @@ import {
 } from './oauthState.js'
 import {
   createStravaTokenCookie,
+  clearStravaTokenCookie,
   decryptTokenBundle,
   encryptTokenBundle,
+  isStravaTokenNearExpiry,
   readStravaTokenCookie,
   STRAVA_TOKEN_COOKIE,
   type StravaTokenBundle,
@@ -32,6 +38,12 @@ const testConfig = {
   redirectUri: 'https://example.test/api/strava/auth/callback',
   tokenCookieSecret: 'test-cookie-secret',
 }
+
+afterEach(() => {
+  vi.unstubAllEnvs()
+  vi.unstubAllGlobals()
+  vi.restoreAllMocks()
+})
 
 describe('Strava OAuth helpers', () => {
   it('creates the Strava authorization URL with activity:read_all scope', () => {
@@ -161,6 +173,267 @@ describe('Strava token cookie', () => {
     )
     expect(readStravaTokenCookie(cookie, 'wrong-secret')).toBeUndefined()
   })
+
+  it('identifies tokens that are expired or near expiry', () => {
+    expect(isStravaTokenNearExpiry({ expiresAt: 1_000 }, 500)).toBe(false)
+    expect(isStravaTokenNearExpiry({ expiresAt: 800 }, 500)).toBe(true)
+    expect(isStravaTokenNearExpiry({ expiresAt: 499 }, 500)).toBe(true)
+  })
+
+  it('clears the token cookie at Path=/', () => {
+    const cookie = clearStravaTokenCookie()
+
+    expect(cookie).toContain(`${STRAVA_TOKEN_COOKIE}=`)
+    expect(cookie).toContain('Max-Age=0')
+    expect(cookie).toContain('Path=/')
+    expect(cookie).toContain('HttpOnly')
+    expect(cookie).toContain('SameSite=Lax')
+  })
+})
+
+describe('Strava token refresh', () => {
+  const expiredTokenBundle: StravaTokenBundle = {
+    accessToken: 'old-access-token',
+    refreshToken: 'old-refresh-token',
+    expiresAt: 1_000,
+    grantedScopes: ['activity:read_all'],
+    athleteId: 6789,
+    createdAt: 900,
+  }
+
+  it('refreshes an access token and preserves rotated refresh tokens', async () => {
+    const fetchMock = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      const body = init?.body as URLSearchParams
+
+      expect(init?.method).toBe('POST')
+      expect(body.get('client_id')).toBe(testConfig.clientId)
+      expect(body.get('client_secret')).toBe(testConfig.clientSecret)
+      expect(body.get('grant_type')).toBe('refresh_token')
+      expect(body.get('refresh_token')).toBe('old-refresh-token')
+
+      return Response.json({
+        access_token: 'new-access-token',
+        refresh_token: 'rotated-refresh-token',
+        expires_at: 2_000,
+      })
+    })
+
+    const refreshed = await refreshAccessToken(
+      expiredTokenBundle,
+      testConfig,
+      fetchMock as typeof fetch,
+    )
+
+    expect(refreshed).toEqual({
+      accessToken: 'new-access-token',
+      refreshToken: 'rotated-refresh-token',
+      expiresAt: 2_000,
+      grantedScopes: ['activity:read_all'],
+      athleteId: 6789,
+      createdAt: 900,
+    })
+  })
+
+  it('does not refresh a token that is not near expiry', async () => {
+    vi.stubEnv('STRAVA_CLIENT_ID', testConfig.clientId)
+    vi.stubEnv('STRAVA_CLIENT_SECRET', testConfig.clientSecret)
+    vi.stubEnv('STRAVA_REDIRECT_URI', testConfig.redirectUri)
+    vi.stubEnv('STRAVA_TOKEN_COOKIE_SECRET', testConfig.tokenCookieSecret)
+
+    const tokenBundle: StravaTokenBundle = {
+      ...expiredTokenBundle,
+      expiresAt: 10_000,
+    }
+    const response = createMockResponse()
+    const fetchMock = vi.fn()
+    const result = await getValidStravaTokenBundle(
+      createMockRequest(
+        '/api/strava/status',
+        createStravaTokenCookie(tokenBundle, testConfig.tokenCookieSecret),
+      ),
+      response,
+      { nowSeconds: 1_000, fetchImplementation: fetchMock as typeof fetch },
+    )
+
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(result).toEqual({
+      ok: true,
+      tokenBundle,
+      refreshed: false,
+    })
+    expect(response.headers['Set-Cookie']).toBeUndefined()
+  })
+
+  it('sets a new token cookie after refreshing a near-expiry token', async () => {
+    vi.stubEnv('STRAVA_CLIENT_ID', testConfig.clientId)
+    vi.stubEnv('STRAVA_CLIENT_SECRET', testConfig.clientSecret)
+    vi.stubEnv('STRAVA_REDIRECT_URI', testConfig.redirectUri)
+    vi.stubEnv('STRAVA_TOKEN_COOKIE_SECRET', testConfig.tokenCookieSecret)
+
+    const response = createMockResponse()
+    const fetchMock = vi.fn(async () =>
+      Response.json({
+        access_token: 'new-access-token',
+        refresh_token: 'rotated-refresh-token',
+        expires_at: 2_000,
+      }),
+    )
+
+    const result = await getValidStravaTokenBundle(
+      createMockRequest(
+        '/api/strava/status',
+        createStravaTokenCookie(expiredTokenBundle, testConfig.tokenCookieSecret),
+      ),
+      response,
+      { nowSeconds: 1_000, fetchImplementation: fetchMock as typeof fetch },
+    )
+
+    expect(result).toMatchObject({
+      ok: true,
+      refreshed: true,
+    })
+
+    const setCookie = response.headers['Set-Cookie']
+    expect(typeof setCookie).toBe('string')
+    expect(setCookie).not.toContain('new-access-token')
+    expect(setCookie).not.toContain('rotated-refresh-token')
+    expect(
+      readStravaTokenCookie(setCookie as string, testConfig.tokenCookieSecret),
+    ).toMatchObject({
+      accessToken: 'new-access-token',
+      refreshToken: 'rotated-refresh-token',
+      expiresAt: 2_000,
+    })
+  })
+
+  it('clears the token cookie when refresh fails', async () => {
+    vi.stubEnv('STRAVA_CLIENT_ID', testConfig.clientId)
+    vi.stubEnv('STRAVA_CLIENT_SECRET', testConfig.clientSecret)
+    vi.stubEnv('STRAVA_REDIRECT_URI', testConfig.redirectUri)
+    vi.stubEnv('STRAVA_TOKEN_COOKIE_SECRET', testConfig.tokenCookieSecret)
+
+    const response = createMockResponse()
+    const result = await getValidStravaTokenBundle(
+      createMockRequest(
+        '/api/strava/status',
+        createStravaTokenCookie(expiredTokenBundle, testConfig.tokenCookieSecret),
+      ),
+      response,
+      {
+        nowSeconds: 1_000,
+        fetchImplementation: vi.fn(async () => new Response(null, { status: 400 })) as typeof fetch,
+      },
+    )
+
+    expect(result).toEqual({ ok: false, reason: 'refresh_failed' })
+    expect(response.headers['Set-Cookie']).toContain('Max-Age=0')
+    expect(response.headers['Set-Cookie']).toContain('Path=/')
+  })
+})
+
+describe('Strava status and disconnect handlers', () => {
+  const validTokenBundle: StravaTokenBundle = {
+    accessToken: 'access-token',
+    refreshToken: 'refresh-token',
+    expiresAt: 4_000_000_000,
+    grantedScopes: ['activity:read_all'],
+    athleteId: 6789,
+    createdAt: 1_000,
+  }
+
+  it('returns disconnected status for a missing token cookie', async () => {
+    vi.stubEnv('STRAVA_CLIENT_ID', testConfig.clientId)
+    vi.stubEnv('STRAVA_CLIENT_SECRET', testConfig.clientSecret)
+    vi.stubEnv('STRAVA_REDIRECT_URI', testConfig.redirectUri)
+    vi.stubEnv('STRAVA_TOKEN_COOKIE_SECRET', testConfig.tokenCookieSecret)
+
+    const response = createMockResponse()
+    await handleStravaStatus(createMockRequest('/api/strava/status'), response)
+
+    expect(JSON.parse(response.body)).toEqual({
+      connected: false,
+      reason: 'missing_token',
+    })
+  })
+
+  it('returns connected status without token values', async () => {
+    vi.stubEnv('STRAVA_CLIENT_ID', testConfig.clientId)
+    vi.stubEnv('STRAVA_CLIENT_SECRET', testConfig.clientSecret)
+    vi.stubEnv('STRAVA_REDIRECT_URI', testConfig.redirectUri)
+    vi.stubEnv('STRAVA_TOKEN_COOKIE_SECRET', testConfig.tokenCookieSecret)
+
+    const response = createMockResponse()
+    await handleStravaStatus(
+      createMockRequest(
+        '/api/strava/status',
+        createStravaTokenCookie(validTokenBundle, testConfig.tokenCookieSecret),
+      ),
+      response,
+    )
+
+    const body = JSON.parse(response.body)
+    expect(body).toEqual({
+      connected: true,
+      grantedScopes: ['activity:read_all'],
+      refreshed: false,
+    })
+    expect(response.body).not.toContain('access-token')
+    expect(response.body).not.toContain('refresh-token')
+  })
+
+  it('clears malformed token cookies safely', async () => {
+    vi.stubEnv('STRAVA_CLIENT_ID', testConfig.clientId)
+    vi.stubEnv('STRAVA_CLIENT_SECRET', testConfig.clientSecret)
+    vi.stubEnv('STRAVA_REDIRECT_URI', testConfig.redirectUri)
+    vi.stubEnv('STRAVA_TOKEN_COOKIE_SECRET', testConfig.tokenCookieSecret)
+
+    const response = createMockResponse()
+    await handleStravaStatus(
+      createMockRequest('/api/strava/status', `${STRAVA_TOKEN_COOKIE}=not-valid`),
+      response,
+    )
+
+    expect(JSON.parse(response.body)).toEqual({
+      connected: false,
+      reason: 'invalid_token',
+    })
+    expect(response.headers['Set-Cookie']).toContain('Max-Age=0')
+  })
+
+  it('clears tokens with insufficient scope', async () => {
+    vi.stubEnv('STRAVA_CLIENT_ID', testConfig.clientId)
+    vi.stubEnv('STRAVA_CLIENT_SECRET', testConfig.clientSecret)
+    vi.stubEnv('STRAVA_REDIRECT_URI', testConfig.redirectUri)
+    vi.stubEnv('STRAVA_TOKEN_COOKIE_SECRET', testConfig.tokenCookieSecret)
+
+    const response = createMockResponse()
+    await handleStravaStatus(
+      createMockRequest(
+        '/api/strava/status',
+        createStravaTokenCookie(
+          { ...validTokenBundle, grantedScopes: ['activity:read'] },
+          testConfig.tokenCookieSecret,
+        ),
+      ),
+      response,
+    )
+
+    expect(JSON.parse(response.body)).toEqual({
+      connected: false,
+      reason: 'insufficient_scope',
+    })
+    expect(response.headers['Set-Cookie']).toContain('Max-Age=0')
+  })
+
+  it('disconnect clears the Strava token cookie', async () => {
+    const response = createMockResponse()
+    await handleStravaDisconnect(createMockRequest('/api/strava/disconnect'), response)
+
+    expect(JSON.parse(response.body)).toEqual({ disconnected: true })
+    expect(response.headers['Set-Cookie']).toContain(`${STRAVA_TOKEN_COOKIE}=`)
+    expect(response.headers['Set-Cookie']).toContain('Max-Age=0')
+    expect(response.headers['Set-Cookie']).toContain('Path=/')
+  })
 })
 
 describe('Strava callback handler', () => {
@@ -289,20 +562,29 @@ function createMockRequest(
 
 function createMockResponse(): ServerResponse & {
   headers: Record<string, number | string | readonly string[]>
+  body: string
 } {
   const headers: Record<string, number | string | readonly string[]> = {}
+  let body = ''
 
   return {
     statusCode: 200,
     headers,
+    get body() {
+      return body
+    },
     setHeader(name: string, value: number | string | readonly string[]) {
       headers[name] = Array.isArray(value) ? [...value] : value
       return this
     },
-    end() {
+    end(chunk?: string) {
+      if (chunk) {
+        body = chunk
+      }
       return this
     },
   } as ServerResponse & {
     headers: Record<string, number | string | readonly string[]>
+    body: string
   }
 }

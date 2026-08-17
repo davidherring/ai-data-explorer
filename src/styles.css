@@ -84,6 +84,19 @@ select {
   gap: 10px;
 }
 
+.connection-control {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.connection-status {
+  color: #53605c;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 .connect-link {
   border: 1px solid #2f6f56;
   border-radius: 6px;
@@ -95,9 +108,23 @@ select {
   text-decoration: none;
 }
 
+.secondary-button {
+  border: 1px solid #cfd8d4;
+  border-radius: 6px;
+  padding: 7px 12px;
+  color: #172026;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 .connect-link:focus-visible,
-.connect-link:hover {
+.connect-link:hover,
+.secondary-button:focus-visible,
+.secondary-button:hover {
   background: #265946;
+  color: #ffffff;
 }
 
 .workspace-layout {

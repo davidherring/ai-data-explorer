@@ -1,0 +1,16 @@
+import type { IncomingMessage, ServerResponse } from 'node:http'
+import { handleStravaDisconnect } from '../_strava/oauth.js'
+
+export default async function handler(
+  request: IncomingMessage,
+  response: ServerResponse,
+) {
+  if (request.method !== 'POST') {
+    response.statusCode = 405
+    response.setHeader('Allow', 'POST')
+    response.end()
+    return
+  }
+
+  await handleStravaDisconnect(request, response)
+}

@@ -1,5 +1,6 @@
 import { AnalysisWorkspaceShell } from './AnalysisWorkspaceShell.tsx'
 import { ConversationPanelShell } from './ConversationPanelShell.tsx'
+import { StravaConnectionControl } from './StravaConnectionControl.tsx'
 
 export function AppShell() {
   return (
@@ -10,9 +11,7 @@ export function AppShell() {
           <h1>Interactive AI Data Explorer</h1>
         </div>
         <div className="header-actions">
-          <a className="connect-link" href="/api/strava/auth/start">
-            Connect Strava
-          </a>
+          <StravaConnectionControl />
           <p className="phase-label">Sprint 2 OAuth</p>
         </div>
       </header>

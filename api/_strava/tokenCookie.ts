@@ -1,5 +1,6 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto'
 import {
+  clearCookie,
   isSecureCookieEnvironment,
   parseCookies,
   serializeCookie,
@@ -30,6 +31,10 @@ export function createStravaTokenCookie(
   })
 }
 
+export function clearStravaTokenCookie(): string {
+  return clearCookie(STRAVA_TOKEN_COOKIE, '/')
+}
+
 export function readStravaTokenCookie(
   cookieHeader: string | undefined,
   secret: string,
@@ -41,6 +46,14 @@ export function readStravaTokenCookie(
   }
 
   return decryptTokenBundle(encryptedValue, secret)
+}
+
+export function isStravaTokenNearExpiry(
+  tokenBundle: Pick<StravaTokenBundle, 'expiresAt'>,
+  nowSeconds = Math.floor(Date.now() / 1000),
+  bufferSeconds = 5 * 60,
+): boolean {
+  return tokenBundle.expiresAt <= nowSeconds + bufferSeconds
 }
 
 export function encryptTokenBundle(

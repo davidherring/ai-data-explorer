@@ -1,9 +1,20 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { App } from '../App.tsx'
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 describe('App shell', () => {
   it('renders the Phase 2 workspace placeholders', () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        Response.json({ connected: false, reason: 'missing_token' }),
+      ),
+    )
+
     render(<App />)
 
     expect(
