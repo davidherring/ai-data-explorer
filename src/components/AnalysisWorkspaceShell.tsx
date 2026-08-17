@@ -1,10 +1,17 @@
-export function AnalysisWorkspaceShell() {
+import type { Ride } from '../data/ride.ts'
+
+type AnalysisWorkspaceShellProps = {
+  rides: Ride[]
+}
+
+export function AnalysisWorkspaceShell({ rides }: AnalysisWorkspaceShellProps) {
   return (
     <section className="analysis-workspace" aria-label="Analysis workspace">
       <div className="visualization-placeholder">
         <p className="section-label">Analysis workspace</p>
         <h2>Visualization area</h2>
         <p>Static placeholder for the future shared-state visualization surface.</p>
+        <p>{rides.length} normalized rides available.</p>
       </div>
 
       <div className="controls-placeholder">

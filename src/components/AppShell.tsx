@@ -1,8 +1,12 @@
 import { AnalysisWorkspaceShell } from './AnalysisWorkspaceShell.tsx'
 import { ConversationPanelShell } from './ConversationPanelShell.tsx'
+import { RideDataSourceControl } from './RideDataSourceControl.tsx'
 import { StravaConnectionControl } from './StravaConnectionControl.tsx'
+import { useRideDataSource } from '../hooks/useRideDataSource.ts'
 
 export function AppShell() {
+  const rideDataSource = useRideDataSource()
+
   return (
     <main className="app-shell">
       <header className="app-header" aria-label="Application header">
@@ -17,12 +21,22 @@ export function AppShell() {
       </header>
 
       <section className="workspace-layout" aria-label="Analysis workspace shell">
-        <AnalysisWorkspaceShell />
+        <AnalysisWorkspaceShell rides={rideDataSource.rides} />
         <ConversationPanelShell />
       </section>
 
       <section className="status-strip" aria-label="Summary and status">
-        <span>Dataset status: placeholder</span>
+        <RideDataSourceControl
+          source={rideDataSource.source}
+          status={rideDataSource.status}
+          rideCount={rideDataSource.rides.length}
+          metadata={rideDataSource.metadata}
+          error={rideDataSource.error}
+          onSourceChange={rideDataSource.setSource}
+          onRefresh={() => {
+            void rideDataSource.refresh()
+          }}
+        />
         <span>Analysis state: placeholder</span>
         <span>Deployment readiness: local shell</span>
       </section>
