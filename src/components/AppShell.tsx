@@ -1,11 +1,25 @@
+import { useMemo, useState } from 'react'
 import { AnalysisWorkspaceShell } from './AnalysisWorkspaceShell.tsx'
 import { ConversationPanelShell } from './ConversationPanelShell.tsx'
 import { RideDataSourceControl } from './RideDataSourceControl.tsx'
 import { StravaConnectionControl } from './StravaConnectionControl.tsx'
+import { filterRides } from '../analysis/filterRides.ts'
 import { useRideDataSource } from '../hooks/useRideDataSource.ts'
+import {
+  defaultAnalysisState,
+  type AnalysisState,
+} from '../state/analysisState.ts'
 
 export function AppShell() {
   const rideDataSource = useRideDataSource()
+  const [analysisState, setAnalysisState] =
+    useState<AnalysisState>(defaultAnalysisState)
+  void setAnalysisState
+
+  const selectedRides = useMemo(
+    () => filterRides(rideDataSource.rides, analysisState.selection),
+    [rideDataSource.rides, analysisState.selection],
+  )
 
   return (
     <main className="app-shell">
@@ -21,7 +35,11 @@ export function AppShell() {
       </header>
 
       <section className="workspace-layout" aria-label="Analysis workspace shell">
-        <AnalysisWorkspaceShell rides={rideDataSource.rides} />
+        <AnalysisWorkspaceShell
+          rides={rideDataSource.rides}
+          selectedRides={selectedRides}
+          analysisState={analysisState}
+        />
         <ConversationPanelShell />
       </section>
 
@@ -37,7 +55,10 @@ export function AppShell() {
             void rideDataSource.refresh()
           }}
         />
-        <span>Analysis state: placeholder</span>
+        <span>
+          Selection: {selectedRides.length} of {rideDataSource.rides.length} rides
+        </span>
+        <span>View: {analysisState.view.type}</span>
         <span>Deployment readiness: local shell</span>
       </section>
     </main>
