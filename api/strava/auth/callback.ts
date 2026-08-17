@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { handleStravaOAuthCallback } from '../../../server/strava/oauth.ts'
+import { handleStravaOAuthCallback } from '../../_strava/oauth.js'
 
 export default async function handler(
   request: IncomingMessage,

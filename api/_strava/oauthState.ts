@@ -3,7 +3,7 @@ import {
   isSecureCookieEnvironment,
   parseCookies,
   serializeCookie,
-} from './cookies.ts'
+} from './cookies.js'
 
 export const STRAVA_OAUTH_STATE_COOKIE = 'strava_oauth_state'
 export const STRAVA_OAUTH_STATE_MAX_AGE_SECONDS = 10 * 60
@@ -44,4 +44,3 @@ export function isValidOAuthState(
 
   return timingSafeEqual(expected, returned)
 }
-

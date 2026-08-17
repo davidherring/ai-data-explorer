@@ -28,4 +28,3 @@ export function getStravaOAuthConfig(
     tokenCookieSecret: env.STRAVA_TOKEN_COOKIE_SECRET ?? '',
   }
 }
-

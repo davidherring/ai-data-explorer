@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { clearCookie } from './cookies.ts'
-import { getStravaOAuthConfig, type StravaOAuthConfig } from './oauthConfig.ts'
+import { clearCookie } from './cookies.js'
+import { getStravaOAuthConfig, type StravaOAuthConfig } from './oauthConfig.js'
 import {
   createOAuthStateCookie,
   generateOAuthState,
@@ -8,11 +8,11 @@ import {
   readOAuthStateCookie,
   STRAVA_OAUTH_STATE_COOKIE,
   STRAVA_OAUTH_STATE_COOKIE_PATH,
-} from './oauthState.ts'
+} from './oauthState.js'
 import {
   createStravaTokenCookie,
   type StravaTokenBundle,
-} from './tokenCookie.ts'
+} from './tokenCookie.js'
 
 export const REQUIRED_STRAVA_SCOPE = 'activity:read_all'
 export const STRAVA_AUTHORIZE_URL = 'https://www.strava.com/oauth/authorize'

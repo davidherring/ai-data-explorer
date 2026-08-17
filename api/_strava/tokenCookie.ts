@@ -3,7 +3,7 @@ import {
   isSecureCookieEnvironment,
   parseCookies,
   serializeCookie,
-} from './cookies.ts'
+} from './cookies.js'
 
 export const STRAVA_TOKEN_COOKIE = 'strava_token'
 
@@ -126,4 +126,3 @@ function parseTokenBundle(value: unknown): StravaTokenBundle | undefined {
     createdAt: candidate.createdAt,
   }
 }
-

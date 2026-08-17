@@ -66,4 +66,3 @@ export function isSecureCookieEnvironment(
 ): boolean {
   return env.NODE_ENV === 'production' || env.VERCEL_ENV === 'production'
 }
-

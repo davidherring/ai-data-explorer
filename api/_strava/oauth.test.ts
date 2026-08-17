@@ -1,6 +1,6 @@
 import type { IncomingHttpHeaders, IncomingMessage, ServerResponse } from 'node:http'
 import { describe, expect, it, vi } from 'vitest'
-import { parseCookies } from './cookies.ts'
+import { parseCookies } from './cookies.js'
 import {
   createStravaAuthorizationUrl,
   exchangeAuthorizationCode,
@@ -10,13 +10,13 @@ import {
   parseStravaTokenExchangeResponse,
   REQUIRED_STRAVA_SCOPE,
   STRAVA_TOKEN_URL,
-} from './oauth.ts'
+} from './oauth.js'
 import {
   createOAuthStateCookie,
   generateOAuthState,
   isValidOAuthState,
   STRAVA_OAUTH_STATE_COOKIE,
-} from './oauthState.ts'
+} from './oauthState.js'
 import {
   createStravaTokenCookie,
   decryptTokenBundle,
@@ -24,7 +24,7 @@ import {
   readStravaTokenCookie,
   STRAVA_TOKEN_COOKIE,
   type StravaTokenBundle,
-} from './tokenCookie.ts'
+} from './tokenCookie.js'
 
 const testConfig = {
   clientId: '12345',
