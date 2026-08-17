@@ -77,6 +77,29 @@ select {
   text-transform: none;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 10px;
+}
+
+.connect-link {
+  border: 1px solid #2f6f56;
+  border-radius: 6px;
+  padding: 7px 12px;
+  color: #ffffff;
+  background: #2f6f56;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.connect-link:focus-visible,
+.connect-link:hover {
+  background: #265946;
+}
+
 .workspace-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
@@ -181,6 +204,10 @@ select {
   .app-header {
     align-items: start;
     flex-direction: column;
+  }
+
+  .header-actions {
+    flex-wrap: wrap;
   }
 
   .workspace-layout {

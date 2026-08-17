@@ -9,7 +9,12 @@ export function AppShell() {
           <p className="eyebrow">Strava cycling analysis</p>
           <h1>Interactive AI Data Explorer</h1>
         </div>
-        <p className="phase-label">Sprint 1 shell</p>
+        <div className="header-actions">
+          <a className="connect-link" href="/api/strava/auth/start">
+            Connect Strava
+          </a>
+          <p className="phase-label">Sprint 2 OAuth</p>
+        </div>
       </header>
 
       <section className="workspace-layout" aria-label="Analysis workspace shell">
