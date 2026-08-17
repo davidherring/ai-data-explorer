@@ -33,7 +33,7 @@ type StravaTokenExchangeResponse = {
   }
 }
 
-type StravaDisconnectedReason =
+export type StravaDisconnectedReason =
   | 'missing_token'
   | 'invalid_token'
   | 'insufficient_scope'
@@ -51,7 +51,7 @@ type StravaConnectionStatus =
       reason: StravaDisconnectedReason
     }
 
-type ValidTokenResult =
+export type ValidTokenResult =
   | {
       ok: true
       tokenBundle: StravaTokenBundle
