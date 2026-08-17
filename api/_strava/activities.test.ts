@@ -200,7 +200,7 @@ describe('Strava activities endpoint handler', () => {
     expect(JSON.parse(response.body)).toEqual({ error: 'not_connected' })
   })
 
-  it('uses a refreshed token for activity retrieval without returning token values', async () => {
+  it('uses a refreshed token for activity retrieval and returns normalized rides', async () => {
     stubStravaEnv()
 
     const nearExpiredToken: StravaTokenBundle = {
@@ -239,13 +239,66 @@ describe('Strava activities endpoint handler', () => {
         Authorization: 'Bearer new-access-token',
       },
     })
-    expect(JSON.parse(response.body)).toMatchObject({
+    const body = JSON.parse(response.body)
+
+    expect(body).toMatchObject({
       total: 1,
       filteredOut: 0,
+      deduplicated: 0,
       refreshed: true,
+    })
+    expect(body.rides).toHaveLength(1)
+    expect(body.rides[0]).toMatchObject({
+      id: '1',
+      startTime: '2026-01-01T08:00:00Z',
+      localDate: '2026-01-01',
+      sportType: 'Ride',
+      trainer: false,
+      commute: false,
+      manual: false,
     })
     expect(response.body).not.toContain('new-access-token')
     expect(response.body).not.toContain('rotated-refresh-token')
+    expect(response.body).not.toContain('sport_type')
+    expect(response.body).not.toContain('start_date_local')
+  })
+
+  it('reports endpoint-level deduplication after cycling filtering', async () => {
+    stubStravaEnv()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        Response.json([
+          createRawActivity({ id: 1, sport_type: 'Ride' }),
+          createRawActivity({ id: 1, sport_type: 'GravelRide' }),
+          createRawActivity({ id: 2, sport_type: 'Run' }),
+        ]),
+      ),
+    )
+
+    const response = createMockResponse()
+    await handleStravaActivities(
+      createMockRequest(
+        '/api/strava/activities',
+        createStravaTokenCookie(validTokenBundle, testConfig.tokenCookieSecret),
+      ),
+      response,
+    )
+
+    const body = JSON.parse(response.body)
+
+    expect(body).toMatchObject({
+      total: 3,
+      filteredOut: 1,
+      deduplicated: 1,
+      refreshed: false,
+    })
+    expect(
+      body.rides.map((ride: { id: string; sportType: string }) => ({
+        id: ride.id,
+        sportType: ride.sportType,
+      })),
+    ).toEqual([{ id: '1', sportType: 'Ride' }])
   })
 
   it('maps Strava rate limits to a simple browser-facing error', async () => {

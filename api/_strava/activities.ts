@@ -3,6 +3,7 @@ import {
   getValidStravaTokenBundle,
   type FetchLike,
 } from './oauth.js'
+import { normalizeStravaActivities } from './normalizeActivity.js'
 
 const STRAVA_API_BASE_URL = 'https://www.strava.com/api/v3'
 const STRAVA_ACTIVITIES_PER_PAGE = 200
@@ -36,9 +37,10 @@ export type StravaSummaryActivity = {
 }
 
 export type StravaActivitiesResult = {
-  activities: StravaSummaryActivity[]
+  rides: ReturnType<typeof normalizeStravaActivities>['rides']
   total: number
   filteredOut: number
+  deduplicated: number
   refreshed: boolean
 }
 
@@ -139,9 +141,13 @@ export async function handleStravaActivities(
 
   try {
     const result = await fetchCyclingActivities(tokenResult.tokenBundle.accessToken)
+    const normalized = normalizeStravaActivities(result.activities)
 
     sendJson(response, 200, {
-      ...result,
+      rides: normalized.rides,
+      total: result.total,
+      filteredOut: result.filteredOut,
+      deduplicated: normalized.deduplicated,
       refreshed: tokenResult.refreshed,
     } satisfies StravaActivitiesResult)
   } catch (error) {
