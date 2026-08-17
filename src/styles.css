@@ -141,11 +141,12 @@ select {
 
 .analysis-workspace {
   display: grid;
-  grid-template-rows: minmax(320px, 1fr) auto;
+  grid-template-rows: minmax(320px, 1fr) auto auto;
   gap: 16px;
 }
 
 .visualization-placeholder,
+.selection-status,
 .controls-placeholder,
 .conversation-panel,
 .status-strip {
@@ -174,6 +175,57 @@ select {
 .controls-placeholder,
 .conversation-panel {
   padding: 20px;
+}
+
+.selection-status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: space-between;
+  padding: 14px 16px;
+}
+
+.selection-status-primary {
+  display: grid;
+  gap: 2px;
+  min-width: 220px;
+}
+
+.selection-status-primary strong {
+  color: #172026;
+  font-size: 0.98rem;
+}
+
+.selection-status-primary span {
+  color: #53605c;
+  font-size: 0.9rem;
+}
+
+.selection-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+}
+
+.selection-metrics div {
+  min-width: 104px;
+  border-left: 1px solid #d9ded5;
+  padding-left: 10px;
+}
+
+.selection-metrics dt {
+  color: #6b7773;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.selection-metrics dd {
+  margin: 0;
+  color: #172026;
+  font-weight: 800;
 }
 
 .control-grid {
@@ -381,5 +433,22 @@ select {
 
   .bounds-row {
     grid-template-columns: 1fr;
+  }
+
+  .selection-status {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .selection-metrics {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .selection-metrics div {
+    border-left: 0;
+    border-top: 1px solid #d9ded5;
+    padding-left: 0;
+    padding-top: 8px;
   }
 }

@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { ActivitySelectionControls } from './ActivitySelectionControls.tsx'
+import { SelectionStatus } from './SelectionStatus.tsx'
 import type { Ride } from '../data/ride.ts'
 import type { AnalysisState } from '../state/analysisState.ts'
 
@@ -25,11 +26,12 @@ export function AnalysisWorkspaceShell({
         <h2>Visualization area</h2>
         <p>Static placeholder for the future shared-state visualization surface.</p>
         <p>{rides.length} normalized rides available.</p>
-        <p>{selectedRides.length} rides currently selected.</p>
         <p>
           Current view: {analysisState.view.type}; metric: {activeMetric}.
         </p>
       </div>
+
+      <SelectionStatus rides={selectedRides} totalRideCount={rides.length} />
 
       <div className="controls-placeholder">
         <p className="section-label">Selection / analysis controls</p>

@@ -26,11 +26,11 @@ describe('App shell', () => {
     expect(
       await screen.findByText('12 normalized rides available.'),
     ).toBeInTheDocument()
-    expect(screen.getByText('12 rides currently selected.')).toBeInTheDocument()
+    expect(screen.getByText('12 of 12 rides selected')).toBeInTheDocument()
     expect(
       screen.getByText('Current view: trend; metric: averageSpeedMph.'),
     ).toBeInTheDocument()
-    expect(screen.getByText('Selection: 12 of 12 rides')).toBeInTheDocument()
+    expect(screen.getByText('Selection ready for trend view.')).toBeInTheDocument()
     expect(screen.getByText('View: trend')).toBeInTheDocument()
     expect(screen.getByLabelText('AI conversation panel')).toBeInTheDocument()
     expect(screen.getByLabelText('Summary and status')).toBeInTheDocument()
@@ -52,7 +52,30 @@ describe('App shell', () => {
 
     fireEvent.click(screen.getByLabelText('2025'))
 
-    expect(screen.getByText('3 rides currently selected.')).toBeInTheDocument()
-    expect(screen.getByText('Selection: 3 of 12 rides')).toBeInTheDocument()
+    expect(screen.getByText('3 of 12 rides selected')).toBeInTheDocument()
+  })
+
+  it('shows an empty selection state when filters match no rides', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        Response.json({ connected: false, reason: 'missing_token' }),
+      ),
+    )
+
+    render(<App />)
+
+    expect(
+      await screen.findByText('12 normalized rides available.'),
+    ).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Start'), {
+      target: { value: '2030-01-01' },
+    })
+
+    expect(screen.getByText('0 of 12 rides selected')).toBeInTheDocument()
+    expect(
+      screen.getByText('No rides match the current filters.'),
+    ).toBeInTheDocument()
   })
 })

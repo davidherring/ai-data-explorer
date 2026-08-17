@@ -55,9 +55,6 @@ export function AppShell() {
             void rideDataSource.refresh()
           }}
         />
-        <span>
-          Selection: {selectedRides.length} of {rideDataSource.rides.length} rides
-        </span>
         <span>View: {analysisState.view.type}</span>
         <span>Deployment readiness: local shell</span>
       </section>
