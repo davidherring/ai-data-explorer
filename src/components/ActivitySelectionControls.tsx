@@ -1,0 +1,357 @@
+import type { Ride, DayOfWeek } from '../data/ride.ts'
+import {
+  defaultAnalysisState,
+  type ActivitySelection,
+  type DateRange,
+  type NumericRange,
+} from '../state/analysisState.ts'
+
+type ActivitySelectionControlsProps = {
+  rides: Ride[]
+  selection: ActivitySelection
+  onSelectionChange: (selection: ActivitySelection) => void
+}
+
+const daysOfWeek = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday',
+] as const satisfies readonly DayOfWeek[]
+
+export function ActivitySelectionControls({
+  rides,
+  selection,
+  onSelectionChange,
+}: ActivitySelectionControlsProps) {
+  const availableYears = getAvailableYears(rides)
+  const availableSportTypes = getAvailableSportTypes(rides)
+
+  return (
+    <form className="selection-controls" aria-label="Activity selection controls">
+      <fieldset className="control-group control-group-wide">
+        <legend>Years</legend>
+        <div className="checkbox-row">
+          {availableYears.map((year) => (
+            <label className="checkbox-pill" key={year}>
+              <input
+                type="checkbox"
+                checked={selection.years?.includes(year) ?? false}
+                onChange={() => {
+                  onSelectionChange(updateYears(selection, year))
+                }}
+              />
+              <span>{year}</span>
+            </label>
+          ))}
+        </div>
+        <p className="control-help">No years selected means all years.</p>
+      </fieldset>
+
+      <fieldset className="control-group">
+        <legend>Date range</legend>
+        <div className="bounds-row">
+          <label>
+            <span>Start</span>
+            <input
+              type="date"
+              value={selection.dateRange?.start ?? ''}
+              onChange={(event) => {
+                onSelectionChange(
+                  updateDateRange(selection, 'start', event.currentTarget.value),
+                )
+              }}
+            />
+          </label>
+          <label>
+            <span>End</span>
+            <input
+              type="date"
+              value={selection.dateRange?.end ?? ''}
+              onChange={(event) => {
+                onSelectionChange(
+                  updateDateRange(selection, 'end', event.currentTarget.value),
+                )
+              }}
+            />
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset className="control-group">
+        <legend>Day type</legend>
+        <label>
+          <span>Mode</span>
+          <select
+            value={selection.dayMode ?? 'all'}
+            onChange={(event) => {
+              onSelectionChange({
+                ...selection,
+                dayMode: event.currentTarget.value as ActivitySelection['dayMode'],
+              })
+            }}
+          >
+            <option value="all">All days</option>
+            <option value="weekday">Weekdays</option>
+            <option value="weekend">Weekends</option>
+          </select>
+        </label>
+      </fieldset>
+
+      <fieldset className="control-group control-group-wide">
+        <legend>Days of week</legend>
+        <div className="checkbox-row">
+          {daysOfWeek.map((day) => (
+            <label className="checkbox-pill" key={day}>
+              <input
+                type="checkbox"
+                checked={selection.daysOfWeek?.includes(day) ?? false}
+                onChange={() => {
+                  onSelectionChange(updateDaysOfWeek(selection, day))
+                }}
+              />
+              <span>{formatDayOfWeek(day)}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset className="control-group">
+        <legend>Distance</legend>
+        <div className="bounds-row">
+          <label>
+            <span>Min mi</span>
+            <input
+              inputMode="decimal"
+              type="number"
+              value={selection.distanceMiles?.min ?? ''}
+              onChange={(event) => {
+                onSelectionChange(
+                  updateNumericRange(
+                    selection,
+                    'distanceMiles',
+                    'min',
+                    event.currentTarget.value,
+                  ),
+                )
+              }}
+            />
+          </label>
+          <label>
+            <span>Max mi</span>
+            <input
+              inputMode="decimal"
+              type="number"
+              value={selection.distanceMiles?.max ?? ''}
+              onChange={(event) => {
+                onSelectionChange(
+                  updateNumericRange(
+                    selection,
+                    'distanceMiles',
+                    'max',
+                    event.currentTarget.value,
+                  ),
+                )
+              }}
+            />
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset className="control-group">
+        <legend>Elevation</legend>
+        <div className="bounds-row">
+          <label>
+            <span>Min ft</span>
+            <input
+              inputMode="decimal"
+              type="number"
+              value={selection.elevationGainFeet?.min ?? ''}
+              onChange={(event) => {
+                onSelectionChange(
+                  updateNumericRange(
+                    selection,
+                    'elevationGainFeet',
+                    'min',
+                    event.currentTarget.value,
+                  ),
+                )
+              }}
+            />
+          </label>
+          <label>
+            <span>Max ft</span>
+            <input
+              inputMode="decimal"
+              type="number"
+              value={selection.elevationGainFeet?.max ?? ''}
+              onChange={(event) => {
+                onSelectionChange(
+                  updateNumericRange(
+                    selection,
+                    'elevationGainFeet',
+                    'max',
+                    event.currentTarget.value,
+                  ),
+                )
+              }}
+            />
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset className="control-group">
+        <legend>Sport type</legend>
+        <label>
+          <span>Type</span>
+          <select
+            value={selection.sportType ?? ''}
+            onChange={(event) => {
+              onSelectionChange(updateSportType(selection, event.currentTarget.value))
+            }}
+          >
+            <option value="">All types</option>
+            {availableSportTypes.map((sportType) => (
+              <option key={sportType} value={sportType}>
+                {sportType}
+              </option>
+            ))}
+          </select>
+        </label>
+      </fieldset>
+
+      <div className="control-actions">
+        <button
+          className="secondary-button"
+          type="button"
+          onClick={() => {
+            onSelectionChange(defaultAnalysisState.selection)
+          }}
+        >
+          Reset filters
+        </button>
+      </div>
+    </form>
+  )
+}
+
+function getAvailableYears(rides: readonly Ride[]): number[] {
+  return Array.from(new Set(rides.map((ride) => ride.year))).sort(
+    (left, right) => right - left,
+  )
+}
+
+function getAvailableSportTypes(rides: readonly Ride[]): string[] {
+  return Array.from(new Set(rides.map((ride) => ride.sportType))).sort((left, right) =>
+    left.localeCompare(right),
+  )
+}
+
+function updateYears(
+  selection: ActivitySelection,
+  selectedYear: number,
+): ActivitySelection {
+  const selectedYears = new Set(selection.years ?? [])
+
+  if (selectedYears.has(selectedYear)) {
+    selectedYears.delete(selectedYear)
+  } else {
+    selectedYears.add(selectedYear)
+  }
+
+  const years = Array.from(selectedYears).sort((left, right) => left - right)
+
+  return withOptionalValue(selection, 'years', years.length > 0 ? years : undefined)
+}
+
+function updateDateRange(
+  selection: ActivitySelection,
+  bound: keyof DateRange,
+  value: string,
+): ActivitySelection {
+  const nextDateRange = {
+    ...selection.dateRange,
+    [bound]: value === '' ? undefined : value,
+  }
+
+  return withOptionalValue(
+    selection,
+    'dateRange',
+    nextDateRange.start === undefined && nextDateRange.end === undefined
+      ? undefined
+      : nextDateRange,
+  )
+}
+
+function updateDaysOfWeek(
+  selection: ActivitySelection,
+  selectedDay: DayOfWeek,
+): ActivitySelection {
+  const selectedDays = new Set(selection.daysOfWeek ?? [])
+
+  if (selectedDays.has(selectedDay)) {
+    selectedDays.delete(selectedDay)
+  } else {
+    selectedDays.add(selectedDay)
+  }
+
+  const days = daysOfWeek.filter((day) => selectedDays.has(day))
+
+  return withOptionalValue(
+    selection,
+    'daysOfWeek',
+    days.length > 0 ? days : undefined,
+  )
+}
+
+function updateNumericRange(
+  selection: ActivitySelection,
+  rangeKey: 'distanceMiles' | 'elevationGainFeet',
+  bound: keyof NumericRange,
+  value: string,
+): ActivitySelection {
+  const parsedValue = Number(value)
+  const nextValue = value === '' || !Number.isFinite(parsedValue) ? undefined : parsedValue
+  const nextRange = {
+    ...selection[rangeKey],
+    [bound]: nextValue,
+  }
+
+  return withOptionalValue(
+    selection,
+    rangeKey,
+    nextRange.min === undefined && nextRange.max === undefined
+      ? undefined
+      : nextRange,
+  )
+}
+
+function updateSportType(
+  selection: ActivitySelection,
+  sportType: string,
+): ActivitySelection {
+  return withOptionalValue(selection, 'sportType', sportType === '' ? undefined : sportType)
+}
+
+function withOptionalValue<Key extends keyof ActivitySelection>(
+  selection: ActivitySelection,
+  key: Key,
+  value: ActivitySelection[Key] | undefined,
+): ActivitySelection {
+  const nextSelection = { ...selection }
+
+  if (value === undefined) {
+    delete nextSelection[key]
+  } else {
+    nextSelection[key] = value
+  }
+
+  return nextSelection
+}
+
+function formatDayOfWeek(day: DayOfWeek): string {
+  return `${day.slice(0, 1).toUpperCase()}${day.slice(1, 3)}`
+}

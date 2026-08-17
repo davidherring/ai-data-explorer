@@ -1,3 +1,5 @@
+import type { Dispatch, SetStateAction } from 'react'
+import { ActivitySelectionControls } from './ActivitySelectionControls.tsx'
 import type { Ride } from '../data/ride.ts'
 import type { AnalysisState } from '../state/analysisState.ts'
 
@@ -5,12 +7,14 @@ type AnalysisWorkspaceShellProps = {
   rides: Ride[]
   selectedRides: Ride[]
   analysisState: AnalysisState
+  onAnalysisStateChange: Dispatch<SetStateAction<AnalysisState>>
 }
 
 export function AnalysisWorkspaceShell({
   rides,
   selectedRides,
   analysisState,
+  onAnalysisStateChange,
 }: AnalysisWorkspaceShellProps) {
   const activeMetric = analysisState.view.yMetric ?? 'averageSpeedMph'
 
@@ -29,14 +33,16 @@ export function AnalysisWorkspaceShell({
 
       <div className="controls-placeholder">
         <p className="section-label">Selection / analysis controls</p>
-        <div className="control-grid" aria-label="Future controls">
-          <span>Date range</span>
-          <span>Day type</span>
-          <span>Distance</span>
-          <span>Elevation</span>
-          <span>View mode</span>
-          <span>Metric</span>
-        </div>
+        <ActivitySelectionControls
+          rides={rides}
+          selection={analysisState.selection}
+          onSelectionChange={(selection) => {
+            onAnalysisStateChange((current) => ({
+              ...current,
+              selection,
+            }))
+          }}
+        />
       </div>
     </section>
   )

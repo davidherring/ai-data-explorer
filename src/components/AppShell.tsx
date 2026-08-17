@@ -14,7 +14,6 @@ export function AppShell() {
   const rideDataSource = useRideDataSource()
   const [analysisState, setAnalysisState] =
     useState<AnalysisState>(defaultAnalysisState)
-  void setAnalysisState
 
   const selectedRides = useMemo(
     () => filterRides(rideDataSource.rides, analysisState.selection),
@@ -39,6 +38,7 @@ export function AppShell() {
           rides={rideDataSource.rides}
           selectedRides={selectedRides}
           analysisState={analysisState}
+          onAnalysisStateChange={setAnalysisState}
         />
         <ConversationPanelShell />
       </section>
