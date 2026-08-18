@@ -271,14 +271,6 @@ select {
   font-weight: 800;
 }
 
-.control-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.control-grid span,
 .composer-placeholder {
   min-height: 42px;
   border: 1px dashed #b7c2bd;
@@ -301,10 +293,6 @@ select {
   border: 1px solid #d9ded5;
   border-radius: 8px;
   padding: 9px 10px 10px;
-}
-
-.control-group-wide {
-  grid-column: span 4;
 }
 
 .control-group-years {
@@ -507,16 +495,8 @@ select {
     position: static;
   }
 
-  .control-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .selection-controls {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .control-group-wide {
-    grid-column: span 2;
   }
 
   .control-group-years,
@@ -534,16 +514,8 @@ select {
 }
 
 @media (max-width: 520px) {
-  .control-grid {
-    grid-template-columns: 1fr;
-  }
-
   .selection-controls {
     grid-template-columns: 1fr;
-  }
-
-  .control-group-wide {
-    grid-column: auto;
   }
 
   .control-group-years,

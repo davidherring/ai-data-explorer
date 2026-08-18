@@ -29,7 +29,6 @@ export function AppShell() {
         </div>
         <div className="header-actions">
           <StravaConnectionControl />
-          <p className="phase-label">Sprint 2 OAuth</p>
         </div>
       </header>
 
@@ -56,7 +55,6 @@ export function AppShell() {
           }}
         />
         <span>View: {analysisState.view.type}</span>
-        <span>Deployment readiness: local shell</span>
       </section>
     </main>
   )
