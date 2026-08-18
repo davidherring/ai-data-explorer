@@ -32,7 +32,7 @@ export function ActivitySelectionControls({
 
   return (
     <form className="selection-controls" aria-label="Activity selection controls">
-      <fieldset className="control-group control-group-wide control-group-compact">
+      <fieldset className="control-group control-group-years control-group-compact">
         <legend>Years</legend>
         <div className="checkbox-row">
           {availableYears.map((year) => (
@@ -51,7 +51,7 @@ export function ActivitySelectionControls({
         <p className="control-help">No years selected means all years.</p>
       </fieldset>
 
-      <fieldset className="control-group">
+      <fieldset className="control-group control-group-date">
         <legend>Date range</legend>
         <div className="bounds-row">
           <label>
@@ -81,7 +81,7 @@ export function ActivitySelectionControls({
         </div>
       </fieldset>
 
-      <fieldset className="control-group control-group-wide control-group-compact">
+      <fieldset className="control-group control-group-days control-group-compact">
         <legend>Day filters</legend>
         <div className="day-filter-grid">
           <label>
@@ -122,7 +122,7 @@ export function ActivitySelectionControls({
         </div>
       </fieldset>
 
-      <fieldset className="control-group">
+      <fieldset className="control-group control-group-distance">
         <legend>Distance</legend>
         <div className="bounds-row">
           <label>
@@ -164,7 +164,7 @@ export function ActivitySelectionControls({
         </div>
       </fieldset>
 
-      <fieldset className="control-group">
+      <fieldset className="control-group control-group-elevation">
         <legend>Elevation</legend>
         <div className="bounds-row">
           <label>

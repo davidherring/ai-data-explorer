@@ -9,7 +9,7 @@ describe('AverageSpeedTrendChart', () => {
   })
 
   it('renders an empty chart state for empty rides', () => {
-    render(<AverageSpeedTrendChart rides={[]} />)
+    render(<AverageSpeedTrendChart rides={[]} totalRideCount={2} />)
 
     expect(
       screen.getByLabelText('Average speed over calendar time'),
@@ -21,7 +21,7 @@ describe('AverageSpeedTrendChart', () => {
   })
 
   it('renders the labeled chart region for non-empty rides', async () => {
-    render(<AverageSpeedTrendChart rides={[rideA, rideB]} />)
+    render(<AverageSpeedTrendChart rides={[rideA, rideB]} totalRideCount={2} />)
 
     expect(
       screen.getByLabelText('Average speed over calendar time'),
@@ -36,7 +36,7 @@ describe('AverageSpeedTrendChart', () => {
   })
 
   it('mounts Plot output', async () => {
-    render(<AverageSpeedTrendChart rides={[rideA]} />)
+    render(<AverageSpeedTrendChart rides={[rideA]} totalRideCount={1} />)
 
     await waitFor(() => {
       expect(document.querySelector('.trend-chart-container svg')).toBeInTheDocument()
@@ -44,7 +44,7 @@ describe('AverageSpeedTrendChart', () => {
   })
 
   it('preserves localDate and ride details in native tooltip text', async () => {
-    render(<AverageSpeedTrendChart rides={[rideA]} />)
+    render(<AverageSpeedTrendChart rides={[rideA]} totalRideCount={1} />)
 
     await waitFor(() => {
       expect(document.querySelector('svg')).toBeInTheDocument()
@@ -58,13 +58,15 @@ describe('AverageSpeedTrendChart', () => {
   })
 
   it('replaces Plot output when rides change', async () => {
-    const { rerender } = render(<AverageSpeedTrendChart rides={[rideA]} />)
+    const { rerender } = render(
+      <AverageSpeedTrendChart rides={[rideA]} totalRideCount={1} />,
+    )
 
     await waitFor(() => {
       expect(document.body.textContent).toContain('2025-03-12')
     })
 
-    rerender(<AverageSpeedTrendChart rides={[rideB]} />)
+    rerender(<AverageSpeedTrendChart rides={[rideB]} totalRideCount={1} />)
 
     await waitFor(() => {
       expect(document.body.textContent).toContain('2026-07-04')

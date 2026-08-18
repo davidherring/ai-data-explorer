@@ -1,9 +1,11 @@
 import * as Plot from '@observablehq/plot'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { SelectionStatus } from './SelectionStatus.tsx'
 import type { Ride } from '../data/ride.ts'
 
 type AverageSpeedTrendChartProps = {
   rides: Ride[]
+  totalRideCount: number
 }
 
 type TrendPoint = {
@@ -21,7 +23,10 @@ const elevationFormatter = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 0,
 })
 
-export function AverageSpeedTrendChart({ rides }: AverageSpeedTrendChartProps) {
+export function AverageSpeedTrendChart({
+  rides,
+  totalRideCount,
+}: AverageSpeedTrendChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [chartWidth, setChartWidth] = useState(fallbackChartWidth)
   const points = useMemo(
@@ -129,18 +134,21 @@ export function AverageSpeedTrendChart({ rides }: AverageSpeedTrendChartProps) {
       className="trend-chart"
       aria-label="Average speed over calendar time"
     >
-      <figcaption>
-        <span className="section-label">Trend</span>
-        <strong>Average speed over calendar time</strong>
+      <figcaption className="trend-chart-header">
+        <div className="trend-chart-title">
+          <span className="section-label">Trend</span>
+          <strong>Average speed over calendar time</strong>
+        </div>
+        <SelectionStatus rides={rides} totalRideCount={totalRideCount} />
       </figcaption>
 
-      {rides.length === 0 ? (
-        <div className="chart-empty-state">
-          No rides to plot for the current selection.
-        </div>
-      ) : (
-        <div ref={containerRef} className="trend-chart-container" />
-      )}
+      <div ref={containerRef} className="trend-chart-container">
+        {rides.length === 0 && (
+          <div className="chart-empty-state">
+            No rides to plot for the current selection.
+          </div>
+        )}
+      </div>
     </figure>
   )
 }

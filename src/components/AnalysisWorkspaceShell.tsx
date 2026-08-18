@@ -1,7 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { ActivitySelectionControls } from './ActivitySelectionControls.tsx'
 import { AverageSpeedTrendChart } from './AverageSpeedTrendChart.tsx'
-import { SelectionStatus } from './SelectionStatus.tsx'
 import type { Ride } from '../data/ride.ts'
 import type { AnalysisState } from '../state/analysisState.ts'
 
@@ -20,9 +19,10 @@ export function AnalysisWorkspaceShell({
 }: AnalysisWorkspaceShellProps) {
   return (
     <section className="analysis-workspace" aria-label="Analysis workspace">
-      <AverageSpeedTrendChart rides={selectedRides} />
-
-      <SelectionStatus rides={selectedRides} totalRideCount={rides.length} />
+      <AverageSpeedTrendChart
+        rides={selectedRides}
+        totalRideCount={rides.length}
+      />
 
       <div className="controls-placeholder">
         <p className="section-label">Selection / analysis controls</p>
