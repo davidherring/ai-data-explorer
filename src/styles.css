@@ -424,8 +424,8 @@ select {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   gap: 14px;
-  height: calc(100vh - 40px);
-  max-height: calc(100vh - 40px);
+  height: calc(100vh - 72px);
+  max-height: calc(100vh - 72px);
   overflow: hidden;
   position: sticky;
   top: 20px;

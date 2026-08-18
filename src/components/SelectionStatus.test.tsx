@@ -23,9 +23,7 @@ describe('SelectionStatus', () => {
 
     expect(screen.getByText('1 of 1 ride selected')).toBeInTheDocument()
     expect(
-      screen.getByText(
-        'Individual rides are still useful, but this is too small for a meaningful trend.',
-      ),
+      screen.getByText('Too few rides for a meaningful trend.'),
     ).toBeInTheDocument()
   })
 
@@ -34,9 +32,7 @@ describe('SelectionStatus', () => {
 
     expect(screen.getByText('2 of 4 rides selected')).toBeInTheDocument()
     expect(
-      screen.getByText(
-        'Individual rides are still useful, but this is too small for a meaningful trend.',
-      ),
+      screen.getByText('Too few rides for a meaningful trend.'),
     ).toBeInTheDocument()
   })
 

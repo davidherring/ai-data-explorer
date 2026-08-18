@@ -56,7 +56,7 @@ function getSelectionMessage(isEmpty: boolean, isSparse: boolean): string {
   }
 
   if (isSparse) {
-    return 'Individual rides are still useful, but this is too small for a meaningful trend.'
+    return 'Too few rides for a meaningful trend.'
   }
 
   return 'Selection ready for trend view.'
