@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { ActivitySelectionControls } from './ActivitySelectionControls.tsx'
+import { AverageSpeedTrendChart } from './AverageSpeedTrendChart.tsx'
 import { SelectionStatus } from './SelectionStatus.tsx'
 import type { Ride } from '../data/ride.ts'
 import type { AnalysisState } from '../state/analysisState.ts'
@@ -17,19 +18,9 @@ export function AnalysisWorkspaceShell({
   analysisState,
   onAnalysisStateChange,
 }: AnalysisWorkspaceShellProps) {
-  const activeMetric = analysisState.view.yMetric ?? 'averageSpeedMph'
-
   return (
     <section className="analysis-workspace" aria-label="Analysis workspace">
-      <div className="visualization-placeholder">
-        <p className="section-label">Analysis workspace</p>
-        <h2>Visualization area</h2>
-        <p>Static placeholder for the future shared-state visualization surface.</p>
-        <p>{rides.length} normalized rides available.</p>
-        <p>
-          Current view: {analysisState.view.type}; metric: {activeMetric}.
-        </p>
-      </div>
+      <AverageSpeedTrendChart rides={selectedRides} />
 
       <SelectionStatus rides={selectedRides} totalRideCount={rides.length} />
 

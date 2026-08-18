@@ -145,7 +145,7 @@ select {
   gap: 16px;
 }
 
-.visualization-placeholder,
+.trend-chart,
 .selection-status,
 .controls-placeholder,
 .conversation-panel,
@@ -156,16 +156,45 @@ select {
   box-shadow: 0 1px 2px rgba(23, 32, 38, 0.05);
 }
 
-.visualization-placeholder {
+.trend-chart {
   display: grid;
-  align-content: center;
-  justify-items: center;
-  gap: 8px;
-  padding: 32px;
+  grid-template-rows: auto 1fr;
+  gap: 12px;
+  min-width: 0;
+  min-height: 320px;
+  margin: 0;
+  padding: 18px;
+}
+
+.trend-chart figcaption {
+  display: grid;
+  gap: 2px;
+}
+
+.trend-chart figcaption strong {
+  color: #172026;
+  font-size: 1.1rem;
+}
+
+.trend-chart-container {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.trend-chart-container svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.chart-empty-state {
+  display: grid;
+  min-height: 240px;
+  place-items: center;
+  color: #53605c;
   text-align: center;
 }
 
-.visualization-placeholder p,
 .conversation-placeholder p {
   margin: 0;
   max-width: 48rem;

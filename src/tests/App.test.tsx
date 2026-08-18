@@ -8,7 +8,7 @@ afterEach(() => {
 })
 
 describe('App shell', () => {
-  it('renders the state-driven workspace placeholders', async () => {
+  it('renders the state-driven trend workspace', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async () =>
@@ -24,11 +24,10 @@ describe('App shell', () => {
     expect(screen.getByLabelText('Analysis workspace')).toBeInTheDocument()
     expect(screen.getByText('Selection / analysis controls')).toBeInTheDocument()
     expect(
-      await screen.findByText('12 normalized rides available.'),
+      await screen.findByText('12 of 12 rides selected'),
     ).toBeInTheDocument()
-    expect(screen.getByText('12 of 12 rides selected')).toBeInTheDocument()
     expect(
-      screen.getByText('Current view: trend; metric: averageSpeedMph.'),
+      screen.getByLabelText('Average speed over calendar time'),
     ).toBeInTheDocument()
     expect(screen.getByText('Selection ready for trend view.')).toBeInTheDocument()
     expect(screen.getByText('View: trend')).toBeInTheDocument()
@@ -47,12 +46,14 @@ describe('App shell', () => {
     render(<App />)
 
     expect(
-      await screen.findByText('12 normalized rides available.'),
+      await screen.findByText('12 of 12 rides selected'),
     ).toBeInTheDocument()
 
     fireEvent.click(screen.getByLabelText('2025'))
 
     expect(screen.getByText('3 of 12 rides selected')).toBeInTheDocument()
+    expect(document.body.textContent).toContain('2025-05-21')
+    expect(document.body.textContent).not.toContain('2024-02-07')
   })
 
   it('shows an empty selection state when filters match no rides', async () => {
@@ -66,7 +67,7 @@ describe('App shell', () => {
     render(<App />)
 
     expect(
-      await screen.findByText('12 normalized rides available.'),
+      await screen.findByText('12 of 12 rides selected'),
     ).toBeInTheDocument()
 
     fireEvent.change(screen.getByLabelText('Start'), {
