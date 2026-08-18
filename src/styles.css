@@ -31,9 +31,9 @@ select {
 .app-shell {
   display: grid;
   grid-template-rows: auto 1fr auto;
-  gap: 16px;
+  gap: 14px;
   min-height: 100vh;
-  padding: 24px;
+  padding: 20px 24px;
 }
 
 .app-header {
@@ -129,7 +129,8 @@ select {
 
 .workspace-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  align-items: start;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
   gap: 16px;
   min-height: 0;
 }
@@ -142,7 +143,7 @@ select {
 .analysis-workspace {
   display: grid;
   grid-template-rows: minmax(320px, 1fr) auto auto;
-  gap: 16px;
+  gap: 12px;
 }
 
 .trend-chart,
@@ -159,11 +160,11 @@ select {
 .trend-chart {
   display: grid;
   grid-template-rows: auto 1fr;
-  gap: 12px;
+  gap: 8px;
   min-width: 0;
   min-height: 320px;
   margin: 0;
-  padding: 18px;
+  padding: 14px 16px;
 }
 
 .trend-chart figcaption {
@@ -178,6 +179,7 @@ select {
 
 .trend-chart-container {
   min-width: 0;
+  width: 100%;
   overflow: hidden;
 }
 
@@ -203,7 +205,7 @@ select {
 
 .controls-placeholder,
 .conversation-panel {
-  padding: 20px;
+  padding: 16px;
 }
 
 .selection-status {
@@ -276,9 +278,9 @@ select {
 
 .selection-controls {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .control-group {
@@ -286,25 +288,29 @@ select {
   margin: 0;
   border: 1px solid #d9ded5;
   border-radius: 8px;
-  padding: 12px;
+  padding: 9px 10px 10px;
 }
 
 .control-group-wide {
-  grid-column: span 3;
+  grid-column: span 4;
+}
+
+.control-group-compact {
+  padding-bottom: 8px;
 }
 
 .control-group legend {
   padding: 0 4px;
   color: #172026;
-  font-size: 0.9rem;
+  font-size: 0.84rem;
   font-weight: 800;
 }
 
 .control-group label {
   display: grid;
-  gap: 5px;
+  gap: 3px;
   color: #46524e;
-  font-size: 0.86rem;
+  font-size: 0.82rem;
   font-weight: 700;
 }
 
@@ -314,7 +320,7 @@ select {
   width: 100%;
   border: 1px solid #cfd8d4;
   border-radius: 6px;
-  padding: 7px 9px;
+  padding: 5px 8px;
   color: #172026;
   background: #ffffff;
 }
@@ -322,13 +328,13 @@ select {
 .bounds-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 
 .checkbox-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .checkbox-pill {
@@ -336,12 +342,13 @@ select {
   align-items: center;
   grid-auto-flow: column;
   grid-template-columns: auto auto;
-  gap: 6px;
-  min-height: 34px;
+  gap: 5px;
+  min-height: 29px;
   border: 1px solid #cfd8d4;
   border-radius: 999px;
-  padding: 6px 10px;
+  padding: 4px 8px;
   background: #f8faf7;
+  font-size: 0.82rem;
 }
 
 .checkbox-pill input {
@@ -350,21 +357,44 @@ select {
 }
 
 .control-help {
-  margin: 8px 0 0;
+  margin: 5px 0 0;
   color: #6b7773;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
 }
 
-.control-actions {
-  display: flex;
+.day-filter-grid {
+  display: grid;
+  grid-template-columns: minmax(132px, 0.55fr) minmax(0, 1.45fr);
+  gap: 10px;
+}
+
+.day-checkboxes {
+  display: grid;
+  gap: 4px;
+  color: #46524e;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.control-group-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
   align-items: end;
-  justify-content: end;
+}
+
+.control-group-actions legend {
+  grid-column: 1 / -1;
 }
 
 .conversation-panel {
   display: grid;
   grid-template-rows: auto auto 1fr auto;
   gap: 14px;
+  max-height: calc(100vh - 120px);
+  overflow: hidden;
+  position: sticky;
+  top: 20px;
 }
 
 .conversation-placeholder {
@@ -372,6 +402,7 @@ select {
   align-content: start;
   gap: 10px;
   min-height: 260px;
+  overflow: auto;
   border-top: 1px solid #eef1ed;
   padding-top: 14px;
 }
@@ -431,7 +462,14 @@ select {
   }
 
   .workspace-layout {
+    align-items: stretch;
     grid-template-columns: 1fr;
+  }
+
+  .conversation-panel {
+    max-height: none;
+    overflow: visible;
+    position: static;
   }
 
   .control-grid {
@@ -444,6 +482,10 @@ select {
 
   .control-group-wide {
     grid-column: span 2;
+  }
+
+  .day-filter-grid {
+    grid-template-columns: 1fr;
   }
 }
 

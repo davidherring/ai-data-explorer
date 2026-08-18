@@ -36,7 +36,21 @@ export function AverageSpeedTrendChart({ rides }: AverageSpeedTrendChartProps) {
   useEffect(() => {
     const container = containerRef.current
 
-    if (!container || typeof ResizeObserver === 'undefined') {
+    if (!container) {
+      return
+    }
+
+    const measureContainer = () => {
+      const measuredWidth = Math.floor(container.getBoundingClientRect().width)
+
+      if (measuredWidth > 0) {
+        setChartWidth(measuredWidth)
+      }
+    }
+
+    measureContainer()
+
+    if (typeof ResizeObserver === 'undefined') {
       return
     }
 

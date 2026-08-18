@@ -32,7 +32,7 @@ export function ActivitySelectionControls({
 
   return (
     <form className="selection-controls" aria-label="Activity selection controls">
-      <fieldset className="control-group control-group-wide">
+      <fieldset className="control-group control-group-wide control-group-compact">
         <legend>Years</legend>
         <div className="checkbox-row">
           {availableYears.map((year) => (
@@ -81,41 +81,44 @@ export function ActivitySelectionControls({
         </div>
       </fieldset>
 
-      <fieldset className="control-group">
-        <legend>Day type</legend>
-        <label>
-          <span>Mode</span>
-          <select
-            value={selection.dayMode ?? 'all'}
-            onChange={(event) => {
-              onSelectionChange({
-                ...selection,
-                dayMode: event.currentTarget.value as ActivitySelection['dayMode'],
-              })
-            }}
-          >
-            <option value="all">All days</option>
-            <option value="weekday">Weekdays</option>
-            <option value="weekend">Weekends</option>
-          </select>
-        </label>
-      </fieldset>
+      <fieldset className="control-group control-group-wide control-group-compact">
+        <legend>Day filters</legend>
+        <div className="day-filter-grid">
+          <label>
+            <span>Day type</span>
+            <select
+              value={selection.dayMode ?? 'all'}
+              onChange={(event) => {
+                onSelectionChange({
+                  ...selection,
+                  dayMode: event.currentTarget
+                    .value as ActivitySelection['dayMode'],
+                })
+              }}
+            >
+              <option value="all">All days</option>
+              <option value="weekday">Weekdays</option>
+              <option value="weekend">Weekends</option>
+            </select>
+          </label>
 
-      <fieldset className="control-group control-group-wide">
-        <legend>Days of week</legend>
-        <div className="checkbox-row">
-          {daysOfWeek.map((day) => (
-            <label className="checkbox-pill" key={day}>
-              <input
-                type="checkbox"
-                checked={selection.daysOfWeek?.includes(day) ?? false}
-                onChange={() => {
-                  onSelectionChange(updateDaysOfWeek(selection, day))
-                }}
-              />
-              <span>{formatDayOfWeek(day)}</span>
-            </label>
-          ))}
+          <div className="day-checkboxes" aria-label="Specific days of week">
+            <span>Specific days</span>
+            <div className="checkbox-row">
+              {daysOfWeek.map((day) => (
+                <label className="checkbox-pill" key={day}>
+                  <input
+                    type="checkbox"
+                    checked={selection.daysOfWeek?.includes(day) ?? false}
+                    onChange={() => {
+                      onSelectionChange(updateDaysOfWeek(selection, day))
+                    }}
+                  />
+                  <span>{formatDayOfWeek(day)}</span>
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
       </fieldset>
 
@@ -203,7 +206,7 @@ export function ActivitySelectionControls({
         </div>
       </fieldset>
 
-      <fieldset className="control-group">
+      <fieldset className="control-group control-group-actions">
         <legend>Sport type</legend>
         <label>
           <span>Type</span>
@@ -221,9 +224,6 @@ export function ActivitySelectionControls({
             ))}
           </select>
         </label>
-      </fieldset>
-
-      <div className="control-actions">
         <button
           className="secondary-button"
           type="button"
@@ -233,7 +233,7 @@ export function ActivitySelectionControls({
         >
           Reset filters
         </button>
-      </div>
+      </fieldset>
     </form>
   )
 }

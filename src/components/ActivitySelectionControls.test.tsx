@@ -96,7 +96,7 @@ describe('ActivitySelectionControls', () => {
   it('updates day mode', () => {
     renderControls()
 
-    fireEvent.change(screen.getByLabelText('Mode'), {
+    fireEvent.change(screen.getByLabelText('Day type'), {
       target: { value: 'weekend' },
     })
 
