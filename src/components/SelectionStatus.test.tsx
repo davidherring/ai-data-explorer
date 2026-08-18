@@ -40,7 +40,7 @@ describe('SelectionStatus', () => {
     render(<SelectionStatus rides={[rideA, rideB, rideC]} totalRideCount={5} />)
 
     expect(screen.getByText('3 of 5 rides selected')).toBeInTheDocument()
-    expect(screen.getByText('Selection ready for trend view.')).toBeInTheDocument()
+    expect(screen.getByText('Selection ready.')).toBeInTheDocument()
   })
 
   it('formats average speed with one decimal and mph', () => {

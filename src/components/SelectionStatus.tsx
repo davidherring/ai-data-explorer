@@ -59,7 +59,7 @@ function getSelectionMessage(isEmpty: boolean, isSparse: boolean): string {
     return 'Too few rides for a meaningful trend.'
   }
 
-  return 'Selection ready for trend view.'
+  return 'Selection ready.'
 }
 
 function pluralizeRide(count: number): string {

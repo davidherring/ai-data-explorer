@@ -38,7 +38,7 @@ describe('App shell', () => {
       'aria-pressed',
       'false',
     )
-    expect(screen.getByText('Selection ready for trend view.')).toBeInTheDocument()
+    expect(screen.getByText('Selection ready.')).toBeInTheDocument()
     expect(screen.getByText('View: trend')).toBeInTheDocument()
     expect(screen.getByLabelText('AI conversation panel')).toBeInTheDocument()
     expect(screen.getByLabelText('Summary and status')).toBeInTheDocument()
