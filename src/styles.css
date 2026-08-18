@@ -245,10 +245,17 @@ select {
   text-align: center;
 }
 
-.relationship-placeholder .chart-empty-state {
+.relationship-chart .chart-empty-state {
   border: 1px dashed #b7c2bd;
   border-radius: 8px;
   background: #f8faf7;
+}
+
+.chart-status-message {
+  margin: 0 0 8px;
+  color: #53605c;
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
 .conversation-placeholder p {

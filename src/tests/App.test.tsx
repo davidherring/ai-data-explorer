@@ -108,8 +108,8 @@ describe('App shell', () => {
     expect(screen.getByText('View: relationship')).toBeInTheDocument()
     expect(screen.getByLabelText('Elevation gain vs average speed')).toBeInTheDocument()
     expect(
-      screen.getByText('Relationship scatter view will render here.'),
-    ).toBeInTheDocument()
+      screen.queryByText('Relationship scatter view will render here.'),
+    ).not.toBeInTheDocument()
     expect(
       screen.queryByLabelText('Average speed over calendar time'),
     ).not.toBeInTheDocument()
@@ -150,7 +150,7 @@ describe('App shell', () => {
     expect(screen.getByText('3 of 12 rides selected')).toBeInTheDocument()
     expect(screen.getByText('View: relationship')).toBeInTheDocument()
     expect(
-      screen.getByText('Relationship scatter view will render here.'),
+      screen.getByLabelText('Elevation gain vs average speed'),
     ).toBeInTheDocument()
   })
 })

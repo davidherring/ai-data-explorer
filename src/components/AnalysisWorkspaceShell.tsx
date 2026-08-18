@@ -1,8 +1,12 @@
-import type { Dispatch, SetStateAction } from 'react'
+import { useMemo, type Dispatch, type SetStateAction } from 'react'
+import {
+  getMetricRelationshipPoints,
+  relationshipBetweenMetrics,
+} from '../analysis/metricRelationships.ts'
 import { ActivitySelectionControls } from './ActivitySelectionControls.tsx'
 import { AnalysisViewSwitcher } from './AnalysisViewSwitcher.tsx'
 import { AverageSpeedTrendChart } from './AverageSpeedTrendChart.tsx'
-import { SelectionStatus } from './SelectionStatus.tsx'
+import { RelationshipScatterChart } from './RelationshipScatterChart.tsx'
 import type { Ride } from '../data/ride.ts'
 import type { AnalysisState } from '../state/analysisState.ts'
 
@@ -19,6 +23,24 @@ export function AnalysisWorkspaceShell({
   analysisState,
   onAnalysisStateChange,
 }: AnalysisWorkspaceShellProps) {
+  const relationshipPoints = useMemo(
+    () =>
+      getMetricRelationshipPoints(
+        selectedRides,
+        'elevationGainFeet',
+        'averageSpeedMph',
+      ),
+    [selectedRides],
+  )
+  const relationship = useMemo(
+    () =>
+      relationshipBetweenMetrics(
+        selectedRides,
+        'elevationGainFeet',
+        'averageSpeedMph',
+      ),
+    [selectedRides],
+  )
   const activeView =
     analysisState.view.type === 'relationship' ? 'relationship' : 'trend'
   const viewSwitcher = (
@@ -46,25 +68,13 @@ export function AnalysisWorkspaceShell({
   return (
     <section className="analysis-workspace" aria-label="Analysis workspace">
       {activeView === 'relationship' ? (
-        <figure
-          className="trend-chart relationship-placeholder"
-          aria-label="Elevation gain vs average speed"
-        >
-          <figcaption className="trend-chart-header">
-            <div className="trend-chart-title">
-              <span className="section-label">Relationship</span>
-              <strong>Elevation gain vs average speed</strong>
-            </div>
-            {viewSwitcher}
-            <SelectionStatus rides={selectedRides} totalRideCount={rides.length} />
-          </figcaption>
-
-          <div className="trend-chart-container">
-            <div className="chart-empty-state">
-              Relationship scatter view will render here.
-            </div>
-          </div>
-        </figure>
+        <RelationshipScatterChart
+          rides={selectedRides}
+          totalRideCount={rides.length}
+          relationship={relationship}
+          points={relationshipPoints}
+          headerControls={viewSwitcher}
+        />
       ) : (
         <AverageSpeedTrendChart
           rides={selectedRides}

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { DayOfWeek, Ride } from '../data/ride.ts'
-import { relationshipBetweenMetrics } from './metricRelationships.ts'
+import {
+  getMetricRelationshipPoints,
+  relationshipBetweenMetrics,
+} from './metricRelationships.ts'
 
 describe('relationshipBetweenMetrics', () => {
   it('calculates a positive Pearson correlation', () => {
@@ -284,6 +287,93 @@ describe('relationshipBetweenMetrics', () => {
     )
 
     expect(result.status).toBe('zero-x-variance')
+  })
+})
+
+describe('getMetricRelationshipPoints', () => {
+  it('excludes undefined and non-finite pairs', () => {
+    const rides = [
+      createRide({ id: 'valid-a', elevationGainFeet: 100, averageSpeedMph: 12 }),
+      createRide({
+        id: 'missing-temperature',
+        temperatureF: undefined,
+        averageSpeedMph: 13,
+      }),
+      createRide({ id: 'nan-x', elevationGainFeet: Number.NaN, averageSpeedMph: 14 }),
+      createRide({
+        id: 'infinite-x',
+        elevationGainFeet: Number.POSITIVE_INFINITY,
+        averageSpeedMph: 15,
+      }),
+      createRide({
+        id: 'infinite-y',
+        elevationGainFeet: 200,
+        averageSpeedMph: Number.NEGATIVE_INFINITY,
+      }),
+      createRide({ id: 'valid-b', elevationGainFeet: 300, averageSpeedMph: 16 }),
+    ]
+
+    expect(
+      getMetricRelationshipPoints(rides, 'elevationGainFeet', 'averageSpeedMph').map(
+        (point) => point.ride.id,
+      ),
+    ).toEqual(['valid-a', 'missing-temperature', 'valid-b'])
+    expect(
+      getMetricRelationshipPoints(
+        [
+          createRide({ id: 'temp-valid', temperatureF: 60, averageSpeedMph: 12 }),
+          createRide({
+            id: 'temp-missing',
+            temperatureF: undefined,
+            averageSpeedMph: 13,
+          }),
+        ],
+        'temperatureF',
+        'averageSpeedMph',
+      ).map((point) => point.ride.id),
+    ).toEqual(['temp-valid'])
+  })
+
+  it('preserves source order for valid points', () => {
+    const rides = [
+      createRide({ id: 'ride-c', elevationGainFeet: 300, averageSpeedMph: 16 }),
+      createRide({ id: 'ride-a', elevationGainFeet: 100, averageSpeedMph: 12 }),
+      createRide({ id: 'ride-b', elevationGainFeet: 200, averageSpeedMph: 14 }),
+    ]
+
+    expect(
+      getMetricRelationshipPoints(rides, 'elevationGainFeet', 'averageSpeedMph').map(
+        (point) => point.ride.id,
+      ),
+    ).toEqual(['ride-c', 'ride-a', 'ride-b'])
+  })
+
+  it('retains the original ride reference', () => {
+    const ride = createRide({
+      id: 'ride-a',
+      elevationGainFeet: 100,
+      averageSpeedMph: 12,
+    })
+    const [point] = getMetricRelationshipPoints(
+      [ride],
+      'elevationGainFeet',
+      'averageSpeedMph',
+    )
+
+    expect(point).toMatchObject({ x: 100, y: 12 })
+    expect(point.ride).toBe(ride)
+  })
+
+  it('does not mutate rides', () => {
+    const rides = [
+      createRide({ id: 'ride-a', elevationGainFeet: 100, averageSpeedMph: 12 }),
+      createRide({ id: 'ride-b', elevationGainFeet: 200, averageSpeedMph: 14 }),
+    ]
+    const originalRides = rides.map((ride) => ({ ...ride }))
+
+    getMetricRelationshipPoints(rides, 'elevationGainFeet', 'averageSpeedMph')
+
+    expect(rides).toEqual(originalRides)
   })
 })
 

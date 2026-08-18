@@ -26,12 +26,16 @@ type MetricPair = {
   y: number
 }
 
+export type MetricRelationshipPoint = MetricPair & {
+  ride: Ride
+}
+
 export function relationshipBetweenMetrics(
   rides: readonly Ride[],
   xMetric: MetricKey,
   yMetric: MetricKey,
 ): MetricRelationshipResult {
-  const pairs = getValidMetricPairs(rides, xMetric, yMetric)
+  const pairs = getMetricRelationshipPoints(rides, xMetric, yMetric)
   const baseResult = buildBaseResult(rides.length, pairs, xMetric, yMetric)
 
   if (pairs.length < 3) {
@@ -76,23 +80,23 @@ export function relationshipBetweenMetrics(
   }
 }
 
-function getValidMetricPairs(
+export function getMetricRelationshipPoints(
   rides: readonly Ride[],
   xMetric: MetricKey,
   yMetric: MetricKey,
-): MetricPair[] {
-  const pairs: MetricPair[] = []
+): MetricRelationshipPoint[] {
+  const points: MetricRelationshipPoint[] = []
 
   for (const ride of rides) {
     const x = getRideMetric(ride, xMetric)
     const y = getRideMetric(ride, yMetric)
 
     if (x !== undefined && y !== undefined && Number.isFinite(x) && Number.isFinite(y)) {
-      pairs.push({ x, y })
+      points.push({ ride, x, y })
     }
   }
 
-  return pairs
+  return points
 }
 
 function buildBaseResult(
