@@ -6,6 +6,7 @@ import {
 import { ActivitySelectionControls } from './ActivitySelectionControls.tsx'
 import { AnalysisViewSwitcher } from './AnalysisViewSwitcher.tsx'
 import { AverageSpeedTrendChart } from './AverageSpeedTrendChart.tsx'
+import { MetricViewControls } from './MetricViewControls.tsx'
 import { RelationshipScatterChart } from './RelationshipScatterChart.tsx'
 import type { Ride } from '../data/ride.ts'
 import {
@@ -64,6 +65,25 @@ export function AnalysisWorkspaceShell({
       }}
     />
   )
+  const metricControls =
+    activeView === 'trend' || activeView === 'relationship' ? (
+      <MetricViewControls
+        rides={rides}
+        view={analysisState.view}
+        onViewChange={(view) => {
+          onAnalysisStateChange((current) => ({
+            ...current,
+            view,
+          }))
+        }}
+      />
+    ) : null
+  const headerControls = (
+    <div className="chart-header-controls">
+      {viewSwitcher}
+      {metricControls}
+    </div>
+  )
 
   return (
     <section className="analysis-workspace" aria-label="Analysis workspace">
@@ -71,7 +91,7 @@ export function AnalysisWorkspaceShell({
         <AverageSpeedTrendChart
           rides={selectedRides}
           totalRideCount={rides.length}
-          headerControls={viewSwitcher}
+          headerControls={headerControls}
         />
       )}
 
@@ -81,7 +101,7 @@ export function AnalysisWorkspaceShell({
           totalRideCount={rides.length}
           relationship={relationship}
           points={relationshipPoints}
-          headerControls={viewSwitcher}
+          headerControls={headerControls}
         />
       )}
 

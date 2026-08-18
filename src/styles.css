@@ -185,6 +185,36 @@ select {
   font-size: 1.1rem;
 }
 
+.chart-header-controls,
+.metric-view-controls {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.metric-view-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #46524e;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.metric-view-control select {
+  min-height: 32px;
+  min-width: 112px;
+  border: 1px solid #cfd8d4;
+  border-radius: 6px;
+  padding: 5px 26px 5px 8px;
+  color: #172026;
+  background: #ffffff;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
 .relationship-status {
   margin: 0;
   color: #53605c;

@@ -42,6 +42,39 @@ describe('AnalysisWorkspaceShell', () => {
     })
   })
 
+  it('updates the trend metric while preserving analysis state', () => {
+    const initialState: AnalysisState = {
+      selection: {
+        years: [2025],
+        dayMode: 'weekday',
+      },
+      comparison: {
+        years: [2024],
+        dayMode: 'all',
+      },
+      view: {
+        type: 'trend',
+        yMetric: 'averageSpeedMph',
+      },
+      grouping: 'year',
+      aggregation: 'raw',
+    }
+    const onAnalysisStateChange = vi.fn()
+
+    renderWorkspace(initialState, onAnalysisStateChange)
+    fireEvent.change(screen.getByLabelText('Trend metric'), {
+      target: { value: 'distanceMiles' },
+    })
+
+    expect(applyStateUpdate(initialState, onAnalysisStateChange)).toEqual({
+      ...initialState,
+      view: {
+        type: 'trend',
+        yMetric: 'distanceMiles',
+      },
+    })
+  })
+
   it('switches to the default trend view while preserving analysis state', () => {
     const initialState: AnalysisState = {
       selection: {
@@ -68,6 +101,54 @@ describe('AnalysisWorkspaceShell', () => {
     expect(applyStateUpdate(initialState, onAnalysisStateChange)).toEqual({
       ...initialState,
       view: defaultTrendView,
+    })
+  })
+
+  it('updates relationship metrics while preserving analysis state', () => {
+    const initialState: AnalysisState = {
+      selection: {
+        years: [2025],
+        dayMode: 'weekday',
+      },
+      comparison: {
+        years: [2024],
+        dayMode: 'all',
+      },
+      view: {
+        type: 'relationship',
+        xMetric: 'elevationGainFeet',
+        yMetric: 'averageSpeedMph',
+      },
+      grouping: 'month',
+      aggregation: 'weekly',
+    }
+    const onAnalysisStateChange = vi.fn()
+
+    renderWorkspace(initialState, onAnalysisStateChange)
+    fireEvent.change(screen.getByLabelText('Relationship X metric'), {
+      target: { value: 'distanceMiles' },
+    })
+
+    expect(applyStateUpdate(initialState, onAnalysisStateChange)).toEqual({
+      ...initialState,
+      view: {
+        type: 'relationship',
+        xMetric: 'distanceMiles',
+        yMetric: 'averageSpeedMph',
+      },
+    })
+
+    fireEvent.change(screen.getByLabelText('Relationship Y metric'), {
+      target: { value: 'distanceMiles' },
+    })
+
+    expect(applyStateUpdateAt(initialState, onAnalysisStateChange, 1)).toEqual({
+      ...initialState,
+      view: {
+        type: 'relationship',
+        xMetric: 'elevationGainFeet',
+        yMetric: 'distanceMiles',
+      },
     })
   })
 
@@ -113,7 +194,15 @@ function applyStateUpdate(
   initialState: AnalysisState,
   onAnalysisStateChange: ReturnType<typeof vi.fn>,
 ): AnalysisState {
-  const [update] = onAnalysisStateChange.mock.calls[0]
+  return applyStateUpdateAt(initialState, onAnalysisStateChange, 0)
+}
+
+function applyStateUpdateAt(
+  initialState: AnalysisState,
+  onAnalysisStateChange: ReturnType<typeof vi.fn>,
+  callIndex: number,
+): AnalysisState {
+  const [update] = onAnalysisStateChange.mock.calls[callIndex]
 
   return typeof update === 'function' ? update(initialState) : update
 }

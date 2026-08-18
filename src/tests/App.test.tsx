@@ -38,6 +38,7 @@ describe('App shell', () => {
       'aria-pressed',
       'false',
     )
+    expect(screen.getByLabelText('Trend metric')).toHaveValue('averageSpeedMph')
     expect(screen.getByText('Selection ready.')).toBeInTheDocument()
     expect(screen.getByText('View: trend')).toBeInTheDocument()
     expect(screen.getByLabelText('AI conversation panel')).toBeInTheDocument()
@@ -113,6 +114,12 @@ describe('App shell', () => {
     expect(
       screen.queryByLabelText('Average speed over calendar time'),
     ).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Relationship X metric')).toHaveValue(
+      'elevationGainFeet',
+    )
+    expect(screen.getByLabelText('Relationship Y metric')).toHaveValue(
+      'averageSpeedMph',
+    )
     expect(screen.getByText('12 of 12 rides selected')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Relationship' })).toHaveAttribute(
       'aria-pressed',
