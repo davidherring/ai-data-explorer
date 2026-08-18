@@ -5,6 +5,7 @@ import type {
   MetricRelationshipPoint,
   MetricRelationshipResult,
 } from '../analysis/metricRelationships.ts'
+import { RelationshipStatus } from './RelationshipStatus.tsx'
 import { SelectionStatus } from './SelectionStatus.tsx'
 import type { Ride } from '../data/ride.ts'
 
@@ -37,8 +38,6 @@ export function RelationshipScatterChart({
   const [chartWidth, setChartWidth] = useState(fallbackChartWidth)
   const hasNoSelectedRides = rides.length === 0
   const hasNoValidPairs = rides.length > 0 && points.length === 0
-  const isSparseRelationship =
-    relationship.validPairCount > 0 && relationship.validPairCount < 3
 
   useEffect(() => {
     const container = containerRef.current
@@ -141,6 +140,7 @@ export function RelationshipScatterChart({
         <div className="trend-chart-title">
           <span className="section-label">Relationship</span>
           <strong>Elevation gain vs average speed</strong>
+          <RelationshipStatus relationship={relationship} />
         </div>
         {headerControls}
         <SelectionStatus rides={rides} totalRideCount={totalRideCount} />
@@ -156,11 +156,6 @@ export function RelationshipScatterChart({
           <div className="chart-empty-state">
             No rides have valid elevation and speed values.
           </div>
-        )}
-        {isSparseRelationship && (
-          <p className="chart-status-message">
-            Too few valid rides to analyze this relationship.
-          </p>
         )}
       </div>
     </figure>

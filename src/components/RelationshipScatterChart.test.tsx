@@ -48,7 +48,7 @@ describe('RelationshipScatterChart', () => {
     renderChart([rideA])
 
     expect(
-      screen.getByText('Too few valid rides to analyze this relationship.'),
+      screen.getByText('Too few valid rides to calculate Pearson r.'),
     ).toBeInTheDocument()
 
     await waitFor(() => {
@@ -60,7 +60,7 @@ describe('RelationshipScatterChart', () => {
     renderChart([rideA, rideB])
 
     expect(
-      screen.getByText('Too few valid rides to analyze this relationship.'),
+      screen.getByText('Too few valid rides to calculate Pearson r.'),
     ).toBeInTheDocument()
 
     await waitFor(() => {
@@ -72,12 +72,85 @@ describe('RelationshipScatterChart', () => {
     renderChart([rideA, rideB, rideC])
 
     expect(
-      screen.queryByText('Too few valid rides to analyze this relationship.'),
+      screen.queryByText('Too few valid rides to calculate Pearson r.'),
     ).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Relationship status')).toHaveTextContent(
+      '3 rides · Pearson r =',
+    )
 
     await waitFor(() => {
       expect(document.querySelector('.relationship-chart-container svg')).toBeInTheDocument()
     })
+  })
+
+  it('renders points and status when elevation has zero variance', async () => {
+    renderChart([
+      createRide({
+        id: 'zero-x-a',
+        localDate: '2025-01-01',
+        elevationGainFeet: 100,
+        averageSpeedMph: 12,
+      }),
+      createRide({
+        id: 'zero-x-b',
+        localDate: '2025-01-02',
+        elevationGainFeet: 100,
+        averageSpeedMph: 14,
+      }),
+      createRide({
+        id: 'zero-x-c',
+        localDate: '2025-01-03',
+        elevationGainFeet: 100,
+        averageSpeedMph: 16,
+      }),
+    ])
+
+    expect(screen.getByLabelText('Relationship status')).toHaveTextContent(
+      'Elevation does not vary enough to calculate Pearson r.',
+    )
+
+    await waitFor(() => {
+      expect(document.querySelector('.relationship-chart-container svg')).toBeInTheDocument()
+    })
+  })
+
+  it('renders points and status when average speed has zero variance', async () => {
+    renderChart([
+      createRide({
+        id: 'zero-y-a',
+        localDate: '2025-01-01',
+        elevationGainFeet: 100,
+        averageSpeedMph: 12,
+      }),
+      createRide({
+        id: 'zero-y-b',
+        localDate: '2025-01-02',
+        elevationGainFeet: 200,
+        averageSpeedMph: 12,
+      }),
+      createRide({
+        id: 'zero-y-c',
+        localDate: '2025-01-03',
+        elevationGainFeet: 300,
+        averageSpeedMph: 12,
+      }),
+    ])
+
+    expect(screen.getByLabelText('Relationship status')).toHaveTextContent(
+      'Average speed does not vary enough to calculate Pearson r.',
+    )
+
+    await waitFor(() => {
+      expect(document.querySelector('.relationship-chart-container svg')).toBeInTheDocument()
+    })
+  })
+
+  it('does not render the old body-level sparse message', () => {
+    renderChart([rideA])
+
+    expect(
+      screen.queryByText('Too few valid rides to analyze this relationship.'),
+    ).not.toBeInTheDocument()
   })
 
   it('preserves localDate and ride details in native tooltip text', async () => {
