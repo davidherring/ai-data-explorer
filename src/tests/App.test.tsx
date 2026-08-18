@@ -29,6 +29,15 @@ describe('App shell', () => {
     expect(
       screen.getByLabelText('Average speed over calendar time'),
     ).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Visualization view' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Trend' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByRole('button', { name: 'Relationship' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
     expect(screen.getByText('Selection ready for trend view.')).toBeInTheDocument()
     expect(screen.getByText('View: trend')).toBeInTheDocument()
     expect(screen.getByLabelText('AI conversation panel')).toBeInTheDocument()
@@ -77,6 +86,71 @@ describe('App shell', () => {
     expect(screen.getByText('0 of 12 rides selected')).toBeInTheDocument()
     expect(
       screen.getByText('No rides match the current filters.'),
+    ).toBeInTheDocument()
+  })
+
+  it('switches between Trend and Relationship views without changing selection', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        Response.json({ connected: false, reason: 'missing_token' }),
+      ),
+    )
+
+    render(<App />)
+
+    expect(
+      await screen.findByText('12 of 12 rides selected'),
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Relationship' }))
+
+    expect(screen.getByText('View: relationship')).toBeInTheDocument()
+    expect(screen.getByLabelText('Elevation gain vs average speed')).toBeInTheDocument()
+    expect(
+      screen.getByText('Relationship scatter view will render here.'),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByLabelText('Average speed over calendar time'),
+    ).not.toBeInTheDocument()
+    expect(screen.getByText('12 of 12 rides selected')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Relationship' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Trend' }))
+
+    expect(screen.getByText('View: trend')).toBeInTheDocument()
+    expect(
+      screen.getByLabelText('Average speed over calendar time'),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText('Relationship scatter view will render here.'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('keeps filtering active while Relationship is selected', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        Response.json({ connected: false, reason: 'missing_token' }),
+      ),
+    )
+
+    render(<App />)
+
+    expect(
+      await screen.findByText('12 of 12 rides selected'),
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Relationship' }))
+    fireEvent.click(screen.getByLabelText('2025'))
+
+    expect(screen.getByText('3 of 12 rides selected')).toBeInTheDocument()
+    expect(screen.getByText('View: relationship')).toBeInTheDocument()
+    expect(
+      screen.getByText('Relationship scatter view will render here.'),
     ).toBeInTheDocument()
   })
 })

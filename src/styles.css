@@ -185,6 +185,45 @@ select {
   font-size: 1.1rem;
 }
 
+.view-switcher {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 1px solid #cfd8d4;
+  border-radius: 7px;
+  background: #f8faf7;
+}
+
+.view-switcher-button {
+  min-height: 32px;
+  border: 0;
+  border-right: 1px solid #cfd8d4;
+  padding: 6px 10px;
+  color: #46524e;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.view-switcher-button:last-child {
+  border-right: 0;
+}
+
+.view-switcher-button:focus-visible,
+.view-switcher-button:hover {
+  color: #172026;
+  background: #eef4f0;
+}
+
+.view-switcher-button-active,
+.view-switcher-button-active:focus-visible,
+.view-switcher-button-active:hover {
+  color: #ffffff;
+  background: #2f6f56;
+}
+
 .trend-chart-container {
   min-width: 0;
   width: 100%;
@@ -204,6 +243,12 @@ select {
   place-items: center;
   color: #53605c;
   text-align: center;
+}
+
+.relationship-placeholder .chart-empty-state {
+  border: 1px dashed #b7c2bd;
+  border-radius: 8px;
+  background: #f8faf7;
 }
 
 .conversation-placeholder p {

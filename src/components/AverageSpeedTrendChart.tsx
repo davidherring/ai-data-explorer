@@ -1,4 +1,5 @@
 import * as Plot from '@observablehq/plot'
+import type { ReactNode } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { SelectionStatus } from './SelectionStatus.tsx'
 import type { Ride } from '../data/ride.ts'
@@ -6,6 +7,7 @@ import type { Ride } from '../data/ride.ts'
 type AverageSpeedTrendChartProps = {
   rides: Ride[]
   totalRideCount: number
+  headerControls?: ReactNode
 }
 
 type TrendPoint = {
@@ -26,6 +28,7 @@ const elevationFormatter = new Intl.NumberFormat('en-US', {
 export function AverageSpeedTrendChart({
   rides,
   totalRideCount,
+  headerControls,
 }: AverageSpeedTrendChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [chartWidth, setChartWidth] = useState(fallbackChartWidth)
@@ -139,6 +142,7 @@ export function AverageSpeedTrendChart({
           <span className="section-label">Trend</span>
           <strong>Average speed over calendar time</strong>
         </div>
+        {headerControls}
         <SelectionStatus rides={rides} totalRideCount={totalRideCount} />
       </figcaption>
 
