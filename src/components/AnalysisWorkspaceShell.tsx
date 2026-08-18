@@ -5,7 +5,7 @@ import {
 } from '../analysis/metricRelationships.ts'
 import { ActivitySelectionControls } from './ActivitySelectionControls.tsx'
 import { AnalysisViewSwitcher } from './AnalysisViewSwitcher.tsx'
-import { AverageSpeedTrendChart } from './AverageSpeedTrendChart.tsx'
+import { MetricTrendChart } from './MetricTrendChart.tsx'
 import { MetricViewControls } from './MetricViewControls.tsx'
 import { RelationshipScatterChart } from './RelationshipScatterChart.tsx'
 import type { Ride } from '../data/ride.ts'
@@ -88,9 +88,10 @@ export function AnalysisWorkspaceShell({
   return (
     <section className="analysis-workspace" aria-label="Analysis workspace">
       {activeView === 'trend' && (
-        <AverageSpeedTrendChart
+        <MetricTrendChart
           rides={selectedRides}
           totalRideCount={rides.length}
+          yMetric={analysisState.view.yMetric}
           headerControls={headerControls}
         />
       )}

@@ -75,6 +75,22 @@ describe('AnalysisWorkspaceShell', () => {
     })
   })
 
+  it('renders the active trend metric from analysis state', () => {
+    renderWorkspace({
+      selection: {
+        dayMode: 'all',
+      },
+      view: {
+        type: 'trend',
+        yMetric: 'distanceMiles',
+      },
+      aggregation: 'raw',
+    })
+
+    expect(screen.getByLabelText('Distance over calendar time')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Average speed over calendar time')).not.toBeInTheDocument()
+  })
+
   it('switches to the default trend view while preserving analysis state', () => {
     const initialState: AnalysisState = {
       selection: {

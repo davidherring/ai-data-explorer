@@ -66,6 +66,30 @@ describe('App shell', () => {
     expect(document.body.textContent).not.toContain('2024-02-07')
   })
 
+  it('updates the Trend chart when the metric selector changes', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        Response.json({ connected: false, reason: 'missing_token' }),
+      ),
+    )
+
+    render(<App />)
+
+    expect(
+      await screen.findByLabelText('Average speed over calendar time'),
+    ).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Trend metric'), {
+      target: { value: 'distanceMiles' },
+    })
+
+    expect(screen.getByLabelText('Distance over calendar time')).toBeInTheDocument()
+    expect(
+      screen.queryByLabelText('Average speed over calendar time'),
+    ).not.toBeInTheDocument()
+  })
+
   it('shows an empty selection state when filters match no rides', async () => {
     vi.stubGlobal(
       'fetch',
