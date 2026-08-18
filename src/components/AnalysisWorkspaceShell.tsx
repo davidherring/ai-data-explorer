@@ -8,7 +8,11 @@ import { AnalysisViewSwitcher } from './AnalysisViewSwitcher.tsx'
 import { AverageSpeedTrendChart } from './AverageSpeedTrendChart.tsx'
 import { RelationshipScatterChart } from './RelationshipScatterChart.tsx'
 import type { Ride } from '../data/ride.ts'
-import type { AnalysisState } from '../state/analysisState.ts'
+import {
+  defaultRelationshipView,
+  defaultTrendView,
+  type AnalysisState,
+} from '../state/analysisState.ts'
 
 type AnalysisWorkspaceShellProps = {
   rides: Ride[]
@@ -23,43 +27,39 @@ export function AnalysisWorkspaceShell({
   analysisState,
   onAnalysisStateChange,
 }: AnalysisWorkspaceShellProps) {
+  const relationshipView =
+    analysisState.view.type === 'relationship'
+      ? analysisState.view
+      : defaultRelationshipView
   const relationshipPoints = useMemo(
     () =>
       getMetricRelationshipPoints(
         selectedRides,
-        'elevationGainFeet',
-        'averageSpeedMph',
+        relationshipView.xMetric,
+        relationshipView.yMetric,
       ),
-    [selectedRides],
+    [relationshipView.xMetric, relationshipView.yMetric, selectedRides],
   )
   const relationship = useMemo(
     () =>
       relationshipBetweenMetrics(
         selectedRides,
-        'elevationGainFeet',
-        'averageSpeedMph',
+        relationshipView.xMetric,
+        relationshipView.yMetric,
       ),
-    [selectedRides],
+    [relationshipView.xMetric, relationshipView.yMetric, selectedRides],
   )
-  const activeView =
-    analysisState.view.type === 'relationship' ? 'relationship' : 'trend'
+  const activeView = analysisState.view.type
   const viewSwitcher = (
     <AnalysisViewSwitcher
-      activeView={activeView}
+      activeView={activeView === 'relationship' ? 'relationship' : 'trend'}
       onViewChange={(view) => {
         onAnalysisStateChange((current) => ({
           ...current,
           view:
             view === 'relationship'
-              ? {
-                  type: 'relationship',
-                  xMetric: 'elevationGainFeet',
-                  yMetric: 'averageSpeedMph',
-                }
-              : {
-                  type: 'trend',
-                  yMetric: 'averageSpeedMph',
-                },
+              ? { ...defaultRelationshipView }
+              : { ...defaultTrendView },
         }))
       }}
     />
@@ -67,7 +67,15 @@ export function AnalysisWorkspaceShell({
 
   return (
     <section className="analysis-workspace" aria-label="Analysis workspace">
-      {activeView === 'relationship' ? (
+      {activeView === 'trend' && (
+        <AverageSpeedTrendChart
+          rides={selectedRides}
+          totalRideCount={rides.length}
+          headerControls={viewSwitcher}
+        />
+      )}
+
+      {activeView === 'relationship' && (
         <RelationshipScatterChart
           rides={selectedRides}
           totalRideCount={rides.length}
@@ -75,12 +83,14 @@ export function AnalysisWorkspaceShell({
           points={relationshipPoints}
           headerControls={viewSwitcher}
         />
-      ) : (
-        <AverageSpeedTrendChart
-          rides={selectedRides}
-          totalRideCount={rides.length}
-          headerControls={viewSwitcher}
-        />
+      )}
+
+      {(activeView === 'seasonal' || activeView === 'cumulative') && (
+        <div className="trend-chart" role="status">
+          <div className="chart-empty-state">
+            This view is not implemented yet.
+          </div>
+        </div>
       )}
 
       <div className="controls-placeholder">

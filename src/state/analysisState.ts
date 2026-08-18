@@ -36,13 +36,25 @@ export type GroupingKey = 'year' | 'month' | 'dayOfWeek' | 'dayMode'
 
 export type AggregationMode = 'raw' | 'weekly' | 'biweekly'
 
-export type ViewConfiguration = {
-  type: ViewType
-  xMetric?: MetricKey
-  yMetric?: MetricKey
-  cumulativeMetric?: MetricKey
-  colorBy?: GroupingKey
+export type TrendViewConfiguration = {
+  type: 'trend'
+  yMetric: MetricKey
 }
+
+export type RelationshipViewConfiguration = {
+  type: 'relationship'
+  xMetric: MetricKey
+  yMetric: MetricKey
+}
+
+export type FutureViewConfiguration = {
+  type: 'seasonal' | 'cumulative'
+}
+
+export type ViewConfiguration =
+  | TrendViewConfiguration
+  | RelationshipViewConfiguration
+  | FutureViewConfiguration
 
 export type AnalysisState = {
   selection: ActivitySelection
@@ -59,13 +71,21 @@ export const supportedViewTypes = [
   'cumulative',
 ] as const satisfies readonly ViewType[]
 
+export const defaultTrendView: TrendViewConfiguration = {
+  type: 'trend',
+  yMetric: 'averageSpeedMph',
+}
+
+export const defaultRelationshipView: RelationshipViewConfiguration = {
+  type: 'relationship',
+  xMetric: 'elevationGainFeet',
+  yMetric: 'averageSpeedMph',
+}
+
 export const defaultAnalysisState: AnalysisState = {
   selection: {
     dayMode: 'all',
   },
-  view: {
-    type: 'trend',
-    yMetric: 'averageSpeedMph',
-  },
+  view: { ...defaultTrendView },
   aggregation: 'raw',
 }

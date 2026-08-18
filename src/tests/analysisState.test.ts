@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   defaultAnalysisState,
+  defaultRelationshipView,
+  defaultTrendView,
   supportedViewTypes,
   type AnalysisState,
+  type RelationshipViewConfiguration,
+  type TrendViewConfiguration,
 } from '../state/analysisState.ts'
 
 describe('analysis state contract', () => {
@@ -20,13 +24,51 @@ describe('analysis state contract', () => {
       selection: {
         dayMode: 'all',
       },
-      view: {
-        type: 'trend',
-        yMetric: 'averageSpeedMph',
-      },
+      view: defaultTrendView,
       aggregation: 'raw',
     })
     expect(defaultAnalysisState.comparison).toBeUndefined()
+  })
+
+  it('defines the default trend view configuration', () => {
+    expect(defaultTrendView).toEqual({
+      type: 'trend',
+      yMetric: 'averageSpeedMph',
+    })
+  })
+
+  it('defines the default relationship view configuration', () => {
+    expect(defaultRelationshipView).toEqual({
+      type: 'relationship',
+      xMetric: 'elevationGainFeet',
+      yMetric: 'averageSpeedMph',
+    })
+  })
+
+  it('represents trend metric configuration explicitly', () => {
+    const trendView: TrendViewConfiguration = {
+      type: 'trend',
+      yMetric: 'distanceMiles',
+    }
+
+    expect(trendView).toEqual({
+      type: 'trend',
+      yMetric: 'distanceMiles',
+    })
+  })
+
+  it('represents relationship metric configuration explicitly', () => {
+    const relationshipView: RelationshipViewConfiguration = {
+      type: 'relationship',
+      xMetric: 'distanceMiles',
+      yMetric: 'averageSpeedMph',
+    }
+
+    expect(relationshipView).toEqual({
+      type: 'relationship',
+      xMetric: 'distanceMiles',
+      yMetric: 'averageSpeedMph',
+    })
   })
 
   it('allows an optional comparison using the same selection shape', () => {
@@ -51,7 +93,6 @@ describe('analysis state contract', () => {
         type: 'relationship',
         xMetric: 'elevationGainFeet',
         yMetric: 'averageSpeedMph',
-        colorBy: 'year',
       },
       grouping: 'year',
       aggregation: 'raw',
