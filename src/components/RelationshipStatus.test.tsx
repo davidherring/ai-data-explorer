@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { MetricRelationshipResult } from '../analysis/metricRelationships.ts'
+import type { MetricKey } from '../state/analysisState.ts'
 import { RelationshipStatus } from './RelationshipStatus.tsx'
 
 describe('RelationshipStatus', () => {
@@ -61,27 +62,35 @@ describe('RelationshipStatus', () => {
   })
 
   it('renders the zero-x-variance message without Pearson r', () => {
-    renderStatus({
-      status: 'zero-x-variance',
-      sampleCount: 4,
-      validPairCount: 4,
-    })
+    renderStatus(
+      {
+        status: 'zero-x-variance',
+        sampleCount: 4,
+        validPairCount: 4,
+      },
+      'distanceMiles',
+      'averageSpeedMph',
+    )
 
     expect(screen.getByLabelText('Relationship status')).toHaveTextContent(
-      'Elevation does not vary enough to calculate Pearson r.',
+      'Distance does not vary enough to calculate Pearson r.',
     )
     expect(screen.queryByText(/Pearson r =/)).not.toBeInTheDocument()
   })
 
   it('renders the zero-y-variance message without Pearson r', () => {
-    renderStatus({
-      status: 'zero-y-variance',
-      sampleCount: 4,
-      validPairCount: 4,
-    })
+    renderStatus(
+      {
+        status: 'zero-y-variance',
+        sampleCount: 4,
+        validPairCount: 4,
+      },
+      'distanceMiles',
+      'movingTimeMinutes',
+    )
 
     expect(screen.getByLabelText('Relationship status')).toHaveTextContent(
-      'Average speed does not vary enough to calculate Pearson r.',
+      'Moving time does not vary enough to calculate Pearson r.',
     )
     expect(screen.queryByText(/Pearson r =/)).not.toBeInTheDocument()
   })
@@ -93,14 +102,18 @@ function renderStatus(
     'status' | 'sampleCount' | 'validPairCount'
   > &
     Partial<Pick<MetricRelationshipResult, 'pearsonR'>>,
+  xMetric: MetricKey = 'elevationGainFeet',
+  yMetric: MetricKey = 'averageSpeedMph',
 ) {
   render(
     <RelationshipStatus
       relationship={{
-        xMetric: 'elevationGainFeet',
-        yMetric: 'averageSpeedMph',
+        xMetric,
+        yMetric,
         ...overrides,
       }}
+      xMetric={xMetric}
+      yMetric={yMetric}
     />,
   )
 }

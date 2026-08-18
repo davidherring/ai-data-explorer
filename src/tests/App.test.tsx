@@ -131,7 +131,7 @@ describe('App shell', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Relationship' }))
 
     expect(screen.getByText('View: relationship')).toBeInTheDocument()
-    expect(screen.getByLabelText('Elevation gain vs average speed')).toBeInTheDocument()
+    expect(screen.getByLabelText('Elevation gain vs Average speed')).toBeInTheDocument()
     expect(
       screen.queryByText('Relationship scatter view will render here.'),
     ).not.toBeInTheDocument()
@@ -161,6 +161,42 @@ describe('App shell', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('updates the Relationship chart when metric selectors change', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        Response.json({ connected: false, reason: 'missing_token' }),
+      ),
+    )
+
+    render(<App />)
+
+    expect(
+      await screen.findByText('12 of 12 rides selected'),
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Relationship' }))
+    expect(screen.getByLabelText('Elevation gain vs Average speed')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Relationship X metric'), {
+      target: { value: 'distanceMiles' },
+    })
+
+    expect(screen.getByLabelText('Distance vs Average speed')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Relationship Y metric'), {
+      target: { value: 'distanceMiles' },
+    })
+
+    expect(screen.getByLabelText('Distance vs Distance')).toBeInTheDocument()
+    expect(screen.getByLabelText('Relationship X metric')).toHaveValue(
+      'distanceMiles',
+    )
+    expect(screen.getByLabelText('Relationship Y metric')).toHaveValue(
+      'distanceMiles',
+    )
+  })
+
   it('keeps filtering active while Relationship is selected', async () => {
     vi.stubGlobal(
       'fetch',
@@ -181,7 +217,7 @@ describe('App shell', () => {
     expect(screen.getByText('3 of 12 rides selected')).toBeInTheDocument()
     expect(screen.getByText('View: relationship')).toBeInTheDocument()
     expect(
-      screen.getByLabelText('Elevation gain vs average speed'),
+      screen.getByLabelText('Elevation gain vs Average speed'),
     ).toBeInTheDocument()
   })
 })

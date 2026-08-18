@@ -5,13 +5,20 @@ import type {
   MetricRelationshipPoint,
   MetricRelationshipResult,
 } from '../analysis/metricRelationships.ts'
+import {
+  getMetricDefinition,
+  type MetricDefinition,
+} from '../analysis/rideMetrics.ts'
 import { RelationshipStatus } from './RelationshipStatus.tsx'
 import { SelectionStatus } from './SelectionStatus.tsx'
 import type { Ride } from '../data/ride.ts'
+import type { MetricKey } from '../state/analysisState.ts'
 
 type RelationshipScatterChartProps = {
   rides: Ride[]
   totalRideCount: number
+  xMetric: MetricKey
+  yMetric: MetricKey
   relationship: MetricRelationshipResult
   points: MetricRelationshipPoint[]
   headerControls?: ReactNode
@@ -19,23 +26,21 @@ type RelationshipScatterChartProps = {
 
 const fallbackChartWidth = 720
 const chartHeight = 320
-const decimalFormatter = new Intl.NumberFormat('en-US', {
-  maximumFractionDigits: 1,
-  minimumFractionDigits: 1,
-})
-const elevationFormatter = new Intl.NumberFormat('en-US', {
-  maximumFractionDigits: 0,
-})
 
 export function RelationshipScatterChart({
   rides,
   totalRideCount,
+  xMetric,
+  yMetric,
   relationship,
   points,
   headerControls,
 }: RelationshipScatterChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [chartWidth, setChartWidth] = useState(fallbackChartWidth)
+  const xDefinition = getMetricDefinition(xMetric)
+  const yDefinition = getMetricDefinition(yMetric)
+  const chartLabel = `${xDefinition.label} vs ${yDefinition.label}`
   const hasNoSelectedRides = rides.length === 0
   const hasNoValidPairs = rides.length > 0 && points.length === 0
 
@@ -97,12 +102,12 @@ export function RelationshipScatterChart({
         maxWidth: '100%',
       },
       x: {
-        label: 'Elevation gain (ft)',
+        label: `${xDefinition.label} (${xDefinition.unit})`,
         grid: true,
         nice: true,
       },
       y: {
-        label: 'Average speed (mph)',
+        label: `${yDefinition.label} (${yDefinition.unit})`,
         grid: true,
         nice: true,
       },
@@ -115,11 +120,16 @@ export function RelationshipScatterChart({
           fillOpacity: 0.82,
           stroke: '#ffffff',
           strokeWidth: 1.4,
-          title: ({ ride }: MetricRelationshipPoint) => formatRideTitle(ride),
-          ariaLabel: ({ ride }: MetricRelationshipPoint) =>
-            `${ride.localDate}, elevation ${formatElevation(
-              ride.elevationGainFeet,
-            )} ft, average speed ${formatDecimal(ride.averageSpeedMph)} mph`,
+          title: (point: MetricRelationshipPoint) =>
+            formatRideTitle(point, xMetric, yMetric, xDefinition, yDefinition),
+          ariaLabel: (point: MetricRelationshipPoint) =>
+            formatPointAriaLabel(
+              point,
+              xMetric,
+              yMetric,
+              xDefinition,
+              yDefinition,
+            ),
         }),
       ],
     })
@@ -129,18 +139,19 @@ export function RelationshipScatterChart({
     return () => {
       plot.remove()
     }
-  }, [chartWidth, points])
+  }, [chartWidth, points, xDefinition, xMetric, yDefinition, yMetric])
 
   return (
-    <figure
-      className="trend-chart relationship-chart"
-      aria-label="Elevation gain vs average speed"
-    >
+    <figure className="trend-chart relationship-chart" aria-label={chartLabel}>
       <figcaption className="trend-chart-header">
         <div className="trend-chart-title">
           <span className="section-label">Relationship</span>
-          <strong>Elevation gain vs average speed</strong>
-          <RelationshipStatus relationship={relationship} />
+          <strong>{chartLabel}</strong>
+          <RelationshipStatus
+            relationship={relationship}
+            xMetric={xMetric}
+            yMetric={yMetric}
+          />
         </div>
         {headerControls}
         <SelectionStatus rides={rides} totalRideCount={totalRideCount} />
@@ -154,7 +165,7 @@ export function RelationshipScatterChart({
         )}
         {hasNoValidPairs && (
           <div className="chart-empty-state">
-            No rides have valid elevation and speed values.
+            {formatNoValidPairsMessage(xMetric, yMetric, xDefinition, yDefinition)}
           </div>
         )}
       </div>
@@ -162,20 +173,96 @@ export function RelationshipScatterChart({
   )
 }
 
-function formatRideTitle(ride: Ride): string {
-  return [
+function formatRideTitle(
+  point: MetricRelationshipPoint,
+  xMetric: MetricKey,
+  yMetric: MetricKey,
+  xDefinition: MetricDefinition,
+  yDefinition: MetricDefinition,
+): string {
+  const { ride } = point
+  const lines = [
     ride.localDate,
-    `Average speed: ${formatDecimal(ride.averageSpeedMph)} mph`,
-    `Distance: ${formatDecimal(ride.distanceMiles)} mi`,
-    `Elevation: ${formatElevation(ride.elevationGainFeet)} ft`,
-    `Sport type: ${ride.sportType}`,
-  ].join('\n')
+    `${xDefinition.label}: ${formatMetricValue(point.x, xDefinition)}`,
+  ]
+
+  if (xMetric !== yMetric) {
+    lines.push(`${yDefinition.label}: ${formatMetricValue(point.y, yDefinition)}`)
+  }
+
+  addContextLines(lines, ride, xMetric, yMetric)
+
+  lines.push(`Sport type: ${ride.sportType}`)
+
+  return lines.join('\n')
 }
 
-function formatDecimal(value: number): string {
-  return decimalFormatter.format(value)
+function formatPointAriaLabel(
+  point: MetricRelationshipPoint,
+  xMetric: MetricKey,
+  yMetric: MetricKey,
+  xDefinition: MetricDefinition,
+  yDefinition: MetricDefinition,
+): string {
+  const metricParts = [
+    `${xDefinition.label.toLowerCase()} ${formatMetricValue(point.x, xDefinition)}`,
+  ]
+
+  if (xMetric !== yMetric) {
+    metricParts.push(
+      `${yDefinition.label.toLowerCase()} ${formatMetricValue(
+        point.y,
+        yDefinition,
+      )}`,
+    )
+  }
+
+  return `${point.ride.localDate}, ${metricParts.join(', ')}`
 }
 
-function formatElevation(value: number): string {
-  return elevationFormatter.format(Math.round(value))
+function addContextLines(
+  lines: string[],
+  ride: Ride,
+  xMetric: MetricKey,
+  yMetric: MetricKey,
+): void {
+  if (xMetric !== 'distanceMiles' && yMetric !== 'distanceMiles') {
+    const distanceDefinition = getMetricDefinition('distanceMiles')
+    lines.push(
+      `${distanceDefinition.label}: ${formatMetricValue(
+        ride.distanceMiles,
+        distanceDefinition,
+      )}`,
+    )
+  }
+
+  if (xMetric !== 'elevationGainFeet' && yMetric !== 'elevationGainFeet') {
+    const elevationDefinition = getMetricDefinition('elevationGainFeet')
+    lines.push(
+      `${elevationDefinition.label}: ${formatMetricValue(
+        ride.elevationGainFeet,
+        elevationDefinition,
+      )}`,
+    )
+  }
+}
+
+function formatNoValidPairsMessage(
+  xMetric: MetricKey,
+  yMetric: MetricKey,
+  xDefinition: MetricDefinition,
+  yDefinition: MetricDefinition,
+): string {
+  if (xMetric === yMetric) {
+    return `No rides have valid ${xDefinition.label.toLowerCase()} values for the current selection.`
+  }
+
+  return `No rides have valid ${xDefinition.label.toLowerCase()} and ${yDefinition.label.toLowerCase()} values for the current selection.`
+}
+
+function formatMetricValue(
+  value: number,
+  metricDefinition: MetricDefinition,
+): string {
+  return `${metricDefinition.format(value)} ${metricDefinition.unit}`
 }

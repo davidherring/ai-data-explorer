@@ -100,6 +100,8 @@ export function AnalysisWorkspaceShell({
         <RelationshipScatterChart
           rides={selectedRides}
           totalRideCount={rides.length}
+          xMetric={analysisState.view.xMetric}
+          yMetric={analysisState.view.yMetric}
           relationship={relationship}
           points={relationshipPoints}
           headerControls={headerControls}

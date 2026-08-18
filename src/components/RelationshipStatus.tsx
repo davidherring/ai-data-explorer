@@ -1,19 +1,29 @@
 import type { MetricRelationshipResult } from '../analysis/metricRelationships.ts'
+import { getMetricDefinition } from '../analysis/rideMetrics.ts'
+import type { MetricKey } from '../state/analysisState.ts'
 
 type RelationshipStatusProps = {
   relationship: MetricRelationshipResult
+  xMetric: MetricKey
+  yMetric: MetricKey
 }
 
-export function RelationshipStatus({ relationship }: RelationshipStatusProps) {
+export function RelationshipStatus({
+  relationship,
+  xMetric,
+  yMetric,
+}: RelationshipStatusProps) {
   return (
     <p className="relationship-status" aria-label="Relationship status">
-      {formatRelationshipStatus(relationship)}
+      {formatRelationshipStatus(relationship, xMetric, yMetric)}
     </p>
   )
 }
 
 function formatRelationshipStatus(
   relationship: MetricRelationshipResult,
+  xMetric: MetricKey,
+  yMetric: MetricKey,
 ): string {
   switch (relationship.status) {
     case 'ready':
@@ -23,9 +33,13 @@ function formatRelationshipStatus(
     case 'insufficient-valid-pairs':
       return 'Too few valid rides to calculate Pearson r.'
     case 'zero-x-variance':
-      return 'Elevation does not vary enough to calculate Pearson r.'
+      return `${getMetricDefinition(
+        xMetric,
+      ).label} does not vary enough to calculate Pearson r.`
     case 'zero-y-variance':
-      return 'Average speed does not vary enough to calculate Pearson r.'
+      return `${getMetricDefinition(
+        yMetric,
+      ).label} does not vary enough to calculate Pearson r.`
   }
 }
 

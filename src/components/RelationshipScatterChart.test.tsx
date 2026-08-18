@@ -5,6 +5,7 @@ import {
   relationshipBetweenMetrics,
 } from '../analysis/metricRelationships.ts'
 import type { DayOfWeek, Ride } from '../data/ride.ts'
+import type { MetricKey } from '../state/analysisState.ts'
 import { RelationshipScatterChart } from './RelationshipScatterChart.tsx'
 
 describe('RelationshipScatterChart', () => {
@@ -12,34 +13,87 @@ describe('RelationshipScatterChart', () => {
     cleanup()
   })
 
+  it('preserves default elevation gain vs average speed behavior', async () => {
+    renderChart([rideA, rideB, rideC])
+
+    expect(
+      screen.getByLabelText('Elevation gain vs Average speed'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Elevation gain vs Average speed')).toBeInTheDocument()
+
+    await waitFor(() => {
+      expect(document.querySelector('.relationship-chart-container svg')).toBeInTheDocument()
+    })
+
+    expect(document.body.textContent).toContain('2025-03-12')
+    expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
+    expect(document.body.textContent).toContain('Average speed: 15.2 mph')
+    expect(document.body.textContent).toContain('Distance: 31.4 mi')
+    expect(document.body.textContent).toContain('Sport type: Ride')
+  })
+
   it('renders an empty chart state for empty selected rides', () => {
     renderChart([])
 
-    expect(screen.getByLabelText('Elevation gain vs average speed')).toBeInTheDocument()
+    expect(
+      screen.getByLabelText('Elevation gain vs Average speed'),
+    ).toBeInTheDocument()
     expect(
       screen.getByText('No rides to plot for the current selection.'),
     ).toBeInTheDocument()
     expect(document.querySelector('svg')).not.toBeInTheDocument()
   })
 
-  it('renders an invalid-pair state when selected rides have no valid pairs', () => {
-    renderChart([
-      createRide({
-        id: 'invalid-a',
-        localDate: '2025-01-01',
-        elevationGainFeet: Number.NaN,
-        averageSpeedMph: 14,
-      }),
-      createRide({
-        id: 'invalid-b',
-        localDate: '2025-01-02',
-        elevationGainFeet: 1200,
-        averageSpeedMph: Number.POSITIVE_INFINITY,
-      }),
-    ])
+  it('renders a metric-specific invalid-pair state when selected rides have no valid pairs', () => {
+    renderChart(
+      [
+        createRide({
+          id: 'invalid-a',
+          localDate: '2025-01-01',
+          distanceMiles: Number.NaN,
+          averageSpeedMph: 14,
+        }),
+        createRide({
+          id: 'invalid-b',
+          localDate: '2025-01-02',
+          distanceMiles: 12,
+          averageSpeedMph: Number.POSITIVE_INFINITY,
+        }),
+      ],
+      'distanceMiles',
+      'averageSpeedMph',
+    )
 
     expect(
-      screen.getByText('No rides have valid elevation and speed values.'),
+      screen.getByText(
+        'No rides have valid distance and average speed values for the current selection.',
+      ),
+    ).toBeInTheDocument()
+    expect(document.querySelector('svg')).not.toBeInTheDocument()
+  })
+
+  it('renders a same-metric invalid-pair state with one metric label', () => {
+    renderChart(
+      [
+        createRide({
+          id: 'invalid-a',
+          localDate: '2025-01-01',
+          temperatureF: undefined,
+        }),
+        createRide({
+          id: 'invalid-b',
+          localDate: '2025-01-02',
+          temperatureF: Number.NaN,
+        }),
+      ],
+      'temperatureF',
+      'temperatureF',
+    )
+
+    expect(
+      screen.getByText(
+        'No rides have valid temperature values for the current selection.',
+      ),
     ).toBeInTheDocument()
     expect(document.querySelector('svg')).not.toBeInTheDocument()
   })
@@ -83,88 +137,61 @@ describe('RelationshipScatterChart', () => {
     })
   })
 
-  it('renders points and status when elevation has zero variance', async () => {
-    renderChart([
-      createRide({
-        id: 'zero-x-a',
-        localDate: '2025-01-01',
-        elevationGainFeet: 100,
-        averageSpeedMph: 12,
-      }),
-      createRide({
-        id: 'zero-x-b',
-        localDate: '2025-01-02',
-        elevationGainFeet: 100,
-        averageSpeedMph: 14,
-      }),
-      createRide({
-        id: 'zero-x-c',
-        localDate: '2025-01-03',
-        elevationGainFeet: 100,
-        averageSpeedMph: 16,
-      }),
-    ])
-
-    expect(screen.getByLabelText('Relationship status')).toHaveTextContent(
-      'Elevation does not vary enough to calculate Pearson r.',
-    )
-
-    await waitFor(() => {
-      expect(document.querySelector('.relationship-chart-container svg')).toBeInTheDocument()
-    })
-  })
-
-  it('renders points and status when average speed has zero variance', async () => {
-    renderChart([
-      createRide({
-        id: 'zero-y-a',
-        localDate: '2025-01-01',
-        elevationGainFeet: 100,
-        averageSpeedMph: 12,
-      }),
-      createRide({
-        id: 'zero-y-b',
-        localDate: '2025-01-02',
-        elevationGainFeet: 200,
-        averageSpeedMph: 12,
-      }),
-      createRide({
-        id: 'zero-y-c',
-        localDate: '2025-01-03',
-        elevationGainFeet: 300,
-        averageSpeedMph: 12,
-      }),
-    ])
-
-    expect(screen.getByLabelText('Relationship status')).toHaveTextContent(
-      'Average speed does not vary enough to calculate Pearson r.',
-    )
-
-    await waitFor(() => {
-      expect(document.querySelector('.relationship-chart-container svg')).toBeInTheDocument()
-    })
-  })
-
-  it('does not render the old body-level sparse message', () => {
-    renderChart([rideA])
+  it('renders non-default distance vs average speed title and tooltip', async () => {
+    renderChart([rideA, rideB, rideC], 'distanceMiles', 'averageSpeedMph')
 
     expect(
-      screen.queryByText('Too few valid rides to analyze this relationship.'),
-    ).not.toBeInTheDocument()
-  })
-
-  it('preserves localDate and ride details in native tooltip text', async () => {
-    renderChart([rideA, rideB, rideC])
+      screen.getByLabelText('Distance vs Average speed'),
+    ).toBeInTheDocument()
 
     await waitFor(() => {
       expect(document.querySelector('svg')).toBeInTheDocument()
     })
 
-    expect(document.body.textContent).toContain('2025-03-12')
-    expect(document.body.textContent).toContain('Average speed: 15.2 mph')
     expect(document.body.textContent).toContain('Distance: 31.4 mi')
-    expect(document.body.textContent).toContain('Elevation: 1,250 ft')
-    expect(document.body.textContent).toContain('Sport type: Ride')
+    expect(document.body.textContent).toContain('Average speed: 15.2 mph')
+    expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
+    expect(countTextOccurrences(getPointTitleText('2025-03-12'), 'Distance:')).toBe(1)
+  })
+
+  it('renders moving time vs distance with metric formatting', async () => {
+    renderChart([rideA, rideB, rideC], 'movingTimeMinutes', 'distanceMiles')
+
+    expect(screen.getByLabelText('Moving time vs Distance')).toBeInTheDocument()
+
+    await waitFor(() => {
+      expect(document.querySelector('svg')).toBeInTheDocument()
+    })
+
+    expect(document.body.textContent).toContain('Moving time: 126 min')
+    expect(document.body.textContent).toContain('Distance: 31.4 mi')
+    expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
+  })
+
+  it('renders same-metric pairs and shows the metric once in tooltip', async () => {
+    renderChart([rideA, rideB, rideC], 'distanceMiles', 'distanceMiles')
+
+    expect(screen.getByLabelText('Distance vs Distance')).toBeInTheDocument()
+
+    await waitFor(() => {
+      expect(document.querySelector('svg')).toBeInTheDocument()
+    })
+
+    expect(document.body.textContent).toContain('3 rides · Pearson r = 1.00')
+    expect(countTextOccurrences(getPointTitleText('2025-03-12'), 'Distance:')).toBe(1)
+  })
+
+  it('does not duplicate elevation context when elevation is an active metric', async () => {
+    renderChart([rideA, rideB, rideC], 'distanceMiles', 'elevationGainFeet')
+
+    await waitFor(() => {
+      expect(document.querySelector('svg')).toBeInTheDocument()
+    })
+
+    expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
+    expect(
+      countTextOccurrences(getPointTitleText('2025-03-12'), 'Elevation gain:'),
+    ).toBe(1)
   })
 
   it('does not include invalid rides in plotted tooltip data', async () => {
@@ -189,6 +216,69 @@ describe('RelationshipScatterChart', () => {
     expect(document.body.textContent).not.toContain('Average speed: 99.0 mph')
   })
 
+  it('renders observations when x variance is zero', async () => {
+    renderChart(
+      [
+        createRide({ id: 'zero-x-a', localDate: '2025-01-01', distanceMiles: 20, averageSpeedMph: 12 }),
+        createRide({ id: 'zero-x-b', localDate: '2025-01-02', distanceMiles: 20, averageSpeedMph: 14 }),
+        createRide({ id: 'zero-x-c', localDate: '2025-01-03', distanceMiles: 20, averageSpeedMph: 16 }),
+      ],
+      'distanceMiles',
+      'averageSpeedMph',
+    )
+
+    expect(screen.getByLabelText('Relationship status')).toHaveTextContent(
+      'Distance does not vary enough to calculate Pearson r.',
+    )
+
+    await waitFor(() => {
+      expect(document.querySelector('.relationship-chart-container svg')).toBeInTheDocument()
+    })
+  })
+
+  it('renders observations when y variance is zero', async () => {
+    renderChart(
+      [
+        createRide({ id: 'zero-y-a', localDate: '2025-01-01', distanceMiles: 10, movingTimeMinutes: 60 }),
+        createRide({ id: 'zero-y-b', localDate: '2025-01-02', distanceMiles: 20, movingTimeMinutes: 60 }),
+        createRide({ id: 'zero-y-c', localDate: '2025-01-03', distanceMiles: 30, movingTimeMinutes: 60 }),
+      ],
+      'distanceMiles',
+      'movingTimeMinutes',
+    )
+
+    expect(screen.getByLabelText('Relationship status')).toHaveTextContent(
+      'Moving time does not vary enough to calculate Pearson r.',
+    )
+
+    await waitFor(() => {
+      expect(document.querySelector('.relationship-chart-container svg')).toBeInTheDocument()
+    })
+  })
+
+  it('replaces Plot output when the metric pair changes', async () => {
+    const { rerender } = renderChart([rideA, rideB, rideC])
+
+    await waitFor(() => {
+      expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
+    })
+
+    rerender(
+      createChartElement(
+        [rideA, rideB, rideC],
+        'movingTimeMinutes',
+        'distanceMiles',
+      ),
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Moving time vs Distance')).toBeInTheDocument()
+    })
+
+    expect(document.body.textContent).toContain('Moving time: 126 min')
+    expect(document.querySelectorAll('.relationship-chart-container svg')).toHaveLength(1)
+  })
+
   it('replaces Plot output when rides change', async () => {
     const { rerender } = renderChart([rideA, rideB, rideC])
 
@@ -207,12 +297,54 @@ describe('RelationshipScatterChart', () => {
   })
 })
 
+function renderChart(
+  rides: Ride[],
+  xMetric: MetricKey = 'elevationGainFeet',
+  yMetric: MetricKey = 'averageSpeedMph',
+) {
+  return render(createChartElement(rides, xMetric, yMetric))
+}
+
+function createChartElement(
+  rides: Ride[],
+  xMetric: MetricKey = 'elevationGainFeet',
+  yMetric: MetricKey = 'averageSpeedMph',
+) {
+  return (
+    <RelationshipScatterChart
+      rides={rides}
+      totalRideCount={rides.length}
+      xMetric={xMetric}
+      yMetric={yMetric}
+      relationship={relationshipBetweenMetrics(rides, xMetric, yMetric)}
+      points={getMetricRelationshipPoints(rides, xMetric, yMetric)}
+    />
+  )
+}
+
+function countTextOccurrences(text: string, searchText: string): number {
+  return text.split(searchText).length - 1
+}
+
+function getPointTitleText(searchText: string): string {
+  const title = Array.from(
+    document.querySelectorAll('.relationship-chart-container title'),
+  ).find((titleElement) => titleElement.textContent?.includes(searchText))
+
+  if (!title) {
+    throw new Error(`Expected point title containing ${searchText}`)
+  }
+
+  return title.textContent ?? ''
+}
+
 const rideA = createRide({
   id: 'ride-a',
   localDate: '2025-03-12',
   averageSpeedMph: 15.24,
   distanceMiles: 31.44,
   elevationGainFeet: 1250,
+  movingTimeMinutes: 125.6,
   sportType: 'Ride',
 })
 
@@ -222,6 +354,7 @@ const rideB = createRide({
   averageSpeedMph: 14.87,
   distanceMiles: 42,
   elevationGainFeet: 2200,
+  movingTimeMinutes: 143,
   sportType: 'GravelRide',
 })
 
@@ -231,6 +364,7 @@ const rideC = createRide({
   averageSpeedMph: 16.1,
   distanceMiles: 25.5,
   elevationGainFeet: 700,
+  movingTimeMinutes: 95,
   sportType: 'Ride',
 })
 
@@ -240,6 +374,7 @@ const rideD = createRide({
   averageSpeedMph: 16.01,
   distanceMiles: 40,
   elevationGainFeet: 1000,
+  movingTimeMinutes: 130,
   sportType: 'Ride',
 })
 
@@ -249,6 +384,7 @@ const rideE = createRide({
   averageSpeedMph: 15.2,
   distanceMiles: 38,
   elevationGainFeet: 1300,
+  movingTimeMinutes: 132,
   sportType: 'Ride',
 })
 
@@ -258,56 +394,43 @@ const rideF = createRide({
   averageSpeedMph: 14.9,
   distanceMiles: 37,
   elevationGainFeet: 1600,
+  movingTimeMinutes: 149,
   sportType: 'Ride',
 })
 
-function renderChart(rides: Ride[]) {
-  return render(createChartElement(rides))
-}
-
-function createChartElement(rides: Ride[]) {
-  return (
-    <RelationshipScatterChart
-      rides={rides}
-      totalRideCount={rides.length}
-      relationship={relationshipBetweenMetrics(
-        rides,
-        'elevationGainFeet',
-        'averageSpeedMph',
-      )}
-      points={getMetricRelationshipPoints(
-        rides,
-        'elevationGainFeet',
-        'averageSpeedMph',
-      )}
-    />
-  )
-}
-
 function createRide(
-  overrides: {
-    id: string
-    localDate: string
-    averageSpeedMph: number
-    distanceMiles?: number
-    elevationGainFeet: number
-    sportType?: string
-  },
+  overrides: Partial<
+    Pick<
+      Ride,
+      | 'id'
+      | 'localDate'
+      | 'averageSpeedMph'
+      | 'distanceMiles'
+      | 'elevationGainFeet'
+      | 'movingTimeMinutes'
+      | 'elapsedTimeMinutes'
+      | 'temperatureF'
+      | 'sportType'
+    >
+  > = {},
 ): Ride {
+  const localDate = overrides.localDate ?? '2025-03-12'
+
   return {
-    id: overrides.id,
-    startTime: `${overrides.localDate}T07:00:00-07:00`,
-    localDate: overrides.localDate,
-    year: Number(overrides.localDate.slice(0, 4)),
-    month: Number(overrides.localDate.slice(5, 7)),
+    id: overrides.id ?? 'ride-a',
+    startTime: `${localDate}T07:00:00-07:00`,
+    localDate,
+    year: Number(localDate.slice(0, 4)),
+    month: Number(localDate.slice(5, 7)),
     weekOfYear: 1,
     dayOfWeek: 'wednesday' satisfies DayOfWeek,
     isWeekend: false,
     distanceMiles: overrides.distanceMiles ?? 20,
-    movingTimeMinutes: 60,
-    elapsedTimeMinutes: 65,
-    averageSpeedMph: overrides.averageSpeedMph,
-    elevationGainFeet: overrides.elevationGainFeet,
+    movingTimeMinutes: overrides.movingTimeMinutes ?? 60,
+    elapsedTimeMinutes: overrides.elapsedTimeMinutes ?? 65,
+    averageSpeedMph: overrides.averageSpeedMph ?? 15,
+    elevationGainFeet: overrides.elevationGainFeet ?? 500,
+    temperatureF: overrides.temperatureF,
     sportType: overrides.sportType ?? 'Ride',
     trainer: false,
     commute: false,

@@ -168,6 +168,25 @@ describe('AnalysisWorkspaceShell', () => {
     })
   })
 
+  it('renders non-default relationship metrics from analysis state', () => {
+    renderWorkspace({
+      selection: {
+        dayMode: 'all',
+      },
+      view: {
+        type: 'relationship',
+        xMetric: 'movingTimeMinutes',
+        yMetric: 'distanceMiles',
+      },
+      aggregation: 'raw',
+    })
+
+    expect(screen.getByLabelText('Moving time vs Distance')).toBeInTheDocument()
+    expect(
+      screen.queryByLabelText('Elevation gain vs Average speed'),
+    ).not.toBeInTheDocument()
+  })
+
   it.each(['seasonal', 'cumulative'] as const)(
     'does not silently render Trend for an unsupported %s view',
     (viewType) => {
@@ -186,7 +205,7 @@ describe('AnalysisWorkspaceShell', () => {
         screen.queryByLabelText('Average speed over calendar time'),
       ).not.toBeInTheDocument()
       expect(
-        screen.queryByLabelText('Elevation gain vs average speed'),
+        screen.queryByLabelText('Elevation gain vs Average speed'),
       ).not.toBeInTheDocument()
     },
   )
