@@ -316,36 +316,120 @@ describe('AnalysisWorkspaceShell', () => {
     ).not.toBeInTheDocument()
   })
 
-  it.each(['seasonal', 'cumulative'] as const)(
-    'does not silently render Trend for an unsupported %s view',
-    (viewType) => {
-      renderWorkspace({
+  it('renders the default seasonal view from analysis state', () => {
+    renderWorkspace({
+      selection: {
+        dayMode: 'all',
+      },
+      view: defaultSeasonalView,
+      aggregation: 'raw',
+    })
+
+    expect(screen.getByLabelText('Average speed by season')).toBeInTheDocument()
+    expect(screen.getByText('Biweekly median by year')).toBeInTheDocument()
+    expect(screen.queryByText('This view is not implemented yet.')).not.toBeInTheDocument()
+    expect(
+      screen.queryByLabelText('Average speed over calendar time'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('renders the default cumulative view from analysis state', () => {
+    renderWorkspace({
+      selection: {
+        dayMode: 'all',
+      },
+      view: defaultCumulativeView,
+      aggregation: 'raw',
+    })
+
+    expect(screen.getByLabelText('Cumulative Distance')).toBeInTheDocument()
+    expect(screen.getByText('Continuous accumulation')).toBeInTheDocument()
+    expect(screen.queryByText('This view is not implemented yet.')).not.toBeInTheDocument()
+    expect(
+      screen.queryByLabelText('Elevation gain vs Average speed'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('renders non-default seasonal metrics from analysis state', () => {
+    renderWorkspace({
+      selection: {
+        dayMode: 'all',
+      },
+      view: {
+        type: 'seasonal',
+        yMetric: 'distanceMiles',
+        aggregation: 'biweekly-median',
+      },
+      aggregation: 'raw',
+    })
+
+    expect(screen.getByLabelText('Distance by season')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Average speed by season')).not.toBeInTheDocument()
+  })
+
+  it('renders non-default cumulative metrics from analysis state', () => {
+    renderWorkspace({
+      selection: {
+        dayMode: 'all',
+      },
+      view: {
+        type: 'cumulative',
+        yMetric: 'elevationGainFeet',
+        accumulation: 'continuous',
+      },
+      aggregation: 'raw',
+    })
+
+    expect(screen.getByLabelText('Cumulative Elevation gain')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Cumulative Distance')).not.toBeInTheDocument()
+  })
+
+  it('passes empty selected rides through seasonal and cumulative charts', () => {
+    renderWorkspace(
+      {
         selection: {
           dayMode: 'all',
         },
-        view: viewType === 'seasonal' ? defaultSeasonalView : defaultCumulativeView,
+        view: defaultSeasonalView,
         aggregation: 'raw',
-      })
+      },
+      vi.fn(),
+      [],
+    )
 
-      expect(screen.getByText('This view is not implemented yet.')).toBeInTheDocument()
-      expect(
-        screen.queryByLabelText('Average speed over calendar time'),
-      ).not.toBeInTheDocument()
-      expect(
-        screen.queryByLabelText('Elevation gain vs Average speed'),
-      ).not.toBeInTheDocument()
-    },
-  )
+    expect(
+      screen.getByText('No rides to plot for the current selection.'),
+    ).toBeInTheDocument()
+
+    cleanup()
+
+    renderWorkspace(
+      {
+        selection: {
+          dayMode: 'all',
+        },
+        view: defaultCumulativeView,
+        aggregation: 'raw',
+      },
+      vi.fn(),
+      [],
+    )
+
+    expect(
+      screen.getByText('No rides to plot for the current selection.'),
+    ).toBeInTheDocument()
+  })
 })
 
 function renderWorkspace(
   analysisState: AnalysisState,
   onAnalysisStateChange: Dispatch<SetStateAction<AnalysisState>> = vi.fn(),
+  selectedRides: Ride[] = [ride],
 ) {
   return render(
     <AnalysisWorkspaceShell
       rides={[ride]}
-      selectedRides={[ride]}
+      selectedRides={selectedRides}
       analysisState={analysisState}
       onAnalysisStateChange={onAnalysisStateChange}
     />,

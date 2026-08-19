@@ -1,13 +1,17 @@
 import { useMemo, type Dispatch, type SetStateAction } from 'react'
+import { buildCumulativeMetricPoints } from '../analysis/cumulativeMetrics.ts'
 import {
   getMetricRelationshipPoints,
   relationshipBetweenMetrics,
 } from '../analysis/metricRelationships.ts'
+import { buildSeasonalMetricBuckets } from '../analysis/seasonalMetrics.ts'
 import { ActivitySelectionControls } from './ActivitySelectionControls.tsx'
 import { AnalysisViewSwitcher } from './AnalysisViewSwitcher.tsx'
+import { CumulativeMetricChart } from './CumulativeMetricChart.tsx'
 import { MetricTrendChart } from './MetricTrendChart.tsx'
 import { MetricViewControls } from './MetricViewControls.tsx'
 import { RelationshipScatterChart } from './RelationshipScatterChart.tsx'
+import { SeasonalMetricChart } from './SeasonalMetricChart.tsx'
 import type { Ride } from '../data/ride.ts'
 import {
   defaultRelationshipView,
@@ -35,6 +39,14 @@ export function AnalysisWorkspaceShell({
     analysisState.view.type === 'relationship'
       ? analysisState.view
       : defaultRelationshipView
+  const seasonalView =
+    analysisState.view.type === 'seasonal'
+      ? analysisState.view
+      : defaultSeasonalView
+  const cumulativeView =
+    analysisState.view.type === 'cumulative'
+      ? analysisState.view
+      : defaultCumulativeView
   const relationshipPoints = useMemo(
     () =>
       getMetricRelationshipPoints(
@@ -52,6 +64,14 @@ export function AnalysisWorkspaceShell({
         relationshipView.yMetric,
       ),
     [relationshipView.xMetric, relationshipView.yMetric, selectedRides],
+  )
+  const seasonalBuckets = useMemo(
+    () => buildSeasonalMetricBuckets(selectedRides, seasonalView.yMetric),
+    [seasonalView.yMetric, selectedRides],
+  )
+  const cumulativePoints = useMemo(
+    () => buildCumulativeMetricPoints(selectedRides, cumulativeView.yMetric),
+    [cumulativeView.yMetric, selectedRides],
   )
   const activeView = analysisState.view.type
   const viewSwitcher = (
@@ -107,13 +127,24 @@ export function AnalysisWorkspaceShell({
         />
       )}
 
-      {(activeView === 'seasonal' || activeView === 'cumulative') && (
-        <div className="trend-chart" role="status">
-          <div className="trend-chart-header">{headerControls}</div>
-          <div className="chart-empty-state">
-            This view is not implemented yet.
-          </div>
-        </div>
+      {activeView === 'seasonal' && (
+        <SeasonalMetricChart
+          rides={selectedRides}
+          totalRideCount={rides.length}
+          yMetric={analysisState.view.yMetric}
+          buckets={seasonalBuckets}
+          headerControls={headerControls}
+        />
+      )}
+
+      {activeView === 'cumulative' && (
+        <CumulativeMetricChart
+          rides={selectedRides}
+          totalRideCount={rides.length}
+          yMetric={analysisState.view.yMetric}
+          points={cumulativePoints}
+          headerControls={headerControls}
+        />
       )}
 
       <div className="controls-placeholder">
