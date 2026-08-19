@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import {
+  defaultCumulativeView,
   defaultAnalysisState,
   defaultRelationshipView,
+  defaultSeasonalView,
   defaultTrendView,
   supportedViewTypes,
   type AnalysisState,
+  type CumulativeViewConfiguration,
   type RelationshipViewConfiguration,
+  type SeasonalViewConfiguration,
   type TrendViewConfiguration,
 } from '../state/analysisState.ts'
 
@@ -45,6 +49,22 @@ describe('analysis state contract', () => {
     })
   })
 
+  it('defines the default seasonal view configuration', () => {
+    expect(defaultSeasonalView).toEqual({
+      type: 'seasonal',
+      yMetric: 'averageSpeedMph',
+      aggregation: 'biweekly-median',
+    })
+  })
+
+  it('defines the default cumulative view configuration', () => {
+    expect(defaultCumulativeView).toEqual({
+      type: 'cumulative',
+      yMetric: 'distanceMiles',
+      accumulation: 'continuous',
+    })
+  })
+
   it('represents trend metric configuration explicitly', () => {
     const trendView: TrendViewConfiguration = {
       type: 'trend',
@@ -68,6 +88,34 @@ describe('analysis state contract', () => {
       type: 'relationship',
       xMetric: 'distanceMiles',
       yMetric: 'averageSpeedMph',
+    })
+  })
+
+  it('represents seasonal metric and aggregation configuration explicitly', () => {
+    const seasonalView: SeasonalViewConfiguration = {
+      type: 'seasonal',
+      yMetric: 'distanceMiles',
+      aggregation: 'biweekly-median',
+    }
+
+    expect(seasonalView).toEqual({
+      type: 'seasonal',
+      yMetric: 'distanceMiles',
+      aggregation: 'biweekly-median',
+    })
+  })
+
+  it('represents cumulative metric and accumulation configuration explicitly', () => {
+    const cumulativeView: CumulativeViewConfiguration = {
+      type: 'cumulative',
+      yMetric: 'elevationGainFeet',
+      accumulation: 'continuous',
+    }
+
+    expect(cumulativeView).toEqual({
+      type: 'cumulative',
+      yMetric: 'elevationGainFeet',
+      accumulation: 'continuous',
     })
   })
 

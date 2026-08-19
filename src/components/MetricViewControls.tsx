@@ -5,18 +5,35 @@ import {
 } from '../analysis/rideMetrics.ts'
 import type { Ride } from '../data/ride.ts'
 import type {
+  CumulativeViewConfiguration,
   MetricKey,
   RelationshipViewConfiguration,
+  SeasonalViewConfiguration,
   TrendViewConfiguration,
 } from '../state/analysisState.ts'
 
+type MetricConfigurableView =
+  | TrendViewConfiguration
+  | RelationshipViewConfiguration
+  | SeasonalViewConfiguration
+  | CumulativeViewConfiguration
+
+type SingleMetricViewConfiguration =
+  | TrendViewConfiguration
+  | SeasonalViewConfiguration
+  | CumulativeViewConfiguration
+
 type MetricViewControlsProps = {
   rides: Ride[]
-  view: TrendViewConfiguration | RelationshipViewConfiguration
-  onViewChange: (
-    view: TrendViewConfiguration | RelationshipViewConfiguration,
-  ) => void
+  view: MetricConfigurableView
+  onViewChange: (view: MetricConfigurableView) => void
 }
+
+const singleMetricAriaLabels = {
+  trend: 'Trend metric',
+  seasonal: 'Seasonal metric',
+  cumulative: 'Cumulative metric',
+} as const satisfies Record<SingleMetricViewConfiguration['type'], string>
 
 export function MetricViewControls({
   rides,
@@ -66,7 +83,7 @@ export function MetricViewControls({
     >
       <MetricSelect
         label="Metric"
-        ariaLabel="Trend metric"
+        ariaLabel={singleMetricAriaLabels[view.type]}
         metric={view.yMetric}
         options={getMetricDefinitionsForRole('trendY', rides)}
         onMetricChange={(yMetric) => {

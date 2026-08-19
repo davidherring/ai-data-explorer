@@ -4,7 +4,9 @@ import type { Dispatch, SetStateAction } from 'react'
 import { AnalysisWorkspaceShell } from './AnalysisWorkspaceShell.tsx'
 import type { DayOfWeek, Ride } from '../data/ride.ts'
 import {
+  defaultCumulativeView,
   defaultRelationshipView,
+  defaultSeasonalView,
   defaultTrendView,
   type AnalysisState,
 } from '../state/analysisState.ts'
@@ -120,6 +122,63 @@ describe('AnalysisWorkspaceShell', () => {
     })
   })
 
+  it('switches to the default seasonal view while preserving analysis state', () => {
+    const initialState: AnalysisState = {
+      selection: {
+        years: [2025],
+        dayMode: 'weekday',
+      },
+      comparison: {
+        years: [2024],
+        dayMode: 'all',
+      },
+      view: {
+        type: 'trend',
+        yMetric: 'distanceMiles',
+      },
+      grouping: 'month',
+      aggregation: 'weekly',
+    }
+    const onAnalysisStateChange = vi.fn()
+
+    renderWorkspace(initialState, onAnalysisStateChange)
+    fireEvent.click(screen.getByRole('button', { name: 'Seasonal' }))
+
+    expect(applyStateUpdate(initialState, onAnalysisStateChange)).toEqual({
+      ...initialState,
+      view: defaultSeasonalView,
+    })
+  })
+
+  it('switches to the default cumulative view while preserving analysis state', () => {
+    const initialState: AnalysisState = {
+      selection: {
+        years: [2025],
+        dayMode: 'weekday',
+      },
+      comparison: {
+        years: [2024],
+        dayMode: 'all',
+      },
+      view: {
+        type: 'relationship',
+        xMetric: 'distanceMiles',
+        yMetric: 'elevationGainFeet',
+      },
+      grouping: 'month',
+      aggregation: 'weekly',
+    }
+    const onAnalysisStateChange = vi.fn()
+
+    renderWorkspace(initialState, onAnalysisStateChange)
+    fireEvent.click(screen.getByRole('button', { name: 'Cumulative' }))
+
+    expect(applyStateUpdate(initialState, onAnalysisStateChange)).toEqual({
+      ...initialState,
+      view: defaultCumulativeView,
+    })
+  })
+
   it('updates relationship metrics while preserving analysis state', () => {
     const initialState: AnalysisState = {
       selection: {
@@ -168,6 +227,76 @@ describe('AnalysisWorkspaceShell', () => {
     })
   })
 
+  it('updates seasonal metrics while preserving analysis state', () => {
+    const initialState: AnalysisState = {
+      selection: {
+        years: [2025],
+        dayMode: 'weekday',
+      },
+      comparison: {
+        years: [2024],
+        dayMode: 'all',
+      },
+      view: {
+        type: 'seasonal',
+        yMetric: 'averageSpeedMph',
+        aggregation: 'biweekly-median',
+      },
+      grouping: 'month',
+      aggregation: 'weekly',
+    }
+    const onAnalysisStateChange = vi.fn()
+
+    renderWorkspace(initialState, onAnalysisStateChange)
+    fireEvent.change(screen.getByLabelText('Seasonal metric'), {
+      target: { value: 'distanceMiles' },
+    })
+
+    expect(applyStateUpdate(initialState, onAnalysisStateChange)).toEqual({
+      ...initialState,
+      view: {
+        type: 'seasonal',
+        yMetric: 'distanceMiles',
+        aggregation: 'biweekly-median',
+      },
+    })
+  })
+
+  it('updates cumulative metrics while preserving analysis state', () => {
+    const initialState: AnalysisState = {
+      selection: {
+        years: [2025],
+        dayMode: 'weekday',
+      },
+      comparison: {
+        years: [2024],
+        dayMode: 'all',
+      },
+      view: {
+        type: 'cumulative',
+        yMetric: 'distanceMiles',
+        accumulation: 'continuous',
+      },
+      grouping: 'month',
+      aggregation: 'weekly',
+    }
+    const onAnalysisStateChange = vi.fn()
+
+    renderWorkspace(initialState, onAnalysisStateChange)
+    fireEvent.change(screen.getByLabelText('Cumulative metric'), {
+      target: { value: 'elevationGainFeet' },
+    })
+
+    expect(applyStateUpdate(initialState, onAnalysisStateChange)).toEqual({
+      ...initialState,
+      view: {
+        type: 'cumulative',
+        yMetric: 'elevationGainFeet',
+        accumulation: 'continuous',
+      },
+    })
+  })
+
   it('renders non-default relationship metrics from analysis state', () => {
     renderWorkspace({
       selection: {
@@ -194,9 +323,7 @@ describe('AnalysisWorkspaceShell', () => {
         selection: {
           dayMode: 'all',
         },
-        view: {
-          type: viewType,
-        },
+        view: viewType === 'seasonal' ? defaultSeasonalView : defaultCumulativeView,
         aggregation: 'raw',
       })
 

@@ -11,8 +11,11 @@ import { RelationshipScatterChart } from './RelationshipScatterChart.tsx'
 import type { Ride } from '../data/ride.ts'
 import {
   defaultRelationshipView,
+  defaultCumulativeView,
+  defaultSeasonalView,
   defaultTrendView,
   type AnalysisState,
+  type ViewType,
 } from '../state/analysisState.ts'
 
 type AnalysisWorkspaceShellProps = {
@@ -53,31 +56,27 @@ export function AnalysisWorkspaceShell({
   const activeView = analysisState.view.type
   const viewSwitcher = (
     <AnalysisViewSwitcher
-      activeView={activeView === 'relationship' ? 'relationship' : 'trend'}
+      activeView={activeView}
       onViewChange={(view) => {
         onAnalysisStateChange((current) => ({
           ...current,
-          view:
-            view === 'relationship'
-              ? { ...defaultRelationshipView }
-              : { ...defaultTrendView },
+          view: getDefaultViewConfiguration(view),
         }))
       }}
     />
   )
-  const metricControls =
-    activeView === 'trend' || activeView === 'relationship' ? (
-      <MetricViewControls
-        rides={rides}
-        view={analysisState.view}
-        onViewChange={(view) => {
-          onAnalysisStateChange((current) => ({
-            ...current,
-            view,
-          }))
-        }}
-      />
-    ) : null
+  const metricControls = (
+    <MetricViewControls
+      rides={rides}
+      view={analysisState.view}
+      onViewChange={(view) => {
+        onAnalysisStateChange((current) => ({
+          ...current,
+          view,
+        }))
+      }}
+    />
+  )
   const headerControls = (
     <div className="chart-header-controls">
       {viewSwitcher}
@@ -110,6 +109,7 @@ export function AnalysisWorkspaceShell({
 
       {(activeView === 'seasonal' || activeView === 'cumulative') && (
         <div className="trend-chart" role="status">
+          <div className="trend-chart-header">{headerControls}</div>
           <div className="chart-empty-state">
             This view is not implemented yet.
           </div>
@@ -131,4 +131,17 @@ export function AnalysisWorkspaceShell({
       </div>
     </section>
   )
+}
+
+function getDefaultViewConfiguration(view: ViewType): AnalysisState['view'] {
+  switch (view) {
+    case 'trend':
+      return { ...defaultTrendView }
+    case 'relationship':
+      return { ...defaultRelationshipView }
+    case 'seasonal':
+      return { ...defaultSeasonalView }
+    case 'cumulative':
+      return { ...defaultCumulativeView }
+  }
 }

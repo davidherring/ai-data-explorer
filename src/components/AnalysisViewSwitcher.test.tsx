@@ -19,6 +19,14 @@ describe('AnalysisViewSwitcher', () => {
       'aria-pressed',
       'false',
     )
+    expect(screen.getByRole('button', { name: 'Seasonal' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+    expect(screen.getByRole('button', { name: 'Cumulative' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
   })
 
   it('marks Relationship as active', () => {
@@ -31,6 +39,32 @@ describe('AnalysisViewSwitcher', () => {
     expect(screen.getByRole('button', { name: 'Relationship' })).toHaveAttribute(
       'aria-pressed',
       'true',
+    )
+  })
+
+  it('marks Seasonal as active', () => {
+    render(<AnalysisViewSwitcher activeView="seasonal" onViewChange={() => {}} />)
+
+    expect(screen.getByRole('button', { name: 'Seasonal' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByRole('button', { name: 'Trend' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+  })
+
+  it('marks Cumulative as active', () => {
+    render(<AnalysisViewSwitcher activeView="cumulative" onViewChange={() => {}} />)
+
+    expect(screen.getByRole('button', { name: 'Cumulative' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByRole('button', { name: 'Relationship' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
     )
   })
 
@@ -55,5 +89,23 @@ describe('AnalysisViewSwitcher', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Relationship' }))
 
     expect(onViewChange).toHaveBeenCalledWith('relationship')
+  })
+
+  it('invokes the callback when Seasonal is clicked', () => {
+    const onViewChange = vi.fn()
+    render(<AnalysisViewSwitcher activeView="trend" onViewChange={onViewChange} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Seasonal' }))
+
+    expect(onViewChange).toHaveBeenCalledWith('seasonal')
+  })
+
+  it('invokes the callback when Cumulative is clicked', () => {
+    const onViewChange = vi.fn()
+    render(<AnalysisViewSwitcher activeView="trend" onViewChange={onViewChange} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cumulative' }))
+
+    expect(onViewChange).toHaveBeenCalledWith('cumulative')
   })
 })

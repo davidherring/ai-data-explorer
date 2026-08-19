@@ -2,7 +2,9 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { DayOfWeek, Ride } from '../data/ride.ts'
 import type {
+  CumulativeViewConfiguration,
   RelationshipViewConfiguration,
+  SeasonalViewConfiguration,
   TrendViewConfiguration,
 } from '../state/analysisState.ts'
 import { MetricViewControls } from './MetricViewControls.tsx'
@@ -50,6 +52,46 @@ describe('MetricViewControls', () => {
     expect(screen.getByLabelText('Relationship Y metric')).toHaveValue(
       'averageSpeedMph',
     )
+  })
+
+  it('renders a seasonal metric selector with trend-compatible options', () => {
+    render(
+      <MetricViewControls
+        rides={[createRide()]}
+        view={seasonalView}
+        onViewChange={() => {}}
+      />,
+    )
+
+    expect(screen.getByText('Metric')).toBeInTheDocument()
+    expect(screen.getByLabelText('Seasonal metric')).toHaveValue('averageSpeedMph')
+    expect(getOptionLabels('Seasonal metric')).toEqual([
+      'Speed',
+      'Distance',
+      'Elevation',
+      'Moving time',
+      'Elapsed time',
+    ])
+  })
+
+  it('renders a cumulative metric selector with trend-compatible options', () => {
+    render(
+      <MetricViewControls
+        rides={[createRide()]}
+        view={cumulativeView}
+        onViewChange={() => {}}
+      />,
+    )
+
+    expect(screen.getByText('Metric')).toBeInTheDocument()
+    expect(screen.getByLabelText('Cumulative metric')).toHaveValue('distanceMiles')
+    expect(getOptionLabels('Cumulative metric')).toEqual([
+      'Speed',
+      'Distance',
+      'Elevation',
+      'Moving time',
+      'Elapsed time',
+    ])
   })
 
   it('updates only the trend y metric', () => {
@@ -111,6 +153,48 @@ describe('MetricViewControls', () => {
       type: 'relationship',
       xMetric: 'elevationGainFeet',
       yMetric: 'distanceMiles',
+    })
+  })
+
+  it('updates seasonal metric while preserving aggregation', () => {
+    const onViewChange = vi.fn()
+    render(
+      <MetricViewControls
+        rides={[createRide()]}
+        view={seasonalView}
+        onViewChange={onViewChange}
+      />,
+    )
+
+    fireEvent.change(screen.getByLabelText('Seasonal metric'), {
+      target: { value: 'distanceMiles' },
+    })
+
+    expect(onViewChange).toHaveBeenCalledWith({
+      type: 'seasonal',
+      yMetric: 'distanceMiles',
+      aggregation: 'biweekly-median',
+    })
+  })
+
+  it('updates cumulative metric while preserving accumulation', () => {
+    const onViewChange = vi.fn()
+    render(
+      <MetricViewControls
+        rides={[createRide()]}
+        view={cumulativeView}
+        onViewChange={onViewChange}
+      />,
+    )
+
+    fireEvent.change(screen.getByLabelText('Cumulative metric'), {
+      target: { value: 'elevationGainFeet' },
+    })
+
+    expect(onViewChange).toHaveBeenCalledWith({
+      type: 'cumulative',
+      yMetric: 'elevationGainFeet',
+      accumulation: 'continuous',
     })
   })
 
@@ -225,6 +309,18 @@ const relationshipView: RelationshipViewConfiguration = {
   type: 'relationship',
   xMetric: 'elevationGainFeet',
   yMetric: 'averageSpeedMph',
+}
+
+const seasonalView: SeasonalViewConfiguration = {
+  type: 'seasonal',
+  yMetric: 'averageSpeedMph',
+  aggregation: 'biweekly-median',
+}
+
+const cumulativeView: CumulativeViewConfiguration = {
+  type: 'cumulative',
+  yMetric: 'distanceMiles',
+  accumulation: 'continuous',
 }
 
 function createRide(

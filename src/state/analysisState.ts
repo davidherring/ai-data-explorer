@@ -47,14 +47,27 @@ export type RelationshipViewConfiguration = {
   yMetric: MetricKey
 }
 
-export type FutureViewConfiguration = {
-  type: 'seasonal' | 'cumulative'
+export type SeasonalAggregationMode = 'biweekly-median'
+
+export type SeasonalViewConfiguration = {
+  type: 'seasonal'
+  yMetric: MetricKey
+  aggregation: SeasonalAggregationMode
+}
+
+export type CumulativeAccumulationMode = 'continuous'
+
+export type CumulativeViewConfiguration = {
+  type: 'cumulative'
+  yMetric: MetricKey
+  accumulation: CumulativeAccumulationMode
 }
 
 export type ViewConfiguration =
   | TrendViewConfiguration
   | RelationshipViewConfiguration
-  | FutureViewConfiguration
+  | SeasonalViewConfiguration
+  | CumulativeViewConfiguration
 
 export type AnalysisState = {
   selection: ActivitySelection
@@ -80,6 +93,18 @@ export const defaultRelationshipView: RelationshipViewConfiguration = {
   type: 'relationship',
   xMetric: 'elevationGainFeet',
   yMetric: 'averageSpeedMph',
+}
+
+export const defaultSeasonalView: SeasonalViewConfiguration = {
+  type: 'seasonal',
+  yMetric: 'averageSpeedMph',
+  aggregation: 'biweekly-median',
+}
+
+export const defaultCumulativeView: CumulativeViewConfiguration = {
+  type: 'cumulative',
+  yMetric: 'distanceMiles',
+  accumulation: 'continuous',
 }
 
 export const defaultAnalysisState: AnalysisState = {

@@ -1,9 +1,23 @@
-type SwitchableAnalysisView = 'trend' | 'relationship'
+import type { ViewType } from '../state/analysisState.ts'
 
 type AnalysisViewSwitcherProps = {
-  activeView: SwitchableAnalysisView
-  onViewChange: (view: SwitchableAnalysisView) => void
+  activeView: ViewType
+  onViewChange: (view: ViewType) => void
 }
+
+const switchableViews = [
+  'trend',
+  'relationship',
+  'seasonal',
+  'cumulative',
+] as const satisfies readonly ViewType[]
+
+const viewLabels = {
+  trend: 'Trend',
+  relationship: 'Relationship',
+  seasonal: 'Seasonal',
+  cumulative: 'Cumulative',
+} as const satisfies Record<ViewType, string>
 
 export function AnalysisViewSwitcher({
   activeView,
@@ -11,26 +25,19 @@ export function AnalysisViewSwitcher({
 }: AnalysisViewSwitcherProps) {
   return (
     <div className="view-switcher" role="group" aria-label="Visualization view">
-      <button
-        className={getButtonClassName(activeView === 'trend')}
-        type="button"
-        aria-pressed={activeView === 'trend'}
-        onClick={() => {
-          onViewChange('trend')
-        }}
-      >
-        Trend
-      </button>
-      <button
-        className={getButtonClassName(activeView === 'relationship')}
-        type="button"
-        aria-pressed={activeView === 'relationship'}
-        onClick={() => {
-          onViewChange('relationship')
-        }}
-      >
-        Relationship
-      </button>
+      {switchableViews.map((view) => (
+        <button
+          key={view}
+          className={getButtonClassName(activeView === view)}
+          type="button"
+          aria-pressed={activeView === view}
+          onClick={() => {
+            onViewChange(view)
+          }}
+        >
+          {viewLabels[view]}
+        </button>
+      ))}
     </div>
   )
 }
