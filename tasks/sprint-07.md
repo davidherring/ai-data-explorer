@@ -142,3 +142,29 @@ Exit criteria:
 ## Remaining Ambiguity
 
 No remaining approval issue is known.
+
+## Closeout Notes
+
+Production smoke testing confirmed:
+
+- `/api/chat` works in production.
+- Streaming responses work.
+- Tool calls execute.
+- The minimal `Analyzed selection` tool status renders.
+- The current selected analysis context reaches the assistant.
+- New Chat clears the browser-memory transcript.
+- The assistant remained appropriately cautious about causation.
+
+Current limitation:
+
+- Sprint 7 exposes `summarizeSelection` and `relationshipBetweenMetrics` only. The assistant can summarize a pooled selection and calculate pooled metric relationships, but it cannot directly execute a deterministic year-to-year or group comparison such as 2019 vs 2026.
+
+Sprint 8 candidate:
+
+- Add `compareSelections` or `compareGroups`, with year-to-year comparison as the first concrete capability.
+
+Deferred UI/content polish:
+
+- Responses can be more verbose than ideal for the narrow panel.
+- Markdown/text presentation needs later polish.
+- Broader AI usefulness depends more on additional deterministic tools than prompt wording alone.
