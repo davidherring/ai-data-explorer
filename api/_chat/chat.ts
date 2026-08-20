@@ -88,7 +88,9 @@ export async function streamChatResponse(
   dependencies: ChatHandlerDependencies = defaultDependencies,
 ): Promise<void> {
   const system = buildChatSystemPrompt(chatRequest)
-  const messages = await dependencies.convertToModelMessages(chatRequest.messages)
+  const messages = await dependencies.convertToModelMessages(
+    stripAssistantToolParts(chatRequest.messages),
+  )
   const result = dependencies.streamText({
     model: dependencies.createModel(),
     system,
@@ -98,6 +100,19 @@ export async function streamChatResponse(
   })
 
   result.pipeUIMessageStreamToResponse(response)
+}
+
+function stripAssistantToolParts(messages: readonly ChatUIMessage[]): ChatUIMessage[] {
+  return messages.map((message) => {
+    if (message.role !== 'assistant') {
+      return message
+    }
+
+    return {
+      ...message,
+      parts: message.parts.filter((part) => !part.type.startsWith('tool-')),
+    }
+  })
 }
 
 async function readJsonBody(request: IncomingMessage): Promise<unknown> {

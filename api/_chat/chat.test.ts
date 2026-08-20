@@ -1,7 +1,11 @@
 import { Readable } from 'node:stream'
 import type { IncomingHttpHeaders, IncomingMessage, ServerResponse } from 'node:http'
 import { describe, expect, it, vi } from 'vitest'
-import type { LanguageModel, ModelMessage } from 'ai'
+import {
+  convertToModelMessages as convertUiToModelMessages,
+  type LanguageModel,
+  type ModelMessage,
+} from 'ai'
 import { buildDatasetProfile } from '../../src/analysis/aiContext.js'
 import type { SelectionSummary } from '../../src/analysis/aiContext.js'
 import type { GroupedComparison } from '../../src/analysis/groupComparisons.js'
@@ -262,6 +266,105 @@ describe('handleChat', () => {
     expect(system).toContain('calculateTrend')
     expect(system).toContain('do not claim statistical significance')
     expect(system).toContain('practical significance')
+  })
+
+  it('strips stale assistant tool output from model-visible history while preserving text and current context', async () => {
+    const selectedRides = [
+      createRide({
+        id: 'current-2025-a',
+        localDate: '2025-01-01',
+        averageSpeedMph: 14,
+      }),
+      createRide({
+        id: 'current-2025-b',
+        localDate: '2025-01-02',
+        averageSpeedMph: 15,
+      }),
+      createRide({
+        id: 'current-2025-c',
+        localDate: '2025-01-03',
+        averageSpeedMph: 16,
+      }),
+    ]
+    const body = {
+      ...createValidChatBody({
+        selectedRides,
+        selectedRideCount: selectedRides.length,
+      }),
+      messages: [
+        {
+          id: 'user-a',
+          role: 'user',
+          parts: [{ type: 'text', text: 'Previous trend question' }],
+        },
+        {
+          id: 'assistant-a',
+          role: 'assistant',
+          parts: [
+            { type: 'text', text: 'I analyzed the earlier selection.' },
+            {
+              type: 'tool-calculateTrend',
+              toolCallId: 'tool-a',
+              state: 'output-available',
+              input: { metric: 'averageSpeedMph' },
+              output: {
+                metric: 'averageSpeedMph',
+                dateRange: { start: '2017-01-01', end: '2025-12-31' },
+                sampleCount: 40,
+                validPointCount: 40,
+                missingCount: 0,
+                direction: 'increasing',
+                status: 'ready',
+                warnings: [],
+              },
+            },
+          ],
+        },
+        {
+          id: 'user-b',
+          role: 'user',
+          parts: [{ type: 'text', text: 'What about the current selection?' }],
+        },
+      ],
+      currentAnalysisState: {
+        ...defaultAnalysisState,
+        selection: { years: [2025] },
+      },
+      datasetProfile: buildDatasetProfile(selectedRides),
+      totalRideCount: selectedRides.length,
+    }
+    const streamTextMock = vi.fn(() => ({
+      pipeUIMessageStreamToResponse: vi.fn(),
+    }))
+    const response = createMockResponse()
+
+    await handleChat(
+      createMockRequest('POST', JSON.stringify(body)),
+      response,
+      createMockDependencies({
+        streamText: streamTextMock,
+        convertToModelMessages: (messages) =>
+          convertUiToModelMessages(messages as never, {
+            ignoreIncompleteToolCalls: true,
+          }),
+      }),
+    )
+
+    const streamTextCalls = streamTextMock.mock.calls as unknown as Array<
+      [{ messages: ModelMessage[]; system: string }]
+    >
+    const modelMessagesJson = JSON.stringify(streamTextCalls[0][0].messages)
+    const system = streamTextCalls[0][0].system
+
+    expect(modelMessagesJson).toContain('Previous trend question')
+    expect(modelMessagesJson).toContain('I analyzed the earlier selection.')
+    expect(modelMessagesJson).toContain('What about the current selection?')
+    expect(modelMessagesJson).not.toContain('2017-01-01')
+    expect(modelMessagesJson).not.toContain('2025-12-31')
+    expect(modelMessagesJson).not.toContain('tool-calculateTrend')
+    expect(system).toContain('"years":[2025]')
+    expect(system).toContain('"selectedRideCount":3')
+    expect(system).not.toContain('current-2025-a')
   })
 
   it('uses the model factory, converts messages, and pipes the UI message stream', async () => {
