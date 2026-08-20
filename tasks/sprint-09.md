@@ -137,3 +137,19 @@ Verification / exit criteria:
 ## Remaining Ambiguity
 
 No remaining approval issue is known.
+
+## Closeout Notes
+
+- Shipped `calculateMetricTrend` as the deterministic ride-level trend helper and `calculateTrend` as the server-side AI tool.
+- Trend analysis operates only on submitted `selectedRides` and remains independent of selector UI, Trend visualization controls, and provisional `AnalysisState.aggregation`.
+- Returned evidence includes slope, estimated change over range, Pearson r, rSquared, sample/time-span information, statuses, and structured warnings.
+- No bucketed trend analysis, forecasting, p-values, significance testing, practical-significance thresholds, or causal inference were added.
+- Production smoke testing confirmed the assistant discovers and calls `calculateTrend` for trend questions across weak upward trends, effectively flat/no-clear-trend cases, insufficient one-ride selections, large date gaps, multiple metrics, and questions naming years outside the current selection.
+- The assistant used slope, estimated change, Pearson r, rSquared, sample count, time span, and warnings as evidence rather than claiming statistical significance after a narrow grounding fix.
+- A smoke test exposed unsupported “practical or statistical significance” wording; Sprint 9 added a focused instruction preventing those claims unless a deterministic tool explicitly supplies that assessment.
+- Another smoke-test bug showed prior tool results from earlier selections could remain in model-visible history; diagnostics confirmed current `AnalysisState`, derived `selectedRides`, and per-send request bodies were correct, while stale data came from preserved assistant tool parts.
+- The fix strips prior assistant `tool-*` parts before model-message conversion, preserving user/assistant text history while keeping current submitted context authoritative.
+- Regression smoke testing confirmed selection changes such as `2017 + 2025` to `2025 only` are reflected correctly on the next chat turn without stale cohort contamination.
+- Final verification: `npm run typecheck`, `npm run lint`, `npm test` (30 files, 332 tests), and `npm run build` passed; the existing Vite chunk-size warning remains unchanged.
+- Deferred work: bucketed/calendar trend analysis if justified, selector/state redesign, richer cohort construction, visualization refinement, View Suggestions, AI-driven `AnalysisState` changes, broader response-length/markdown polish, and a future per-turn analysis-snapshot model if historical tool-result continuity becomes desirable.
+- Architectural lesson: current analysis context must remain authoritative across chat turns, and selection-sensitive deterministic tool outputs from older turns must not silently masquerade as current evidence.
