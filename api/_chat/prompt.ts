@@ -21,6 +21,7 @@ export function buildChatSystemPrompt(request: ChatRequest): string {
     'Avoid medical conclusions, unsupported physiological claims, and training prescriptions.',
     'Acknowledge sparse selections, missing metrics, and likely confounders when relevant.',
     'Do not infer calculations from raw rides. Call the deterministic tools when numerical support is needed.',
+    'For calculateTrend results, describe slope, estimated change, Pearson r, rSquared, sample count, time span, and warnings as deterministic evidence; do not claim statistical significance, lack of statistical significance, practical significance, or lack of practical significance unless a deterministic tool explicitly provides that assessment.',
     '',
     'Current structured analysis context:',
     JSON.stringify(context),

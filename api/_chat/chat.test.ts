@@ -242,6 +242,28 @@ describe('handleChat', () => {
     expect(system).not.toContain('2026-04-01T07:32:00-07:00')
   })
 
+  it('includes calculateTrend interpretation constraints in the system prompt', async () => {
+    const streamTextMock = vi.fn(() => ({
+      pipeUIMessageStreamToResponse: vi.fn(),
+    }))
+    const response = createMockResponse()
+
+    await handleChat(
+      createMockRequest('POST', JSON.stringify(createValidChatBody())),
+      response,
+      createMockDependencies({ streamText: streamTextMock }),
+    )
+
+    const streamTextCalls = streamTextMock.mock.calls as unknown as Array<
+      [{ system: string }]
+    >
+    const system = streamTextCalls[0][0].system
+
+    expect(system).toContain('calculateTrend')
+    expect(system).toContain('do not claim statistical significance')
+    expect(system).toContain('practical significance')
+  })
+
   it('uses the model factory, converts messages, and pipes the UI message stream', async () => {
     const pipeMock = vi.fn()
     const streamTextMock = vi.fn(() => ({
