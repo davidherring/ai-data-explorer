@@ -3,6 +3,7 @@ import { AnalysisWorkspaceShell } from './AnalysisWorkspaceShell.tsx'
 import { ConversationPanelShell } from './ConversationPanelShell.tsx'
 import { RideDataSourceControl } from './RideDataSourceControl.tsx'
 import { StravaConnectionControl } from './StravaConnectionControl.tsx'
+import { buildDatasetProfile } from '../analysis/aiContext.ts'
 import { filterRides } from '../analysis/filterRides.ts'
 import { useRideDataSource } from '../hooks/useRideDataSource.ts'
 import {
@@ -18,6 +19,10 @@ export function AppShell() {
   const selectedRides = useMemo(
     () => filterRides(rideDataSource.rides, analysisState.selection),
     [rideDataSource.rides, analysisState.selection],
+  )
+  const datasetProfile = useMemo(
+    () => buildDatasetProfile(rideDataSource.rides),
+    [rideDataSource.rides],
   )
 
   return (
@@ -39,7 +44,14 @@ export function AppShell() {
           analysisState={analysisState}
           onAnalysisStateChange={setAnalysisState}
         />
-        <ConversationPanelShell />
+        <ConversationPanelShell
+          analysisState={analysisState}
+          selectedRides={selectedRides}
+          datasetProfile={datasetProfile}
+          selectedRideCount={selectedRides.length}
+          totalRideCount={rideDataSource.rides.length}
+          dataSource={rideDataSource.source}
+        />
       </section>
 
       <section className="status-strip" aria-label="Summary and status">

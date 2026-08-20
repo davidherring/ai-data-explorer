@@ -77,6 +77,15 @@ select {
   text-transform: none;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
 .header-actions {
   display: flex;
   align-items: center;
@@ -288,6 +297,7 @@ select {
   background: #f8faf7;
 }
 
+.conversation-empty,
 .conversation-placeholder p {
   margin: 0;
   max-width: 48rem;
@@ -499,6 +509,93 @@ select {
   overflow: hidden;
   position: sticky;
   top: 20px;
+}
+
+.conversation-panel-header {
+  display: flex;
+  align-items: start;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.conversation-messages {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-height: 0;
+  overflow: auto;
+  border-top: 1px solid #eef1ed;
+  padding-top: 14px;
+}
+
+.conversation-message {
+  display: grid;
+  gap: 4px;
+  max-width: 100%;
+}
+
+.conversation-message-role {
+  margin: 0;
+  color: #5d6b66;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.conversation-message-content {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #d9ded5;
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #172026;
+  background: #f8faf7;
+}
+
+.conversation-message-user .conversation-message-content {
+  background: #eef4f0;
+}
+
+.conversation-message-content p {
+  margin: 0;
+}
+
+.conversation-tool-status,
+.conversation-status {
+  color: #53605c;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.conversation-error {
+  color: #9b2c2c;
+}
+
+.conversation-composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.conversation-input-label {
+  min-width: 0;
+}
+
+.conversation-input {
+  width: 100%;
+  min-height: 74px;
+  resize: vertical;
+  border: 1px solid #cfd8d4;
+  border-radius: 6px;
+  padding: 9px 10px;
+  color: #172026;
+  background: #ffffff;
+}
+
+.conversation-input:disabled {
+  color: #6b7773;
+  background: #f3f5f1;
 }
 
 .conversation-placeholder {
