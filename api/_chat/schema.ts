@@ -192,6 +192,36 @@ export const relationshipToolInputSchema = z
   })
   .strict()
 
+const monthGroupSchema = z.number().int().min(1).max(12)
+const dayModeGroupSchema = z.enum(['weekday', 'weekend'])
+
+export const compareGroupsToolInputSchema = z.discriminatedUnion('groupBy', [
+  z
+    .object({
+      groupBy: z.literal('year'),
+      groups: z.array(z.number()).optional(),
+    })
+    .strict(),
+  z
+    .object({
+      groupBy: z.literal('month'),
+      groups: z.array(monthGroupSchema).optional(),
+    })
+    .strict(),
+  z
+    .object({
+      groupBy: z.literal('dayMode'),
+      groups: z.array(dayModeGroupSchema).optional(),
+    })
+    .strict(),
+  z
+    .object({
+      groupBy: z.literal('dayOfWeek'),
+      groups: z.array(dayOfWeekSchema).optional(),
+    })
+    .strict(),
+])
+
 export type ChatRequest = z.infer<typeof chatRequestSchema> & {
   currentAnalysisState: AnalysisState
   selectedRides: Ride[]

@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { LanguageModel, ModelMessage } from 'ai'
 import { buildDatasetProfile } from '../../src/analysis/aiContext.js'
 import type { SelectionSummary } from '../../src/analysis/aiContext.js'
+import type { GroupedComparison } from '../../src/analysis/groupComparisons.js'
 import type { DayOfWeek, Ride } from '../../src/data/ride.js'
 import { defaultAnalysisState } from '../../src/state/analysisState.js'
 import chatHandler from '../chat.js'
@@ -13,6 +14,7 @@ import {
 } from './chat.js'
 import { createAnalysisTools } from './tools.js'
 import {
+  compareGroupsToolInputSchema,
   MAX_CHAT_REQUEST_BYTES,
   MAX_SELECTED_RIDES_FOR_CHAT,
   relationshipToolInputSchema,
@@ -268,6 +270,7 @@ describe('handleChat', () => {
         tools: expect.objectContaining({
           summarizeSelection: expect.any(Object),
           relationshipBetweenMetrics: expect.any(Object),
+          compareGroups: expect.any(Object),
         }),
       }),
     )
@@ -329,6 +332,168 @@ describe('analysis chat tools', () => {
       relationshipToolInputSchema.safeParse({
         xMetric: 'not-a-metric',
         yMetric: 'averageSpeedMph',
+      }).success,
+    ).toBe(false)
+  })
+
+  it('executes compareGroups deterministically over submitted rides', async () => {
+    const tools = createAnalysisTools([
+      createRide({
+        id: '2019-a',
+        localDate: '2019-01-01',
+        averageSpeedMph: 12,
+        distanceMiles: 10,
+      }),
+      createRide({
+        id: '2019-b',
+        localDate: '2019-01-02',
+        averageSpeedMph: 18,
+        distanceMiles: 20,
+      }),
+      createRide({
+        id: '2026-a',
+        localDate: '2026-01-01',
+        averageSpeedMph: 10,
+        distanceMiles: 30,
+      }),
+      createRide({
+        id: '2026-b',
+        localDate: '2026-01-02',
+        averageSpeedMph: 14,
+        distanceMiles: 40,
+      }),
+    ])
+    const output = await executeTool<GroupedComparison>(tools.compareGroups, {
+      groupBy: 'year',
+      groups: [2019, 2026],
+    })
+
+    expect(output).toMatchObject({
+      groupBy: 'year',
+      sampleCount: 4,
+      groups: [
+        expect.objectContaining({
+          groupValue: 2019,
+          status: 'present',
+          rideCount: 2,
+        }),
+        expect.objectContaining({
+          groupValue: 2026,
+          status: 'present',
+          rideCount: 2,
+        }),
+      ],
+      pairwiseDeltas: expect.objectContaining({
+        baselineGroupValue: 2019,
+        comparisonGroupValue: 2026,
+      }),
+    })
+    expect(
+      output.pairwiseDeltas?.metrics.find(
+        (metric) => metric.metric === 'averageSpeedMph',
+      )?.mean,
+    ).toMatchObject({
+      baselineValue: 15,
+      comparisonValue: 12,
+      absoluteDifference: -3,
+      percentDifference: -3 / 15,
+    })
+    expect(
+      output.pairwiseDeltas?.metrics.find(
+        (metric) => metric.metric === 'distanceMiles',
+      )?.total,
+    ).toMatchObject({
+      baselineValue: 30,
+      comparisonValue: 70,
+      absoluteDifference: 40,
+    })
+  })
+
+  it('returns missing requested group status from compareGroups', async () => {
+    const tools = createAnalysisTools([
+      createRide({ id: '2026-a', localDate: '2026-01-01' }),
+    ])
+    const output = await executeTool<GroupedComparison>(tools.compareGroups, {
+      groupBy: 'year',
+      groups: [2019, 2026],
+    })
+
+    expect(output.groups[0]).toMatchObject({
+      groupValue: 2019,
+      status: 'missing-requested-group',
+      rideCount: 0,
+      warnings: [
+        { code: 'missing-requested-group', groupValue: 2019 },
+        { code: 'empty-selection' },
+      ],
+    })
+  })
+
+  it('validates compareGroups supported grouping inputs', () => {
+    expect(
+      compareGroupsToolInputSchema.safeParse({
+        groupBy: 'year',
+        groups: [2019, 2026],
+      }).success,
+    ).toBe(true)
+    expect(
+      compareGroupsToolInputSchema.safeParse({
+        groupBy: 'month',
+        groups: [1, 12],
+      }).success,
+    ).toBe(true)
+    expect(
+      compareGroupsToolInputSchema.safeParse({
+        groupBy: 'dayMode',
+        groups: ['weekday', 'weekend'],
+      }).success,
+    ).toBe(true)
+    expect(
+      compareGroupsToolInputSchema.safeParse({
+        groupBy: 'dayOfWeek',
+        groups: ['monday', 'sunday'],
+      }).success,
+    ).toBe(true)
+    expect(
+      compareGroupsToolInputSchema.safeParse({ groupBy: 'year' }).success,
+    ).toBe(true)
+  })
+
+  it('rejects malformed compareGroups inputs', () => {
+    expect(
+      compareGroupsToolInputSchema.safeParse({
+        groupBy: 'sportType',
+        groups: ['Ride'],
+      }).success,
+    ).toBe(false)
+    expect(
+      compareGroupsToolInputSchema.safeParse({
+        groupBy: 'year',
+        groups: ['2026'],
+      }).success,
+    ).toBe(false)
+    expect(
+      compareGroupsToolInputSchema.safeParse({
+        groupBy: 'dayOfWeek',
+        groups: [1],
+      }).success,
+    ).toBe(false)
+    expect(
+      compareGroupsToolInputSchema.safeParse({
+        groupBy: 'dayMode',
+        groups: [1],
+      }).success,
+    ).toBe(false)
+    expect(
+      compareGroupsToolInputSchema.safeParse({
+        groupBy: 'month',
+        groups: [0, 13],
+      }).success,
+    ).toBe(false)
+    expect(
+      compareGroupsToolInputSchema.safeParse({
+        groupBy: 'month',
+        groups: [1.5],
       }).success,
     ).toBe(false)
   })
