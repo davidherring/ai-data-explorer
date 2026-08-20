@@ -53,6 +53,47 @@ describe('handleChat', () => {
     expect(JSON.parse(response.body)).toEqual({ error: 'invalid_chat_request' })
   })
 
+  it('accepts the AI SDK transport envelope fields', async () => {
+    const pipeMock = vi.fn()
+    const streamTextMock = vi.fn(() => ({
+      pipeUIMessageStreamToResponse: pipeMock,
+    }))
+    const body = createValidChatBody({
+      id: 'chat-a',
+      trigger: 'submit-message',
+    })
+    const response = createMockResponse()
+
+    await handleChat(
+      createMockRequest('POST', JSON.stringify(body)),
+      response,
+      createMockDependencies({ streamText: streamTextMock }),
+    )
+
+    expect(streamTextMock).toHaveBeenCalledTimes(1)
+    expect(pipeMock).toHaveBeenCalledWith(response)
+  })
+
+  it('accepts an optional transport messageId', async () => {
+    const streamTextMock = vi.fn(() => ({
+      pipeUIMessageStreamToResponse: vi.fn(),
+    }))
+    const body = createValidChatBody({
+      id: 'chat-a',
+      trigger: 'regenerate-message',
+      messageId: 'message-a',
+    })
+    const response = createMockResponse()
+
+    await handleChat(
+      createMockRequest('POST', JSON.stringify(body)),
+      response,
+      createMockDependencies({ streamText: streamTextMock }),
+    )
+
+    expect(streamTextMock).toHaveBeenCalledTimes(1)
+  })
+
   it('rejects selectedRideCount mismatches', async () => {
     const body = createValidChatBody({
       selectedRides: [createRide({ id: 'a' })],
@@ -68,6 +109,56 @@ describe('handleChat', () => {
 
     expect(response.statusCode).toBe(400)
     expect(JSON.parse(response.body)).toEqual({ error: 'invalid_chat_request' })
+  })
+
+  it('logs compact validation issues without raw request content', async () => {
+    const privateRideId = 'private-ride-id'
+    const privateMessageText = 'private question text'
+    const body = {
+      ...createValidChatBody({
+        selectedRides: [createRide({ id: privateRideId })],
+        selectedRideCount: 2,
+      }),
+      messages: [
+        {
+          id: 'message-a',
+          role: 'user',
+          parts: [{ type: 'text', text: privateMessageText }],
+        },
+      ],
+    }
+    const response = createMockResponse()
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    try {
+      await handleChat(
+        createMockRequest('POST', JSON.stringify(body)),
+        response,
+        createMockDependencies(),
+      )
+
+      expect(response.statusCode).toBe(400)
+      expect(JSON.parse(response.body)).toEqual({ error: 'invalid_chat_request' })
+      expect(warnSpy).toHaveBeenCalledWith(
+        'Invalid chat request',
+        expect.objectContaining({
+          issues: expect.arrayContaining([
+            expect.objectContaining({
+              path: ['selectedRideCount'],
+              code: 'custom',
+              message: 'selectedRideCount must match submitted ride count',
+            }),
+          ]),
+        }),
+      )
+      const loggedPayload = JSON.stringify(warnSpy.mock.calls)
+      expect(loggedPayload).not.toContain(privateRideId)
+      expect(loggedPayload).not.toContain(privateMessageText)
+      expect(loggedPayload).not.toContain('selectedRides')
+      expect(loggedPayload).not.toContain('messages')
+    } finally {
+      warnSpy.mockRestore()
+    }
   })
 
   it('rejects unreasonable selected ride payloads', async () => {
@@ -283,6 +374,9 @@ type RelationshipToolOutput = {
 
 function createValidChatBody(
   overrides: Partial<{
+    id: string
+    trigger: 'submit-message' | 'regenerate-message'
+    messageId: string
     selectedRides: Ride[]
     selectedRideCount: number
   }> = {},
@@ -296,6 +390,7 @@ function createValidChatBody(
     ]
 
   return {
+    ...(overrides.id !== undefined ? { id: overrides.id } : {}),
     messages: [
       {
         id: 'message-a',
@@ -303,6 +398,10 @@ function createValidChatBody(
         parts: [{ type: 'text', text: 'What stands out?' }],
       },
     ],
+    ...(overrides.trigger !== undefined ? { trigger: overrides.trigger } : {}),
+    ...(overrides.messageId !== undefined
+      ? { messageId: overrides.messageId }
+      : {}),
     currentAnalysisState: defaultAnalysisState,
     selectedRides,
     datasetProfile: buildDatasetProfile(selectedRides),

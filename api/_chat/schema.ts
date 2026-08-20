@@ -161,7 +161,10 @@ const uiMessageSchema = z
 
 export const chatRequestSchema = z
   .object({
+    id: z.string().optional(),
     messages: z.array(uiMessageSchema),
+    trigger: z.enum(['submit-message', 'regenerate-message']).optional(),
+    messageId: z.string().optional(),
     currentAnalysisState: analysisStateSchema,
     selectedRides: z
       .array(rideSchema)
@@ -177,7 +180,7 @@ export const chatRequestSchema = z
       context.addIssue({
         code: 'custom',
         path: ['selectedRideCount'],
-        message: 'selectedRideCount must match selectedRides.length',
+        message: 'selectedRideCount must match submitted ride count',
       })
     }
   })

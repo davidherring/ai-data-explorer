@@ -66,6 +66,7 @@ export async function handleChat(
   const parseResult = chatRequestSchema.safeParse(body)
 
   if (!parseResult.success) {
+    logValidationIssues(parseResult.error.issues)
     sendJson(
       response,
       hasTooManySelectedRidesIssue(parseResult.error.issues) ? 413 : 400,
@@ -127,6 +128,18 @@ function hasTooManySelectedRidesIssue(
   issues: readonly { message: string }[],
 ): boolean {
   return issues.some((issue) => issue.message === 'too_many_selected_rides')
+}
+
+function logValidationIssues(
+  issues: readonly { path: PropertyKey[]; code: string; message: string }[],
+): void {
+  const sanitizedIssues = issues.slice(0, 10).map((issue) => ({
+    path: issue.path.map(String),
+    code: issue.code,
+    message: issue.message,
+  }))
+
+  console.warn('Invalid chat request', { issues: sanitizedIssues })
 }
 
 class PayloadTooLargeError extends Error {
