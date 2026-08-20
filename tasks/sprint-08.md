@@ -144,3 +144,16 @@ Exit criteria:
 ## Remaining Ambiguity
 
 No remaining approval issue is known.
+
+## Closeout Notes
+
+- Shipped deterministic grouped comparison through `buildGroupedComparison` and the `compareGroups` AI tool.
+- `compareGroups` operates only on submitted `selectedRides`, keeping grouped analysis downstream of the user's current selection and independent of future selector/UI redesign.
+- The capability is reusable across supported grouping keys rather than a year-specific special case.
+- Production smoke testing successfully supported 2019 vs 2026, weekday vs weekend within 2025, and 2019 weekday/weekend vs 2025 weekday/weekend comparisons.
+- The assistant used grouped summaries with existing deterministic relationship analysis to examine speed, distance, elevation, moving time, and sport mix differences.
+- Responses appropriately distinguished observations, associations, hypotheses, and causal claims; sparse or uneven groups were treated cautiously.
+- Production behavior showed the assistant can test and refine a user hypothesis rather than only summarize pooled data.
+- Selector limitations prevented some precise follow-up cohorts, such as matched date ranges or more complex intersecting selections; this remains deferred selector/state UX work, not a Sprint 8 defect.
+- Conversational response length and presentation still need later polish.
+- View Suggestions, AI-driven `AnalysisState` changes, and broader UI redesign remain deferred.
