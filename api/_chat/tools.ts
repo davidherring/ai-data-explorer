@@ -3,8 +3,10 @@ import type { Ride } from '../../src/data/ride.js'
 import { summarizeSelection } from '../../src/analysis/aiContext.js'
 import { buildGroupedComparison } from '../../src/analysis/groupComparisons.js'
 import { relationshipBetweenMetrics } from '../../src/analysis/metricRelationships.js'
+import { calculateMetricTrend } from '../../src/analysis/metricTrends.js'
 import { getMetricDefinition } from '../../src/analysis/rideMetrics.js'
 import {
+  calculateTrendToolInputSchema,
   compareGroupsToolInputSchema,
   relationshipToolInputSchema,
 } from './schema.js'
@@ -41,6 +43,12 @@ export function createAnalysisTools(selectedRides: readonly Ride[]) {
         'Compare groups within the currently selected rides using deterministic metric summaries, composition counts, warnings, and pairwise deltas.',
       inputSchema: compareGroupsToolInputSchema,
       execute: async (input) => buildGroupedComparison(selectedRides, input),
+    }),
+    calculateTrend: tool({
+      description:
+        'Calculate deterministic ride-level trend evidence for one metric over calendar time within the currently selected rides.',
+      inputSchema: calculateTrendToolInputSchema,
+      execute: async ({ metric }) => calculateMetricTrend(selectedRides, metric),
     }),
   }
 }

@@ -5,6 +5,7 @@ import type { LanguageModel, ModelMessage } from 'ai'
 import { buildDatasetProfile } from '../../src/analysis/aiContext.js'
 import type { SelectionSummary } from '../../src/analysis/aiContext.js'
 import type { GroupedComparison } from '../../src/analysis/groupComparisons.js'
+import type { MetricTrendAnalysis } from '../../src/analysis/metricTrends.js'
 import type { DayOfWeek, Ride } from '../../src/data/ride.js'
 import { defaultAnalysisState } from '../../src/state/analysisState.js'
 import chatHandler from '../chat.js'
@@ -14,6 +15,7 @@ import {
 } from './chat.js'
 import { createAnalysisTools } from './tools.js'
 import {
+  calculateTrendToolInputSchema,
   compareGroupsToolInputSchema,
   MAX_CHAT_REQUEST_BYTES,
   MAX_SELECTED_RIDES_FOR_CHAT,
@@ -271,6 +273,7 @@ describe('handleChat', () => {
           summarizeSelection: expect.any(Object),
           relationshipBetweenMetrics: expect.any(Object),
           compareGroups: expect.any(Object),
+          calculateTrend: expect.any(Object),
         }),
       }),
     )
@@ -494,6 +497,74 @@ describe('analysis chat tools', () => {
       compareGroupsToolInputSchema.safeParse({
         groupBy: 'month',
         groups: [1.5],
+      }).success,
+    ).toBe(false)
+  })
+
+  it('executes calculateTrend deterministically over submitted rides', async () => {
+    const tools = createAnalysisTools([
+      createRide({
+        id: 'private-a',
+        localDate: '2026-01-01',
+        averageSpeedMph: 10,
+      }),
+      createRide({
+        id: 'private-b',
+        localDate: '2026-01-11',
+        averageSpeedMph: 20,
+      }),
+      createRide({
+        id: 'private-c',
+        localDate: '2026-01-21',
+        averageSpeedMph: 30,
+      }),
+    ])
+    const output = await executeTool<MetricTrendAnalysis>(tools.calculateTrend, {
+      metric: 'averageSpeedMph',
+    })
+
+    expect(output).toMatchObject({
+      metric: 'averageSpeedMph',
+      label: 'Average speed',
+      unit: 'mph',
+      sampleCount: 3,
+      validPointCount: 3,
+      missingCount: 0,
+      dateRange: { start: '2026-01-01', end: '2026-01-21' },
+      timeSpanDays: 20,
+      metricMin: 10,
+      metricMax: 30,
+      slopePerDay: 1,
+      slopePerYear: 365.25,
+      estimatedChangeOverRange: 20,
+      direction: 'increasing',
+      status: 'ready',
+      warnings: [],
+    })
+    expect(output.pearsonR).toBeCloseTo(1)
+    expect(output.rSquared).toBeCloseTo(1)
+    expect(JSON.stringify(output)).not.toContain('private-a')
+    expect(JSON.stringify(output)).not.toContain('private-b')
+    expect(JSON.stringify(output)).not.toContain('private-c')
+    expect(JSON.stringify(output)).not.toContain('selectedRides')
+    expect(JSON.stringify(output)).not.toContain('"ride"')
+  })
+
+  it('validates calculateTrend metric input', () => {
+    expect(
+      calculateTrendToolInputSchema.safeParse({
+        metric: 'averageSpeedMph',
+      }).success,
+    ).toBe(true)
+    expect(
+      calculateTrendToolInputSchema.safeParse({
+        metric: 'not-a-metric',
+      }).success,
+    ).toBe(false)
+    expect(
+      calculateTrendToolInputSchema.safeParse({
+        metric: 'averageSpeedMph',
+        groupBy: 'year',
       }).success,
     ).toBe(false)
   })

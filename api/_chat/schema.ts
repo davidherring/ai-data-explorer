@@ -192,6 +192,12 @@ export const relationshipToolInputSchema = z
   })
   .strict()
 
+export const calculateTrendToolInputSchema = z
+  .object({
+    metric: metricKeySchema,
+  })
+  .strict()
+
 const monthGroupSchema = z.number().int().min(1).max(12)
 const dayModeGroupSchema = z.enum(['weekday', 'weekend'])
 
