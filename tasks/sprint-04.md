@@ -273,3 +273,12 @@ Exit criteria:
 ## Remaining Ambiguity
 
 The only approved ambiguity is presentation detail: the exact placement and visual styling of the Trend / Relationship control may be chosen during implementation, provided it remains compact, near the visualization header, and does not substantially redesign the workspace.
+
+## Closeout
+
+- Shipped the state-driven Trend/Relationship switcher, fixed elevation-vs-speed relationship chart, relationship status UI, and deterministic `relationshipBetweenMetrics` helper.
+- Relationship analysis excludes non-finite metric pairs, reports structured unavailable states, and avoids p-values, regression lines, significance language, and causal claims.
+- Chart components consume selected rides and deterministic results rather than duplicating analytical calculations.
+- Switching views preserves the active activity selection, reinforcing `AnalysisState.view` as the visible-analysis contract.
+- Current repo verification passes `typecheck`, `lint`, `test`, and `build`; `npm test` currently reports 28 files / 297 tests.
+- Configurable metrics, Seasonal/Cumulative views, AI tools, and comparison mode remained deferred.

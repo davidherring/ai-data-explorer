@@ -275,3 +275,12 @@ Exit criteria:
 ## Remaining Ambiguity
 
 No remaining product approval issue is known.
+
+## Closeout
+
+- Shipped implemented Seasonal and Cumulative views, explicit discriminated view configurations, compact metric controls, deterministic transforms, and dedicated chart components.
+- Seasonal uses biweekly median buckets by year, preserves sparse buckets as points, connects only adjacent non-sparse buckets, and does not smooth or fill gaps.
+- Cumulative uses continuous accumulation over the selected range only, with no reset-by-year mode in Sprint 6.
+- `AnalysisWorkspaceShell` owns derived Seasonal/Cumulative data; charts remain render-only consumers of structured analysis output.
+- Current repo verification passes `typecheck`, `lint`, `test`, and `build`; `npm test` currently reports 28 files / 297 tests.
+- Follow-ups left at sprint end: top-level `AnalysisState.aggregation` appears obsolete, crowded header/toolbar cleanup is deferred, and repeated chart lifecycle consolidation is deferred.

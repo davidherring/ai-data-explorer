@@ -222,3 +222,12 @@ Verification / exit criteria:
 ## Remaining Approved Architecture Note
 
 Encrypted HttpOnly cookie token persistence is acceptable for Sprint 2 because it avoids adding infrastructure before the product needs it. This should be revisited before treating the application as a broader multi-user production system.
+
+## Closeout
+
+- Shipped the Strava OAuth/API boundary, encrypted HttpOnly token cookie flow, token refresh, status/disconnect routes, paginated cycling activity retrieval, and Strava-to-`Ride` normalization.
+- Added the demo/Strava data-source boundary so downstream analysis consumes normalized `Ride[]` regardless of source.
+- Preserved the no-database/no-browser-persistence decision for connected rides; live rides remain in memory and are refetched through server APIs.
+- Normal tests use mocked Strava behavior and do not require live Strava calls or credentials.
+- Current repo verification passes `typecheck`, `lint`, `test`, and `build`; `npm test` currently reports 28 files / 297 tests.
+- Durable follow-up: encrypted cookie token persistence is an MVP choice to revisit before broader multi-user production use.

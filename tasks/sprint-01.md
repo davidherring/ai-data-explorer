@@ -109,3 +109,12 @@ Verification / exit criteria:
 - Deployed shell loads in a browser without runtime errors.
 - Deployment does not require real Strava credentials, model provider credentials, or private data for the shell phase.
 - Repository documentation records how to verify or redeploy the shell.
+
+## Closeout
+
+- Shipped the production repository baseline, React/Vite/TypeScript shell, CI-quality scripts, synthetic demo data, initial normalized `Ride` model, and shared `AnalysisState` skeleton.
+- Established the core product boundary that visualization and future AI work use the same typed analysis state rather than separate UI/AI models.
+- Demo data remained public-safe and importable by tests without live APIs or credentials.
+- Current repo verification passes `typecheck`, `lint`, `test`, and `build`; `npm test` currently reports 28 files / 297 tests.
+- Historical Sprint 1 test count is not recoverable from the current task file, so only current verification is recorded.
+- Product features, Strava OAuth, AI, and real visual analytics were intentionally deferred to later sprints.

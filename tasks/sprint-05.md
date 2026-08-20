@@ -340,3 +340,12 @@ Exit criteria:
 No product ambiguity currently requires approval.
 
 The only implementation judgment left is whether the component rename from `AverageSpeedTrendChart` to `MetricTrendChart` is clean enough to include. Prefer the rename if it is low-churn; otherwise keep the existing file temporarily and still make the chart metric-driven.
+
+## Closeout
+
+- Shipped metric-configurable Trend and Relationship views backed by typed metric metadata in `rideMetrics`.
+- `MetricTrendChart`, `RelationshipScatterChart`, `RelationshipStatus`, and `MetricViewControls` now derive labels, units, formatting, and finite-value behavior from metadata.
+- `AnalysisState.view` now carries the active Trend metric or Relationship metric pair needed to reproduce the visible chart.
+- Optional `temperatureF` remains hidden from metric selectors unless the active source dataset has finite temperature values.
+- Current repo verification passes `typecheck`, `lint`, `test`, and `build`; `npm test` currently reports 28 files / 297 tests.
+- Seasonal/Cumulative implementation, AI tooling, comparison mode, and broader header/workspace cleanup remained deferred.

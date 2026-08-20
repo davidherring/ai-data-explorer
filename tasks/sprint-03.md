@@ -173,3 +173,11 @@ Verification / exit criteria:
 - New persistence.
 - New global state-management library.
 
+## Closeout
+
+- Shipped deterministic `filterRides`, shared `AnalysisState` ownership in the workspace, activity filter controls, selection status, and the first Observable Plot trend view.
+- The first trend visualization stayed points-only and average-speed focused, avoiding smoothing, connected lines, and aggregation.
+- Filtering became source-agnostic for demo and live Strava rides, with empty selections represented as empty arrays rather than errors.
+- This sprint established the selected-rides derivation pattern that later charts and AI context reuse.
+- Current repo verification passes `typecheck`, `lint`, `test`, and `build`; `npm test` currently reports 28 files / 297 tests.
+- Relationship, Seasonal, Cumulative, comparison, and AI behavior remained deferred.
