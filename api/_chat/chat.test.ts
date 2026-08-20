@@ -2,22 +2,22 @@ import { Readable } from 'node:stream'
 import type { IncomingHttpHeaders, IncomingMessage, ServerResponse } from 'node:http'
 import { describe, expect, it, vi } from 'vitest'
 import type { LanguageModel, ModelMessage } from 'ai'
-import { buildDatasetProfile } from '../../src/analysis/aiContext.ts'
-import type { SelectionSummary } from '../../src/analysis/aiContext.ts'
-import type { DayOfWeek, Ride } from '../../src/data/ride.ts'
-import { defaultAnalysisState } from '../../src/state/analysisState.ts'
-import chatHandler from '../chat.ts'
+import { buildDatasetProfile } from '../../src/analysis/aiContext.js'
+import type { SelectionSummary } from '../../src/analysis/aiContext.js'
+import type { DayOfWeek, Ride } from '../../src/data/ride.js'
+import { defaultAnalysisState } from '../../src/state/analysisState.js'
+import chatHandler from '../chat.js'
 import {
   handleChat,
   type ChatHandlerDependencies,
-} from './chat.ts'
-import { createAnalysisTools } from './tools.ts'
+} from './chat.js'
+import { createAnalysisTools } from './tools.js'
 import {
   MAX_CHAT_REQUEST_BYTES,
   MAX_SELECTED_RIDES_FOR_CHAT,
   relationshipToolInputSchema,
-} from './schema.ts'
-import { AI_CHAT_MODEL_ID, createChatModel } from './model.ts'
+} from './schema.js'
+import { AI_CHAT_MODEL_ID, createChatModel } from './model.js'
 
 describe('chat endpoint route', () => {
   it('rejects non-POST methods', async () => {

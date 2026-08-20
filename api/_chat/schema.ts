@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import type { DatasetProfile } from '../../src/analysis/aiContext.ts'
-import type { Ride } from '../../src/data/ride.ts'
-import type { AnalysisState, MetricKey } from '../../src/state/analysisState.ts'
+import type { DatasetProfile } from '../../src/analysis/aiContext.js'
+import type { Ride } from '../../src/data/ride.js'
+import type { AnalysisState, MetricKey } from '../../src/state/analysisState.js'
 
 export const MAX_SELECTED_RIDES_FOR_CHAT = 2000
 export const MAX_CHAT_REQUEST_BYTES = 3_000_000

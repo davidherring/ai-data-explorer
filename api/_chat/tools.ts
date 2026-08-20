@@ -1,9 +1,9 @@
 import { tool } from 'ai'
-import type { Ride } from '../../src/data/ride.ts'
-import { summarizeSelection } from '../../src/analysis/aiContext.ts'
-import { relationshipBetweenMetrics } from '../../src/analysis/metricRelationships.ts'
-import { getMetricDefinition } from '../../src/analysis/rideMetrics.ts'
-import { relationshipToolInputSchema } from './schema.ts'
+import type { Ride } from '../../src/data/ride.js'
+import { summarizeSelection } from '../../src/analysis/aiContext.js'
+import { relationshipBetweenMetrics } from '../../src/analysis/metricRelationships.js'
+import { getMetricDefinition } from '../../src/analysis/rideMetrics.js'
+import { relationshipToolInputSchema } from './schema.js'
 import { z } from 'zod'
 
 export function createAnalysisTools(selectedRides: readonly Ride[]) {

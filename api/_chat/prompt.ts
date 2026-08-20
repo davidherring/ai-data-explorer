@@ -1,5 +1,5 @@
-import { summarizeSelection } from '../../src/analysis/aiContext.ts'
-import type { ChatRequest } from './schema.ts'
+import { summarizeSelection } from '../../src/analysis/aiContext.js'
+import type { ChatRequest } from './schema.js'
 
 export function buildChatSystemPrompt(request: ChatRequest): string {
   const context = {

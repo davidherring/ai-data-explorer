@@ -6,15 +6,15 @@ import {
   type LanguageModel,
   type ModelMessage,
 } from 'ai'
-import { createAnalysisTools } from './tools.ts'
-import { buildChatSystemPrompt } from './prompt.ts'
+import { createAnalysisTools } from './tools.js'
+import { buildChatSystemPrompt } from './prompt.js'
 import {
   chatRequestSchema,
   MAX_CHAT_REQUEST_BYTES,
   type ChatRequest,
   type ChatUIMessage,
-} from './schema.ts'
-import { createChatModel } from './model.ts'
+} from './schema.js'
+import { createChatModel } from './model.js'
 
 type ChatStreamResult = {
   pipeUIMessageStreamToResponse: (response: ServerResponse) => void
