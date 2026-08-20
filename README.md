@@ -36,3 +36,5 @@ The assistant is grounded in the same typed analysis state that drives the visua
 The chat transcript is browser-memory only. New Chat clears the visible transcript without changing the analysis state, and there is no database, saved chat, server session, or persistence layer.
 
 Deterministic tools perform analytical calculations server-side over the submitted selected rides. The model interprets structured tool results; raw ride arrays are available to tools but are not pasted into the model prompt text.
+
+Grouped comparison tools can compare years, months, weekdays/weekends, or days of week only within the rides included in the submitted selection; they do not reach outside the current selection. Their outputs are deterministic observations and associations for the assistant to interpret, not causal proof.
