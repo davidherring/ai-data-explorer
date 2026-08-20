@@ -1,5 +1,5 @@
-import type { Ride } from '../data/ride.ts'
-import type { MetricKey } from '../state/analysisState.ts'
+import type { Ride } from '../data/ride.js'
+import type { MetricKey } from '../state/analysisState.js'
 
 export type MetricRole = 'trendY' | 'relationshipX' | 'relationshipY'
 

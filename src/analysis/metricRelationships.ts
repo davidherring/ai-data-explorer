@@ -1,6 +1,6 @@
-import type { Ride } from '../data/ride.ts'
-import type { MetricKey } from '../state/analysisState.ts'
-import { getRideMetric } from './rideMetrics.ts'
+import type { Ride } from '../data/ride.js'
+import type { MetricKey } from '../state/analysisState.js'
+import { getRideMetric } from './rideMetrics.js'
 
 export type MetricRelationshipStatus =
   | 'ready'

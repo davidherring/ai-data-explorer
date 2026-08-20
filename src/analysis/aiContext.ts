@@ -1,10 +1,10 @@
-import type { Ride } from '../data/ride.ts'
-import type { DateRange, MetricKey } from '../state/analysisState.ts'
+import type { Ride } from '../data/ride.js'
+import type { DateRange, MetricKey } from '../state/analysisState.js'
 import {
   getMetricDefinition,
   getRideMetric,
   metricDefinitions,
-} from './rideMetrics.ts'
+} from './rideMetrics.js'
 
 export type DatasetProfile = {
   rideCount: number

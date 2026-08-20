@@ -1,4 +1,4 @@
-import type { DayOfWeek } from '../data/ride.ts'
+import type { DayOfWeek } from '../data/ride.js'
 
 export type DateRange = {
   start?: string
