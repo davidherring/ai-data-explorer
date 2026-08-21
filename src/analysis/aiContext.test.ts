@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { DayOfWeek, Ride } from '../data/ride.ts'
+import type { DayOfWeek, Activity } from '../data/activity.ts'
 import type { MetricKey } from '../state/analysisState.ts'
 import {
   buildDatasetProfile,
@@ -8,9 +8,9 @@ import {
 } from './aiContext.ts'
 
 describe('buildDatasetProfile', () => {
-  it('returns a compact empty profile for no source rides', () => {
+  it('returns a compact empty profile for no source activities', () => {
     expect(buildDatasetProfile([])).toEqual({
-      rideCount: 0,
+      activityCount: 0,
       years: [],
       sportTypes: [],
       metrics: expectedMetricKeys.map((metric) =>
@@ -26,19 +26,19 @@ describe('buildDatasetProfile', () => {
 
   it('returns source-level date range, sorted years, and sorted sport types', () => {
     const profile = buildDatasetProfile([
-      createRide({
+      createActivity({
         id: 'late',
         localDate: '2026-05-01',
         year: 2026,
         sportType: 'VirtualRide',
       }),
-      createRide({
+      createActivity({
         id: 'early',
         localDate: '2024-01-15',
         year: 2024,
         sportType: 'Ride',
       }),
-      createRide({
+      createActivity({
         id: 'middle',
         localDate: '2025-07-12',
         year: 2025,
@@ -47,7 +47,7 @@ describe('buildDatasetProfile', () => {
     ])
 
     expect(profile).toMatchObject({
-      rideCount: 3,
+      activityCount: 3,
       dateRange: { start: '2024-01-15', end: '2026-05-01' },
       years: [2024, 2025, 2026],
       sportTypes: ['Ride', 'VirtualRide'],
@@ -56,8 +56,8 @@ describe('buildDatasetProfile', () => {
 
   it('reports metric availability for every current metric key', () => {
     const profile = buildDatasetProfile([
-      createRide({ id: 'a', temperatureF: undefined }),
-      createRide({ id: 'b', temperatureF: 72 }),
+      createActivity({ id: 'a', temperatureF: undefined }),
+      createActivity({ id: 'b', temperatureF: 72 }),
     ])
 
     expect(profile.metrics).toEqual([
@@ -118,12 +118,12 @@ describe('buildDatasetProfile', () => {
     ])
   })
 
-  it('marks optional temperature unavailable when no source rides have finite values', () => {
+  it('marks optional temperature unavailable when no source activities have finite values', () => {
     const profile = buildDatasetProfile([
-      createRide({ id: 'missing', temperatureF: undefined }),
-      createRide({ id: 'nan', temperatureF: Number.NaN }),
-      createRide({ id: 'infinite', temperatureF: Number.POSITIVE_INFINITY }),
-      createRide({ id: 'negative-infinite', temperatureF: Number.NEGATIVE_INFINITY }),
+      createActivity({ id: 'missing', temperatureF: undefined }),
+      createActivity({ id: 'nan', temperatureF: Number.NaN }),
+      createActivity({ id: 'infinite', temperatureF: Number.POSITIVE_INFINITY }),
+      createActivity({ id: 'negative-infinite', temperatureF: Number.NEGATIVE_INFINITY }),
     ])
 
     expect(getProfileMetric(profile, 'temperatureF')).toMatchObject({
@@ -134,18 +134,18 @@ describe('buildDatasetProfile', () => {
     })
   })
 
-  it('does not mutate or reorder source rides', () => {
-    const rides = [
-      createRide({ id: 'b', localDate: '2026-01-01', year: 2026 }),
-      createRide({ id: 'a', localDate: '2025-01-01', year: 2025 }),
+  it('does not mutate or reorder source activities', () => {
+    const activities = [
+      createActivity({ id: 'b', localDate: '2026-01-01', year: 2026 }),
+      createActivity({ id: 'a', localDate: '2025-01-01', year: 2025 }),
     ]
-    const originalRides = rides.map((ride) => ({ ...ride }))
-    const originalIds = rides.map((ride) => ride.id)
+    const originalActivities = activities.map((activity) => ({ ...activity }))
+    const originalIds = activities.map((activity) => activity.id)
 
-    buildDatasetProfile(rides)
+    buildDatasetProfile(activities)
 
-    expect(rides).toEqual(originalRides)
-    expect(rides.map((ride) => ride.id)).toEqual(originalIds)
+    expect(activities).toEqual(originalActivities)
+    expect(activities.map((activity) => activity.id)).toEqual(originalIds)
   })
 })
 
@@ -154,7 +154,7 @@ describe('summarizeSelection', () => {
     const summary = summarizeSelection([])
 
     expect(summary).toEqual({
-      rideCount: 0,
+      activityCount: 0,
       metrics: expectedMetricKeys.map((metric) =>
         expect.objectContaining({
           metric,
@@ -169,7 +169,7 @@ describe('summarizeSelection', () => {
 
   it('summarizes every current metric using finite raw values only', () => {
     const summary = summarizeSelection([
-      createRide({
+      createActivity({
         id: 'a',
         localDate: '2025-01-03',
         averageSpeedMph: 10.25,
@@ -179,7 +179,7 @@ describe('summarizeSelection', () => {
         elapsedTimeMinutes: 35,
         temperatureF: 60,
       }),
-      createRide({
+      createActivity({
         id: 'b',
         localDate: '2025-01-01',
         averageSpeedMph: 20.75,
@@ -189,7 +189,7 @@ describe('summarizeSelection', () => {
         elapsedTimeMinutes: 75,
         temperatureF: 70,
       }),
-      createRide({
+      createActivity({
         id: 'c',
         localDate: '2025-01-02',
         averageSpeedMph: 30.5,
@@ -201,7 +201,7 @@ describe('summarizeSelection', () => {
       }),
     ])
 
-    expect(summary.rideCount).toBe(3)
+    expect(summary.activityCount).toBe(3)
     expect(summary.dateRange).toEqual({
       start: '2025-01-01',
       end: '2025-01-03',
@@ -249,10 +249,10 @@ describe('summarizeSelection', () => {
 
   it('uses the middle average for even-count medians', () => {
     const summary = summarizeSelection([
-      createRide({ id: 'a', averageSpeedMph: 10 }),
-      createRide({ id: 'b', averageSpeedMph: 20 }),
-      createRide({ id: 'c', averageSpeedMph: 30 }),
-      createRide({ id: 'd', averageSpeedMph: 100 }),
+      createActivity({ id: 'a', averageSpeedMph: 10 }),
+      createActivity({ id: 'b', averageSpeedMph: 20 }),
+      createActivity({ id: 'c', averageSpeedMph: 30 }),
+      createActivity({ id: 'd', averageSpeedMph: 100 }),
     ])
 
     expect(getSummaryMetric(summary, 'averageSpeedMph').median).toBe(25)
@@ -260,11 +260,11 @@ describe('summarizeSelection', () => {
 
   it('treats undefined, NaN, Infinity, and -Infinity as missing metric values', () => {
     const summary = summarizeSelection([
-      createRide({ id: 'valid', temperatureF: 60 }),
-      createRide({ id: 'missing', temperatureF: undefined }),
-      createRide({ id: 'nan', temperatureF: Number.NaN }),
-      createRide({ id: 'infinite', temperatureF: Number.POSITIVE_INFINITY }),
-      createRide({ id: 'negative-infinite', temperatureF: Number.NEGATIVE_INFINITY }),
+      createActivity({ id: 'valid', temperatureF: 60 }),
+      createActivity({ id: 'missing', temperatureF: undefined }),
+      createActivity({ id: 'nan', temperatureF: Number.NaN }),
+      createActivity({ id: 'infinite', temperatureF: Number.POSITIVE_INFINITY }),
+      createActivity({ id: 'negative-infinite', temperatureF: Number.NEGATIVE_INFINITY }),
     ])
 
     expect(getSummaryMetric(summary, 'temperatureF')).toMatchObject({
@@ -283,28 +283,28 @@ describe('summarizeSelection', () => {
   })
 
   it('warns for sparse non-empty selections', () => {
-    expect(summarizeSelection([createRide()]).warnings).toContainEqual({
+    expect(summarizeSelection([createActivity()]).warnings).toContainEqual({
       code: 'sparse-selection',
-      rideCount: 1,
+      activityCount: 1,
     })
-    expect(summarizeSelection([createRide({ id: 'a' }), createRide({ id: 'b' })]).warnings).toContainEqual({
+    expect(summarizeSelection([createActivity({ id: 'a' }), createActivity({ id: 'b' })]).warnings).toContainEqual({
       code: 'sparse-selection',
-      rideCount: 2,
+      activityCount: 2,
     })
     expect(
       summarizeSelection([
-        createRide({ id: 'a' }),
-        createRide({ id: 'b' }),
-        createRide({ id: 'c' }),
+        createActivity({ id: 'a' }),
+        createActivity({ id: 'b' }),
+        createActivity({ id: 'c' }),
       ]).warnings,
-    ).not.toContainEqual({ code: 'sparse-selection', rideCount: 3 })
+    ).not.toContainEqual({ code: 'sparse-selection', activityCount: 3 })
   })
 
   it('warns when a non-empty selection has no finite values for a metric', () => {
     const summary = summarizeSelection([
-      createRide({ id: 'missing', temperatureF: undefined }),
-      createRide({ id: 'nan', temperatureF: Number.NaN }),
-      createRide({ id: 'infinite', temperatureF: Number.POSITIVE_INFINITY }),
+      createActivity({ id: 'missing', temperatureF: undefined }),
+      createActivity({ id: 'nan', temperatureF: Number.NaN }),
+      createActivity({ id: 'infinite', temperatureF: Number.POSITIVE_INFINITY }),
     ])
 
     expect(getSummaryMetric(summary, 'temperatureF')).toMatchObject({
@@ -325,26 +325,26 @@ describe('summarizeSelection', () => {
 
   it('does not total average speed or temperature', () => {
     const summary = summarizeSelection([
-      createRide({ id: 'a', averageSpeedMph: 10, temperatureF: 60 }),
-      createRide({ id: 'b', averageSpeedMph: 20, temperatureF: 70 }),
+      createActivity({ id: 'a', averageSpeedMph: 10, temperatureF: 60 }),
+      createActivity({ id: 'b', averageSpeedMph: 20, temperatureF: 70 }),
     ])
 
     expect(getSummaryMetric(summary, 'averageSpeedMph').total).toBeUndefined()
     expect(getSummaryMetric(summary, 'temperatureF').total).toBeUndefined()
   })
 
-  it('does not mutate or reorder selected rides', () => {
-    const rides = [
-      createRide({ id: 'b', localDate: '2026-01-01', year: 2026 }),
-      createRide({ id: 'a', localDate: '2025-01-01', year: 2025 }),
+  it('does not mutate or reorder selected activities', () => {
+    const activities = [
+      createActivity({ id: 'b', localDate: '2026-01-01', year: 2026 }),
+      createActivity({ id: 'a', localDate: '2025-01-01', year: 2025 }),
     ]
-    const originalRides = rides.map((ride) => ({ ...ride }))
-    const originalIds = rides.map((ride) => ride.id)
+    const originalActivities = activities.map((activity) => ({ ...activity }))
+    const originalIds = activities.map((activity) => activity.id)
 
-    summarizeSelection(rides)
+    summarizeSelection(activities)
 
-    expect(rides).toEqual(originalRides)
-    expect(rides.map((ride) => ride.id)).toEqual(originalIds)
+    expect(activities).toEqual(originalActivities)
+    expect(activities.map((activity) => activity.id)).toEqual(originalIds)
   })
 })
 
@@ -379,10 +379,10 @@ function getSummaryMetric(
   return result as SelectionMetricSummary
 }
 
-function createRide(
+function createActivity(
   overrides: Partial<
     Pick<
-      Ride,
+      Activity,
       | 'id'
       | 'startTime'
       | 'localDate'
@@ -403,11 +403,11 @@ function createRide(
       | 'manual'
     >
   > = {},
-): Ride {
+): Activity {
   const localDate = overrides.localDate ?? '2025-01-01'
 
   return {
-    id: overrides.id ?? 'ride-a',
+    id: overrides.id ?? 'activity-a',
     startTime: overrides.startTime ?? `${localDate}T07:00:00-07:00`,
     localDate,
     year: overrides.year ?? Number(localDate.slice(0, 4)),

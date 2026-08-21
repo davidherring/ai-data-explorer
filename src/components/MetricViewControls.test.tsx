@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { DayOfWeek, Ride } from '../data/ride.ts'
+import type { DayOfWeek, Activity } from '../data/activity.ts'
 import type {
   CumulativeViewConfiguration,
   RelationshipViewConfiguration,
@@ -17,7 +17,7 @@ describe('MetricViewControls', () => {
   it('renders one trend metric selector with role-derived options', () => {
     render(
       <MetricViewControls
-        rides={[createRide()]}
+        activities={[createActivity()]}
         view={trendView}
         onViewChange={() => {}}
       />,
@@ -38,7 +38,7 @@ describe('MetricViewControls', () => {
   it('renders relationship X and Y metric selectors', () => {
     render(
       <MetricViewControls
-        rides={[createRide()]}
+        activities={[createActivity()]}
         view={relationshipView}
         onViewChange={() => {}}
       />,
@@ -57,7 +57,7 @@ describe('MetricViewControls', () => {
   it('renders a seasonal metric selector with trend-compatible options', () => {
     render(
       <MetricViewControls
-        rides={[createRide()]}
+        activities={[createActivity()]}
         view={seasonalView}
         onViewChange={() => {}}
       />,
@@ -77,7 +77,7 @@ describe('MetricViewControls', () => {
   it('renders a cumulative metric selector with trend-compatible options', () => {
     render(
       <MetricViewControls
-        rides={[createRide()]}
+        activities={[createActivity()]}
         view={cumulativeView}
         onViewChange={() => {}}
       />,
@@ -98,7 +98,7 @@ describe('MetricViewControls', () => {
     const onViewChange = vi.fn()
     render(
       <MetricViewControls
-        rides={[createRide()]}
+        activities={[createActivity()]}
         view={trendView}
         onViewChange={onViewChange}
       />,
@@ -118,7 +118,7 @@ describe('MetricViewControls', () => {
     const onViewChange = vi.fn()
     render(
       <MetricViewControls
-        rides={[createRide()]}
+        activities={[createActivity()]}
         view={relationshipView}
         onViewChange={onViewChange}
       />,
@@ -139,7 +139,7 @@ describe('MetricViewControls', () => {
     const onViewChange = vi.fn()
     render(
       <MetricViewControls
-        rides={[createRide()]}
+        activities={[createActivity()]}
         view={relationshipView}
         onViewChange={onViewChange}
       />,
@@ -160,7 +160,7 @@ describe('MetricViewControls', () => {
     const onViewChange = vi.fn()
     render(
       <MetricViewControls
-        rides={[createRide()]}
+        activities={[createActivity()]}
         view={seasonalView}
         onViewChange={onViewChange}
       />,
@@ -181,7 +181,7 @@ describe('MetricViewControls', () => {
     const onViewChange = vi.fn()
     render(
       <MetricViewControls
-        rides={[createRide()]}
+        activities={[createActivity()]}
         view={cumulativeView}
         onViewChange={onViewChange}
       />,
@@ -202,7 +202,7 @@ describe('MetricViewControls', () => {
     const onViewChange = vi.fn()
     render(
       <MetricViewControls
-        rides={[createRide()]}
+        activities={[createActivity()]}
         view={relationshipView}
         onViewChange={onViewChange}
       />,
@@ -219,13 +219,13 @@ describe('MetricViewControls', () => {
     })
   })
 
-  it('omits temperature when no source rides have finite temperature', () => {
+  it('omits temperature when no source activities have finite temperature', () => {
     render(
       <MetricViewControls
-        rides={[
-          createRide({ temperatureF: undefined }),
-          createRide({ temperatureF: Number.NaN }),
-          createRide({ temperatureF: Number.POSITIVE_INFINITY }),
+        activities={[
+          createActivity({ temperatureF: undefined }),
+          createActivity({ temperatureF: Number.NaN }),
+          createActivity({ temperatureF: Number.POSITIVE_INFINITY }),
         ]}
         view={trendView}
         onViewChange={() => {}}
@@ -235,12 +235,12 @@ describe('MetricViewControls', () => {
     expect(getOptionLabels('Trend metric')).not.toContain('Temp')
   })
 
-  it('includes temperature when at least one source ride has finite temperature', () => {
+  it('includes temperature when at least one source activity has finite temperature', () => {
     render(
       <MetricViewControls
-        rides={[
-          createRide({ temperatureF: undefined }),
-          createRide({ temperatureF: 72 }),
+        activities={[
+          createActivity({ temperatureF: undefined }),
+          createActivity({ temperatureF: 72 }),
         ]}
         view={trendView}
         onViewChange={() => {}}
@@ -254,7 +254,7 @@ describe('MetricViewControls', () => {
     const onViewChange = vi.fn()
     render(
       <MetricViewControls
-        rides={[createRide({ temperatureF: undefined })]}
+        activities={[createActivity({ temperatureF: undefined })]}
         view={{
           type: 'trend',
           yMetric: 'temperatureF',
@@ -272,7 +272,7 @@ describe('MetricViewControls', () => {
     const onViewChange = vi.fn()
     render(
       <MetricViewControls
-        rides={[createRide({ temperatureF: undefined })]}
+        activities={[createActivity({ temperatureF: undefined })]}
         view={{
           type: 'trend',
           yMetric: 'temperatureF',
@@ -323,10 +323,10 @@ const cumulativeView: CumulativeViewConfiguration = {
   accumulation: 'continuous',
 }
 
-function createRide(
+function createActivity(
   overrides: Partial<
     Pick<
-      Ride,
+      Activity,
       | 'averageSpeedMph'
       | 'distanceMiles'
       | 'elevationGainFeet'
@@ -335,9 +335,9 @@ function createRide(
       | 'temperatureF'
     >
   > = {},
-): Ride {
+): Activity {
   return {
-    id: 'ride-a',
+    id: 'activity-a',
     startTime: '2025-01-01T07:00:00-07:00',
     localDate: '2025-01-01',
     year: 2025,

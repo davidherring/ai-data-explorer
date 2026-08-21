@@ -1,6 +1,6 @@
-import type { Ride } from '../data/ride.ts'
+import type { Activity } from '../data/activity.ts'
 import type { MetricKey } from '../state/analysisState.ts'
-import { getRideMetric } from './rideMetrics.ts'
+import { getActivityMetric } from './activityMetrics.ts'
 
 export type SeasonalMetricBucket = {
   year: number
@@ -21,24 +21,24 @@ type SeasonalBucketAccumulator = {
 }
 
 export function buildSeasonalMetricBuckets(
-  rides: readonly Ride[],
+  activities: readonly Activity[],
   metricKey: MetricKey,
 ): SeasonalMetricBucket[] {
   const bucketsByKey = new Map<string, SeasonalBucketAccumulator>()
 
-  for (const ride of rides) {
-    if (!isValidWeekOfYear(ride.weekOfYear)) {
+  for (const activity of activities) {
+    if (!isValidWeekOfYear(activity.weekOfYear)) {
       continue
     }
 
-    const value = getRideMetric(ride, metricKey)
+    const value = getActivityMetric(activity, metricKey)
 
     if (value === undefined || !Number.isFinite(value)) {
       continue
     }
 
-    const bucketRange = getBiweeklyBucketRange(ride.weekOfYear)
-    const bucketKey = `${ride.year}:${bucketRange.bucketIndex}`
+    const bucketRange = getBiweeklyBucketRange(activity.weekOfYear)
+    const bucketKey = `${activity.year}:${bucketRange.bucketIndex}`
     const existingBucket = bucketsByKey.get(bucketKey)
 
     if (existingBucket) {
@@ -47,7 +47,7 @@ export function buildSeasonalMetricBuckets(
     }
 
     bucketsByKey.set(bucketKey, {
-      year: ride.year,
+      year: activity.year,
       ...bucketRange,
       values: [value],
     })

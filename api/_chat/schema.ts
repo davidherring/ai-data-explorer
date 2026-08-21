@@ -1,9 +1,9 @@
 import { z } from 'zod'
 import type { DatasetProfile } from '../../src/analysis/aiContext.js'
-import type { Ride } from '../../src/data/ride.js'
+import type { Activity } from '../../src/data/activity.js'
 import type { AnalysisState, MetricKey } from '../../src/state/analysisState.js'
 
-export const MAX_SELECTED_RIDES_FOR_CHAT = 2000
+export const MAX_SELECTED_ACTIVITIES_FOR_CHAT = 2000
 export const MAX_CHAT_REQUEST_BYTES = 3_000_000
 
 export const metricKeyValues = [
@@ -99,7 +99,7 @@ const analysisStateSchema = z
   })
   .strict()
 
-const rideSchema = z
+const activitySchema = z
   .object({
     id: z.string(),
     startTime: z.string(),
@@ -136,7 +136,7 @@ const datasetMetricAvailabilitySchema = z
 
 const datasetProfileSchema = z
   .object({
-    rideCount: z.number(),
+    activityCount: z.number(),
     dateRange: dateRangeSchema.optional(),
     years: z.array(z.number()),
     sportTypes: z.array(z.string()),
@@ -166,21 +166,21 @@ export const chatRequestSchema = z
     trigger: z.enum(['submit-message', 'regenerate-message']).optional(),
     messageId: z.string().optional(),
     currentAnalysisState: analysisStateSchema,
-    selectedRides: z
-      .array(rideSchema)
-      .max(MAX_SELECTED_RIDES_FOR_CHAT, 'too_many_selected_rides'),
+    selectedActivities: z
+      .array(activitySchema)
+      .max(MAX_SELECTED_ACTIVITIES_FOR_CHAT, 'too_many_selected_activities'),
     datasetProfile: datasetProfileSchema,
-    selectedRideCount: z.number(),
-    totalRideCount: z.number(),
+    selectedActivityCount: z.number(),
+    totalActivityCount: z.number(),
     dataSource: z.enum(['demo', 'strava']),
   })
   .strict()
   .superRefine((value, context) => {
-    if (value.selectedRideCount !== value.selectedRides.length) {
+    if (value.selectedActivityCount !== value.selectedActivities.length) {
       context.addIssue({
         code: 'custom',
-        path: ['selectedRideCount'],
-        message: 'selectedRideCount must match submitted ride count',
+        path: ['selectedActivityCount'],
+        message: 'selectedActivityCount must match submitted activity count',
       })
     }
   })
@@ -230,7 +230,7 @@ export const compareGroupsToolInputSchema = z.discriminatedUnion('groupBy', [
 
 export type ChatRequest = z.infer<typeof chatRequestSchema> & {
   currentAnalysisState: AnalysisState
-  selectedRides: Ride[]
+  selectedActivities: Activity[]
   datasetProfile: DatasetProfile
 }
 

@@ -1,37 +1,37 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { RideDataSourceControl } from './RideDataSourceControl.tsx'
+import { ActivityDataSourceControl } from './ActivityDataSourceControl.tsx'
 
 afterEach(() => {
   cleanup()
 })
 
-describe('RideDataSourceControl', () => {
-  it('renders source selection and ride count', () => {
+describe('ActivityDataSourceControl', () => {
+  it('renders source selection and activity count', () => {
     render(
-      <RideDataSourceControl
+      <ActivityDataSourceControl
         source="demo"
         status="ready"
-        rideCount={12}
+        activityCount={12}
         metadata={{ total: 12 }}
         onSourceChange={vi.fn()}
         onRefresh={vi.fn()}
       />,
     )
 
-    expect(screen.getByLabelText('Ride data source')).toBeInTheDocument()
+    expect(screen.getByLabelText('Activity data source')).toBeInTheDocument()
     expect(screen.getByLabelText('Data source')).toHaveValue('demo')
-    expect(screen.getByText('12 rides')).toBeInTheDocument()
+    expect(screen.getByText('12 activities')).toBeInTheDocument()
   })
 
   it('notifies when the source changes', () => {
     const onSourceChange = vi.fn()
 
     render(
-      <RideDataSourceControl
+      <ActivityDataSourceControl
         source="demo"
         status="ready"
-        rideCount={12}
+        activityCount={12}
         metadata={{ total: 12 }}
         onSourceChange={onSourceChange}
         onRefresh={vi.fn()}
@@ -47,10 +47,10 @@ describe('RideDataSourceControl', () => {
 
   it('renders not connected and error states', () => {
     const { rerender } = render(
-      <RideDataSourceControl
+      <ActivityDataSourceControl
         source="strava"
         status="notConnected"
-        rideCount={0}
+        activityCount={0}
         metadata={undefined}
         onSourceChange={vi.fn()}
         onRefresh={vi.fn()}
@@ -60,28 +60,28 @@ describe('RideDataSourceControl', () => {
     expect(screen.getByText('Strava not connected')).toBeInTheDocument()
 
     rerender(
-      <RideDataSourceControl
+      <ActivityDataSourceControl
         source="strava"
         status="error"
-        rideCount={0}
+        activityCount={0}
         metadata={undefined}
-        error="Unable to load Strava rides."
+        error="Unable to load Strava activities."
         onSourceChange={vi.fn()}
         onRefresh={vi.fn()}
       />,
     )
 
-    expect(screen.getByText('Unable to load Strava rides.')).toBeInTheDocument()
+    expect(screen.getByText('Unable to load Strava activities.')).toBeInTheDocument()
   })
 
   it('calls refresh', () => {
     const onRefresh = vi.fn()
 
     render(
-      <RideDataSourceControl
+      <ActivityDataSourceControl
         source="demo"
         status="ready"
-        rideCount={12}
+        activityCount={12}
         metadata={{ total: 12 }}
         onSourceChange={vi.fn()}
         onRefresh={onRefresh}

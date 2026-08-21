@@ -2,28 +2,28 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { ActivitySelectionControls } from './ActivitySelectionControls.tsx'
-import type { DayOfWeek, Ride } from '../data/ride.ts'
+import type { DayOfWeek, Activity } from '../data/activity.ts'
 import type { ActivitySelection } from '../state/analysisState.ts'
 
-const rides: Ride[] = [
-  createRide({
-    id: 'ride-2024',
+const activities: Activity[] = [
+  createActivity({
+    id: 'activity-2024',
     localDate: '2024-01-01',
     year: 2024,
     dayOfWeek: 'monday',
     isWeekend: false,
     sportType: 'Ride',
   }),
-  createRide({
-    id: 'ride-2025',
+  createActivity({
+    id: 'activity-2025',
     localDate: '2025-01-01',
     year: 2025,
     dayOfWeek: 'wednesday',
     isWeekend: false,
     sportType: 'GravelRide',
   }),
-  createRide({
-    id: 'ride-2025-virtual',
+  createActivity({
+    id: 'activity-2025-virtual',
     localDate: '2025-02-01',
     year: 2025,
     dayOfWeek: 'saturday',
@@ -37,7 +37,7 @@ describe('ActivitySelectionControls', () => {
     cleanup()
   })
 
-  it('derives sorted year options from rides', () => {
+  it('derives sorted year options from activities', () => {
     renderControls()
 
     const yearCheckboxes = screen.getAllByRole('checkbox', {
@@ -213,7 +213,7 @@ function ControlledControls({
   return (
     <>
       <ActivitySelectionControls
-        rides={rides}
+        activities={activities}
         selection={selection}
         onSelectionChange={setSelection}
       />
@@ -226,14 +226,14 @@ function readSelection(): ActivitySelection {
   return JSON.parse(screen.getByTestId('selection-state').textContent ?? '{}')
 }
 
-function createRide(overrides: {
+function createActivity(overrides: {
   id: string
   localDate: string
   year: number
   dayOfWeek: DayOfWeek
   isWeekend: boolean
   sportType: string
-}): Ride {
+}): Activity {
   return {
     id: overrides.id,
     startTime: `${overrides.localDate}T07:00:00-07:00`,

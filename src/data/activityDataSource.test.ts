@@ -1,32 +1,32 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
-  loadDemoRideSource,
-  loadStravaRideSource,
-  RideDataSourceError,
-} from './rideDataSource.ts'
-import { loadDemoRides } from './demoDataset.ts'
-import type { Ride } from './ride.ts'
+  loadDemoActivitySource,
+  loadStravaActivitySource,
+  ActivityDataSourceError,
+} from './activityDataSource.ts'
+import { loadDemoActivities } from './demoDataset.ts'
+import type { Activity } from './activity.ts'
 
-describe('ride data source service', () => {
-  it('loads demo rides offline without fetch', async () => {
+describe('activity data source service', () => {
+  it('loads demo activities offline without fetch', async () => {
     const fetchMock = vi.fn()
     vi.stubGlobal('fetch', fetchMock)
 
-    const result = await loadDemoRideSource()
+    const result = await loadDemoActivitySource()
 
-    expect(result.rides).toEqual(loadDemoRides())
-    expect(result.metadata?.total).toBe(result.rides.length)
+    expect(result.activities).toEqual(loadDemoActivities())
+    expect(result.metadata?.total).toBe(result.activities.length)
     expect(fetchMock).not.toHaveBeenCalled()
 
     vi.unstubAllGlobals()
   })
 
-  it('loads normalized Strava rides from the activities endpoint', async () => {
-    const ride = createRide({ id: 'strava-1' })
-    const result = await loadStravaRideSource(
+  it('loads normalized Strava activities from the activities endpoint', async () => {
+    const activity = createActivity({ id: 'strava-1' })
+    const result = await loadStravaActivitySource(
       vi.fn(async () =>
         Response.json({
-          rides: [ride],
+          activities: [activity],
           total: 1,
           filteredOut: 0,
           deduplicated: 0,
@@ -36,7 +36,7 @@ describe('ride data source service', () => {
     )
 
     expect(result).toEqual({
-      rides: [ride],
+      activities: [activity],
       metadata: {
         total: 1,
         filteredOut: 0,
@@ -48,19 +48,19 @@ describe('ride data source service', () => {
 
   it('maps disconnected Strava responses to notConnected', async () => {
     await expect(
-      loadStravaRideSource(
+      loadStravaActivitySource(
         vi.fn(async () =>
           Response.json({ error: 'not_connected' }, { status: 401 }),
         ) as typeof fetch,
       ),
     ).rejects.toMatchObject({
       code: 'notConnected',
-    } satisfies Partial<RideDataSourceError>)
+    } satisfies Partial<ActivityDataSourceError>)
   })
 
   it('rejects malformed or non-normalized Strava responses', async () => {
     await expect(
-      loadStravaRideSource(
+      loadStravaActivitySource(
         vi.fn(async () =>
           Response.json({
             activities: [{ id: 1, sport_type: 'Ride' }],
@@ -73,13 +73,13 @@ describe('ride data source service', () => {
       ),
     ).rejects.toMatchObject({
       code: 'invalidResponse',
-    } satisfies Partial<RideDataSourceError>)
+    } satisfies Partial<ActivityDataSourceError>)
   })
 })
 
-function createRide(overrides: Partial<Ride> = {}): Ride {
+function createActivity(overrides: Partial<Activity> = {}): Activity {
   return {
-    id: 'ride-1',
+    id: 'activity-1',
     startTime: '2026-01-01T08:00:00Z',
     localDate: '2026-01-01',
     year: 2026,

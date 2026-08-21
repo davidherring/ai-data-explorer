@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { loadDemoRides } from '../data/demoDataset.ts'
+import { loadDemoActivities } from '../data/demoDataset.ts'
 
 const privateOrLocationFields = [
   'athlete',
@@ -18,10 +18,10 @@ const privateOrLocationFields = [
   'rawStrava',
 ]
 
-describe('demo ride dataset', () => {
-  it('loads typed synthetic rides without sharing the fixture array reference', () => {
-    const firstLoad = loadDemoRides()
-    const secondLoad = loadDemoRides()
+describe('demo activity dataset', () => {
+  it('loads typed synthetic activities without sharing the fixture array reference', () => {
+    const firstLoad = loadDemoActivities()
+    const secondLoad = loadDemoActivities()
 
     expect(firstLoad).toHaveLength(12)
     expect(secondLoad).toHaveLength(12)
@@ -29,26 +29,26 @@ describe('demo ride dataset', () => {
   })
 
   it('contains variation needed for future date, seasonal, and metric tests', () => {
-    const rides = loadDemoRides()
+    const activities = loadDemoActivities()
 
-    expect(new Set(rides.map((ride) => ride.year)).size).toBeGreaterThanOrEqual(4)
-    expect(new Set(rides.map((ride) => ride.month)).size).toBeGreaterThanOrEqual(6)
-    expect(new Set(rides.map((ride) => ride.weekOfYear)).size).toBeGreaterThanOrEqual(6)
-    expect(new Set(rides.map((ride) => ride.isWeekend)).size).toBe(2)
-    expect(new Set(rides.map((ride) => ride.distanceMiles)).size).toBeGreaterThan(1)
-    expect(new Set(rides.map((ride) => ride.elevationGainFeet)).size).toBeGreaterThan(1)
-    expect(new Set(rides.map((ride) => ride.averageSpeedMph)).size).toBeGreaterThan(1)
-    expect(rides.some((ride) => ride.temperatureF !== undefined)).toBe(true)
+    expect(new Set(activities.map((activity) => activity.year)).size).toBeGreaterThanOrEqual(4)
+    expect(new Set(activities.map((activity) => activity.month)).size).toBeGreaterThanOrEqual(6)
+    expect(new Set(activities.map((activity) => activity.weekOfYear)).size).toBeGreaterThanOrEqual(6)
+    expect(new Set(activities.map((activity) => activity.isWeekend)).size).toBe(2)
+    expect(new Set(activities.map((activity) => activity.distanceMiles)).size).toBeGreaterThan(1)
+    expect(new Set(activities.map((activity) => activity.elevationGainFeet)).size).toBeGreaterThan(1)
+    expect(new Set(activities.map((activity) => activity.averageSpeedMph)).size).toBeGreaterThan(1)
+    expect(activities.some((activity) => activity.temperatureF !== undefined)).toBe(true)
   })
 
   it('does not include private identifiers, route geometry, or raw Strava payloads', () => {
-    const rides = loadDemoRides()
+    const activities = loadDemoActivities()
 
-    for (const ride of rides) {
-      expect(ride.id).toMatch(/^demo-ride-\d{3}$/)
+    for (const activity of activities) {
+      expect(activity.id).toMatch(/^demo-activity-\d{3}$/)
 
       for (const field of privateOrLocationFields) {
-        expect(ride).not.toHaveProperty(field)
+        expect(activity).not.toHaveProperty(field)
       }
     }
   })

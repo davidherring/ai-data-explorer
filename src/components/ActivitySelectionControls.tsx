@@ -1,4 +1,4 @@
-import type { Ride, DayOfWeek } from '../data/ride.ts'
+import type { Activity, DayOfWeek } from '../data/activity.ts'
 import {
   defaultAnalysisState,
   type ActivitySelection,
@@ -7,7 +7,7 @@ import {
 } from '../state/analysisState.ts'
 
 type ActivitySelectionControlsProps = {
-  rides: Ride[]
+  activities: Activity[]
   selection: ActivitySelection
   onSelectionChange: (selection: ActivitySelection) => void
 }
@@ -23,12 +23,12 @@ const daysOfWeek = [
 ] as const satisfies readonly DayOfWeek[]
 
 export function ActivitySelectionControls({
-  rides,
+  activities,
   selection,
   onSelectionChange,
 }: ActivitySelectionControlsProps) {
-  const availableYears = getAvailableYears(rides)
-  const availableSportTypes = getAvailableSportTypes(rides)
+  const availableYears = getAvailableYears(activities)
+  const availableSportTypes = getAvailableSportTypes(activities)
 
   return (
     <form className="selection-controls" aria-label="Activity selection controls">
@@ -238,14 +238,14 @@ export function ActivitySelectionControls({
   )
 }
 
-function getAvailableYears(rides: readonly Ride[]): number[] {
-  return Array.from(new Set(rides.map((ride) => ride.year))).sort(
+function getAvailableYears(activities: readonly Activity[]): number[] {
+  return Array.from(new Set(activities.map((activity) => activity.year))).sort(
     (left, right) => right - left,
   )
 }
 
-function getAvailableSportTypes(rides: readonly Ride[]): string[] {
-  return Array.from(new Set(rides.map((ride) => ride.sportType))).sort((left, right) =>
+function getAvailableSportTypes(activities: readonly Activity[]): string[] {
+  return Array.from(new Set(activities.map((activity) => activity.sportType))).sort((left, right) =>
     left.localeCompare(right),
   )
 }

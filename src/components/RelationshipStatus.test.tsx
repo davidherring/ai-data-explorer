@@ -18,7 +18,7 @@ describe('RelationshipStatus', () => {
     })
 
     expect(screen.getByLabelText('Relationship status')).toHaveTextContent(
-      '5 rides · Pearson r = 0.38',
+      '5 activities · Pearson r = 0.38',
     )
   })
 
@@ -31,11 +31,11 @@ describe('RelationshipStatus', () => {
     })
 
     expect(screen.getByLabelText('Relationship status')).toHaveTextContent(
-      '5 rides · Pearson r = -0.38',
+      '5 activities · Pearson r = -0.38',
     )
   })
 
-  it('uses valid rides wording when some selected rides are excluded', () => {
+  it('uses valid activities wording when some selected activities are excluded', () => {
     renderStatus({
       status: 'ready',
       sampleCount: 7,
@@ -44,7 +44,7 @@ describe('RelationshipStatus', () => {
     })
 
     expect(screen.getByLabelText('Relationship status')).toHaveTextContent(
-      '5 valid rides · Pearson r = 0.25',
+      '5 valid activities · Pearson r = 0.25',
     )
   })
 
@@ -56,7 +56,7 @@ describe('RelationshipStatus', () => {
     })
 
     expect(screen.getByLabelText('Relationship status')).toHaveTextContent(
-      'Too few valid rides to calculate Pearson r.',
+      'Too few valid activities to calculate Pearson r.',
     )
     expect(screen.queryByText(/Pearson r =/)).not.toBeInTheDocument()
   })

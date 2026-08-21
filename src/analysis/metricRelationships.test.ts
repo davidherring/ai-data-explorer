@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { DayOfWeek, Ride } from '../data/ride.ts'
+import type { DayOfWeek, Activity } from '../data/activity.ts'
 import {
   getMetricRelationshipPoints,
   relationshipBetweenMetrics,
@@ -9,10 +9,10 @@ describe('relationshipBetweenMetrics', () => {
   it('calculates a positive Pearson correlation', () => {
     const result = relationshipBetweenMetrics(
       [
-        createRide({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 12 }),
-        createRide({ id: 'b', elevationGainFeet: 200, averageSpeedMph: 14 }),
-        createRide({ id: 'c', elevationGainFeet: 300, averageSpeedMph: 16 }),
-        createRide({ id: 'd', elevationGainFeet: 400, averageSpeedMph: 17 }),
+        createActivity({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 12 }),
+        createActivity({ id: 'b', elevationGainFeet: 200, averageSpeedMph: 14 }),
+        createActivity({ id: 'c', elevationGainFeet: 300, averageSpeedMph: 16 }),
+        createActivity({ id: 'd', elevationGainFeet: 400, averageSpeedMph: 17 }),
       ],
       'elevationGainFeet',
       'averageSpeedMph',
@@ -25,10 +25,10 @@ describe('relationshipBetweenMetrics', () => {
   it('calculates a negative Pearson correlation', () => {
     const result = relationshipBetweenMetrics(
       [
-        createRide({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 18 }),
-        createRide({ id: 'b', elevationGainFeet: 200, averageSpeedMph: 16 }),
-        createRide({ id: 'c', elevationGainFeet: 300, averageSpeedMph: 14 }),
-        createRide({ id: 'd', elevationGainFeet: 400, averageSpeedMph: 13 }),
+        createActivity({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 18 }),
+        createActivity({ id: 'b', elevationGainFeet: 200, averageSpeedMph: 16 }),
+        createActivity({ id: 'c', elevationGainFeet: 300, averageSpeedMph: 14 }),
+        createActivity({ id: 'd', elevationGainFeet: 400, averageSpeedMph: 13 }),
       ],
       'elevationGainFeet',
       'averageSpeedMph',
@@ -41,9 +41,9 @@ describe('relationshipBetweenMetrics', () => {
   it('calculates perfect correlation without rounding', () => {
     const result = relationshipBetweenMetrics(
       [
-        createRide({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 10 }),
-        createRide({ id: 'b', elevationGainFeet: 200, averageSpeedMph: 20 }),
-        createRide({ id: 'c', elevationGainFeet: 300, averageSpeedMph: 30 }),
+        createActivity({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 10 }),
+        createActivity({ id: 'b', elevationGainFeet: 200, averageSpeedMph: 20 }),
+        createActivity({ id: 'c', elevationGainFeet: 300, averageSpeedMph: 30 }),
       ],
       'elevationGainFeet',
       'averageSpeedMph',
@@ -67,7 +67,7 @@ describe('relationshipBetweenMetrics', () => {
 
   it('returns insufficient-valid-pairs for one valid pair', () => {
     const result = relationshipBetweenMetrics(
-      [createRide({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 12 })],
+      [createActivity({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 12 })],
       'elevationGainFeet',
       'averageSpeedMph',
     )
@@ -87,8 +87,8 @@ describe('relationshipBetweenMetrics', () => {
   it('returns insufficient-valid-pairs for two valid pairs', () => {
     const result = relationshipBetweenMetrics(
       [
-        createRide({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 12 }),
-        createRide({ id: 'b', elevationGainFeet: 200, averageSpeedMph: 14 }),
+        createActivity({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 12 }),
+        createActivity({ id: 'b', elevationGainFeet: 200, averageSpeedMph: 14 }),
       ],
       'elevationGainFeet',
       'averageSpeedMph',
@@ -109,10 +109,10 @@ describe('relationshipBetweenMetrics', () => {
   it('excludes missing optional metric values', () => {
     const result = relationshipBetweenMetrics(
       [
-        createRide({ id: 'a', temperatureF: 60, averageSpeedMph: 12 }),
-        createRide({ id: 'b', temperatureF: undefined, averageSpeedMph: 99 }),
-        createRide({ id: 'c', temperatureF: 70, averageSpeedMph: 14 }),
-        createRide({ id: 'd', temperatureF: 80, averageSpeedMph: 16 }),
+        createActivity({ id: 'a', temperatureF: 60, averageSpeedMph: 12 }),
+        createActivity({ id: 'b', temperatureF: undefined, averageSpeedMph: 99 }),
+        createActivity({ id: 'c', temperatureF: 70, averageSpeedMph: 14 }),
+        createActivity({ id: 'd', temperatureF: 80, averageSpeedMph: 16 }),
       ],
       'temperatureF',
       'averageSpeedMph',
@@ -133,10 +133,10 @@ describe('relationshipBetweenMetrics', () => {
   it('excludes NaN metric values', () => {
     const result = relationshipBetweenMetrics(
       [
-        createRide({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 12 }),
-        createRide({ id: 'b', elevationGainFeet: Number.NaN, averageSpeedMph: 99 }),
-        createRide({ id: 'c', elevationGainFeet: 200, averageSpeedMph: 14 }),
-        createRide({ id: 'd', elevationGainFeet: 300, averageSpeedMph: 16 }),
+        createActivity({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 12 }),
+        createActivity({ id: 'b', elevationGainFeet: Number.NaN, averageSpeedMph: 99 }),
+        createActivity({ id: 'c', elevationGainFeet: 200, averageSpeedMph: 14 }),
+        createActivity({ id: 'd', elevationGainFeet: 300, averageSpeedMph: 16 }),
       ],
       'elevationGainFeet',
       'averageSpeedMph',
@@ -156,11 +156,11 @@ describe('relationshipBetweenMetrics', () => {
   it('excludes Infinity and -Infinity metric values', () => {
     const result = relationshipBetweenMetrics(
       [
-        createRide({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 12 }),
-        createRide({ id: 'b', elevationGainFeet: Number.POSITIVE_INFINITY, averageSpeedMph: 99 }),
-        createRide({ id: 'c', elevationGainFeet: 200, averageSpeedMph: Number.NEGATIVE_INFINITY }),
-        createRide({ id: 'd', elevationGainFeet: 300, averageSpeedMph: 16 }),
-        createRide({ id: 'e', elevationGainFeet: 400, averageSpeedMph: 18 }),
+        createActivity({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 12 }),
+        createActivity({ id: 'b', elevationGainFeet: Number.POSITIVE_INFINITY, averageSpeedMph: 99 }),
+        createActivity({ id: 'c', elevationGainFeet: 200, averageSpeedMph: Number.NEGATIVE_INFINITY }),
+        createActivity({ id: 'd', elevationGainFeet: 300, averageSpeedMph: 16 }),
+        createActivity({ id: 'e', elevationGainFeet: 400, averageSpeedMph: 18 }),
       ],
       'elevationGainFeet',
       'averageSpeedMph',
@@ -180,9 +180,9 @@ describe('relationshipBetweenMetrics', () => {
   it('returns zero-x-variance when x does not vary', () => {
     const result = relationshipBetweenMetrics(
       [
-        createRide({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 12 }),
-        createRide({ id: 'b', elevationGainFeet: 100, averageSpeedMph: 14 }),
-        createRide({ id: 'c', elevationGainFeet: 100, averageSpeedMph: 16 }),
+        createActivity({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 12 }),
+        createActivity({ id: 'b', elevationGainFeet: 100, averageSpeedMph: 14 }),
+        createActivity({ id: 'c', elevationGainFeet: 100, averageSpeedMph: 16 }),
       ],
       'elevationGainFeet',
       'averageSpeedMph',
@@ -195,9 +195,9 @@ describe('relationshipBetweenMetrics', () => {
   it('returns zero-y-variance when y does not vary', () => {
     const result = relationshipBetweenMetrics(
       [
-        createRide({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 12 }),
-        createRide({ id: 'b', elevationGainFeet: 200, averageSpeedMph: 12 }),
-        createRide({ id: 'c', elevationGainFeet: 300, averageSpeedMph: 12 }),
+        createActivity({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 12 }),
+        createActivity({ id: 'b', elevationGainFeet: 200, averageSpeedMph: 12 }),
+        createActivity({ id: 'c', elevationGainFeet: 300, averageSpeedMph: 12 }),
       ],
       'elevationGainFeet',
       'averageSpeedMph',
@@ -210,9 +210,9 @@ describe('relationshipBetweenMetrics', () => {
   it('returns zero-x-variance when both metrics have zero variance', () => {
     const result = relationshipBetweenMetrics(
       [
-        createRide({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 12 }),
-        createRide({ id: 'b', elevationGainFeet: 100, averageSpeedMph: 12 }),
-        createRide({ id: 'c', elevationGainFeet: 100, averageSpeedMph: 12 }),
+        createActivity({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 12 }),
+        createActivity({ id: 'b', elevationGainFeet: 100, averageSpeedMph: 12 }),
+        createActivity({ id: 'c', elevationGainFeet: 100, averageSpeedMph: 12 }),
       ],
       'elevationGainFeet',
       'averageSpeedMph',
@@ -225,11 +225,11 @@ describe('relationshipBetweenMetrics', () => {
   it('uses valid pairs only for ranges', () => {
     const result = relationshipBetweenMetrics(
       [
-        createRide({ id: 'a', elevationGainFeet: 10, averageSpeedMph: Number.NaN }),
-        createRide({ id: 'b', elevationGainFeet: 100, averageSpeedMph: 12 }),
-        createRide({ id: 'c', elevationGainFeet: 200, averageSpeedMph: 14 }),
-        createRide({ id: 'd', elevationGainFeet: Number.POSITIVE_INFINITY, averageSpeedMph: 100 }),
-        createRide({ id: 'e', elevationGainFeet: 300, averageSpeedMph: 16 }),
+        createActivity({ id: 'a', elevationGainFeet: 10, averageSpeedMph: Number.NaN }),
+        createActivity({ id: 'b', elevationGainFeet: 100, averageSpeedMph: 12 }),
+        createActivity({ id: 'c', elevationGainFeet: 200, averageSpeedMph: 14 }),
+        createActivity({ id: 'd', elevationGainFeet: Number.POSITIVE_INFINITY, averageSpeedMph: 100 }),
+        createActivity({ id: 'e', elevationGainFeet: 300, averageSpeedMph: 16 }),
       ],
       'elevationGainFeet',
       'averageSpeedMph',
@@ -245,27 +245,27 @@ describe('relationshipBetweenMetrics', () => {
     })
   })
 
-  it('does not mutate source data or reorder rides', () => {
-    const rides = [
-      createRide({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 12 }),
-      createRide({ id: 'b', elevationGainFeet: 200, averageSpeedMph: 14 }),
-      createRide({ id: 'c', elevationGainFeet: 300, averageSpeedMph: 16 }),
+  it('does not mutate source data or reorder activities', () => {
+    const activities = [
+      createActivity({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 12 }),
+      createActivity({ id: 'b', elevationGainFeet: 200, averageSpeedMph: 14 }),
+      createActivity({ id: 'c', elevationGainFeet: 300, averageSpeedMph: 16 }),
     ]
-    const originalRides = rides.map((ride) => ({ ...ride }))
-    const originalIds = rides.map((ride) => ride.id)
+    const originalActivities = activities.map((activity) => ({ ...activity }))
+    const originalIds = activities.map((activity) => activity.id)
 
-    relationshipBetweenMetrics(rides, 'elevationGainFeet', 'averageSpeedMph')
+    relationshipBetweenMetrics(activities, 'elevationGainFeet', 'averageSpeedMph')
 
-    expect(rides).toEqual(originalRides)
-    expect(rides.map((ride) => ride.id)).toEqual(originalIds)
+    expect(activities).toEqual(originalActivities)
+    expect(activities.map((activity) => activity.id)).toEqual(originalIds)
   })
 
   it('supports matching x and y metrics when variance is non-zero', () => {
     const result = relationshipBetweenMetrics(
       [
-        createRide({ id: 'a', elevationGainFeet: 100 }),
-        createRide({ id: 'b', elevationGainFeet: 200 }),
-        createRide({ id: 'c', elevationGainFeet: 300 }),
+        createActivity({ id: 'a', elevationGainFeet: 100 }),
+        createActivity({ id: 'b', elevationGainFeet: 200 }),
+        createActivity({ id: 'c', elevationGainFeet: 300 }),
       ],
       'elevationGainFeet',
       'elevationGainFeet',
@@ -278,9 +278,9 @@ describe('relationshipBetweenMetrics', () => {
   it('uses zero-x-variance precedence for matching constant metrics', () => {
     const result = relationshipBetweenMetrics(
       [
-        createRide({ id: 'a', elevationGainFeet: 100 }),
-        createRide({ id: 'b', elevationGainFeet: 100 }),
-        createRide({ id: 'c', elevationGainFeet: 100 }),
+        createActivity({ id: 'a', elevationGainFeet: 100 }),
+        createActivity({ id: 'b', elevationGainFeet: 100 }),
+        createActivity({ id: 'c', elevationGainFeet: 100 }),
       ],
       'elevationGainFeet',
       'elevationGainFeet',
@@ -292,37 +292,37 @@ describe('relationshipBetweenMetrics', () => {
 
 describe('getMetricRelationshipPoints', () => {
   it('excludes undefined and non-finite pairs', () => {
-    const rides = [
-      createRide({ id: 'valid-a', elevationGainFeet: 100, averageSpeedMph: 12 }),
-      createRide({
+    const activities = [
+      createActivity({ id: 'valid-a', elevationGainFeet: 100, averageSpeedMph: 12 }),
+      createActivity({
         id: 'missing-temperature',
         temperatureF: undefined,
         averageSpeedMph: 13,
       }),
-      createRide({ id: 'nan-x', elevationGainFeet: Number.NaN, averageSpeedMph: 14 }),
-      createRide({
+      createActivity({ id: 'nan-x', elevationGainFeet: Number.NaN, averageSpeedMph: 14 }),
+      createActivity({
         id: 'infinite-x',
         elevationGainFeet: Number.POSITIVE_INFINITY,
         averageSpeedMph: 15,
       }),
-      createRide({
+      createActivity({
         id: 'infinite-y',
         elevationGainFeet: 200,
         averageSpeedMph: Number.NEGATIVE_INFINITY,
       }),
-      createRide({ id: 'valid-b', elevationGainFeet: 300, averageSpeedMph: 16 }),
+      createActivity({ id: 'valid-b', elevationGainFeet: 300, averageSpeedMph: 16 }),
     ]
 
     expect(
-      getMetricRelationshipPoints(rides, 'elevationGainFeet', 'averageSpeedMph').map(
-        (point) => point.ride.id,
+      getMetricRelationshipPoints(activities, 'elevationGainFeet', 'averageSpeedMph').map(
+        (point) => point.activity.id,
       ),
     ).toEqual(['valid-a', 'missing-temperature', 'valid-b'])
     expect(
       getMetricRelationshipPoints(
         [
-          createRide({ id: 'temp-valid', temperatureF: 60, averageSpeedMph: 12 }),
-          createRide({
+          createActivity({ id: 'temp-valid', temperatureF: 60, averageSpeedMph: 12 }),
+          createActivity({
             id: 'temp-missing',
             temperatureF: undefined,
             averageSpeedMph: 13,
@@ -330,57 +330,57 @@ describe('getMetricRelationshipPoints', () => {
         ],
         'temperatureF',
         'averageSpeedMph',
-      ).map((point) => point.ride.id),
+      ).map((point) => point.activity.id),
     ).toEqual(['temp-valid'])
   })
 
   it('preserves source order for valid points', () => {
-    const rides = [
-      createRide({ id: 'ride-c', elevationGainFeet: 300, averageSpeedMph: 16 }),
-      createRide({ id: 'ride-a', elevationGainFeet: 100, averageSpeedMph: 12 }),
-      createRide({ id: 'ride-b', elevationGainFeet: 200, averageSpeedMph: 14 }),
+    const activities = [
+      createActivity({ id: 'activity-c', elevationGainFeet: 300, averageSpeedMph: 16 }),
+      createActivity({ id: 'activity-a', elevationGainFeet: 100, averageSpeedMph: 12 }),
+      createActivity({ id: 'activity-b', elevationGainFeet: 200, averageSpeedMph: 14 }),
     ]
 
     expect(
-      getMetricRelationshipPoints(rides, 'elevationGainFeet', 'averageSpeedMph').map(
-        (point) => point.ride.id,
+      getMetricRelationshipPoints(activities, 'elevationGainFeet', 'averageSpeedMph').map(
+        (point) => point.activity.id,
       ),
-    ).toEqual(['ride-c', 'ride-a', 'ride-b'])
+    ).toEqual(['activity-c', 'activity-a', 'activity-b'])
   })
 
-  it('retains the original ride reference', () => {
-    const ride = createRide({
-      id: 'ride-a',
+  it('retains the original activity reference', () => {
+    const activity = createActivity({
+      id: 'activity-a',
       elevationGainFeet: 100,
       averageSpeedMph: 12,
     })
     const [point] = getMetricRelationshipPoints(
-      [ride],
+      [activity],
       'elevationGainFeet',
       'averageSpeedMph',
     )
 
     expect(point).toMatchObject({ x: 100, y: 12 })
-    expect(point.ride).toBe(ride)
+    expect(point.activity).toBe(activity)
   })
 
-  it('does not mutate rides', () => {
-    const rides = [
-      createRide({ id: 'ride-a', elevationGainFeet: 100, averageSpeedMph: 12 }),
-      createRide({ id: 'ride-b', elevationGainFeet: 200, averageSpeedMph: 14 }),
+  it('does not mutate activities', () => {
+    const activities = [
+      createActivity({ id: 'activity-a', elevationGainFeet: 100, averageSpeedMph: 12 }),
+      createActivity({ id: 'activity-b', elevationGainFeet: 200, averageSpeedMph: 14 }),
     ]
-    const originalRides = rides.map((ride) => ({ ...ride }))
+    const originalActivities = activities.map((activity) => ({ ...activity }))
 
-    getMetricRelationshipPoints(rides, 'elevationGainFeet', 'averageSpeedMph')
+    getMetricRelationshipPoints(activities, 'elevationGainFeet', 'averageSpeedMph')
 
-    expect(rides).toEqual(originalRides)
+    expect(activities).toEqual(originalActivities)
   })
 })
 
-function createRide(
+function createActivity(
   overrides: Partial<
     Pick<
-      Ride,
+      Activity,
       | 'id'
       | 'averageSpeedMph'
       | 'distanceMiles'
@@ -390,9 +390,9 @@ function createRide(
       | 'temperatureF'
     >
   > = {},
-): Ride {
+): Activity {
   return {
-    id: overrides.id ?? 'ride-a',
+    id: overrides.id ?? 'activity-a',
     startTime: '2025-01-01T07:00:00-07:00',
     localDate: '2025-01-01',
     year: 2025,

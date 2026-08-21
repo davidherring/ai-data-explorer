@@ -1,38 +1,38 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
-  getInitialRideDataSource,
-  useRideDataSource,
-} from './useRideDataSource.ts'
-import type { Ride } from '../data/ride.ts'
+  getInitialActivityDataSource,
+  useActivityDataSource,
+} from './useActivityDataSource.ts'
+import type { Activity } from '../data/activity.ts'
 
 afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('useRideDataSource', () => {
+describe('useActivityDataSource', () => {
   it('defaults to demo unless the current OAuth return is connected', () => {
-    expect(getInitialRideDataSource('')).toBe('demo')
-    expect(getInitialRideDataSource('?strava=connected')).toBe('strava')
-    expect(getInitialRideDataSource('?strava=access_denied')).toBe('demo')
+    expect(getInitialActivityDataSource('')).toBe('demo')
+    expect(getInitialActivityDataSource('?strava=connected')).toBe('strava')
+    expect(getInitialActivityDataSource('?strava=access_denied')).toBe('demo')
   })
 
-  it('loads demo rides by default', async () => {
-    const { result } = renderHook(() => useRideDataSource('demo'))
+  it('loads demo activities by default', async () => {
+    const { result } = renderHook(() => useActivityDataSource('demo'))
 
     await waitFor(() => expect(result.current.status).toBe('ready'))
 
     expect(result.current.source).toBe('demo')
-    expect(result.current.rides.length).toBeGreaterThan(0)
+    expect(result.current.activities.length).toBeGreaterThan(0)
   })
 
-  it('loads Strava rides when selected', async () => {
-    const ride = createRide({ id: 'strava-1' })
+  it('loads Strava activities when selected', async () => {
+    const activity = createActivity({ id: 'strava-1' })
     vi.stubGlobal(
       'fetch',
       vi.fn(async () =>
         Response.json({
-          rides: [ride],
+          activities: [activity],
           total: 1,
           filteredOut: 0,
           deduplicated: 0,
@@ -41,7 +41,7 @@ describe('useRideDataSource', () => {
       ),
     )
 
-    const { result } = renderHook(() => useRideDataSource('demo'))
+    const { result } = renderHook(() => useActivityDataSource('demo'))
 
     await waitFor(() => expect(result.current.status).toBe('ready'))
 
@@ -52,7 +52,7 @@ describe('useRideDataSource', () => {
       expect(result.current.status).toBe('ready')
     })
 
-    expect(result.current.rides).toEqual([ride])
+    expect(result.current.activities).toEqual([activity])
   })
 
   it('represents disconnected Strava state', async () => {
@@ -63,20 +63,20 @@ describe('useRideDataSource', () => {
       ),
     )
 
-    const { result } = renderHook(() => useRideDataSource('strava'))
+    const { result } = renderHook(() => useActivityDataSource('strava'))
 
     await waitFor(() => expect(result.current.status).toBe('notConnected'))
 
-    expect(result.current.rides).toEqual([])
+    expect(result.current.activities).toEqual([])
   })
 
-  it('refresh preserves previously loaded Strava rides on failure', async () => {
-    const ride = createRide({ id: 'strava-1' })
+  it('refresh preserves previously loaded Strava activities on failure', async () => {
+    const activity = createActivity({ id: 'strava-1' })
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(
         Response.json({
-          rides: [ride],
+          activities: [activity],
           total: 1,
           filteredOut: 0,
           deduplicated: 0,
@@ -87,7 +87,7 @@ describe('useRideDataSource', () => {
 
     vi.stubGlobal('fetch', fetchMock)
 
-    const { result } = renderHook(() => useRideDataSource('strava'))
+    const { result } = renderHook(() => useActivityDataSource('strava'))
 
     await waitFor(() => expect(result.current.status).toBe('ready'))
 
@@ -96,13 +96,13 @@ describe('useRideDataSource', () => {
     })
 
     expect(result.current.status).toBe('error')
-    expect(result.current.rides).toEqual([ride])
+    expect(result.current.activities).toEqual([activity])
   })
 })
 
-function createRide(overrides: Partial<Ride> = {}): Ride {
+function createActivity(overrides: Partial<Activity> = {}): Activity {
   return {
-    id: 'ride-1',
+    id: 'activity-1',
     startTime: '2026-01-01T08:00:00Z',
     localDate: '2026-01-01',
     year: 2026,

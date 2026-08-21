@@ -2,8 +2,8 @@ import {
   getMetricDefinition,
   getMetricDefinitionsForRole,
   type MetricDefinition,
-} from '../analysis/rideMetrics.ts'
-import type { Ride } from '../data/ride.ts'
+} from '../analysis/activityMetrics.ts'
+import type { Activity } from '../data/activity.ts'
 import type {
   CumulativeViewConfiguration,
   MetricKey,
@@ -24,7 +24,7 @@ type SingleMetricViewConfiguration =
   | CumulativeViewConfiguration
 
 type MetricViewControlsProps = {
-  rides: Ride[]
+  activities: Activity[]
   view: MetricConfigurableView
   onViewChange: (view: MetricConfigurableView) => void
 }
@@ -36,7 +36,7 @@ const singleMetricAriaLabels = {
 } as const satisfies Record<SingleMetricViewConfiguration['type'], string>
 
 export function MetricViewControls({
-  rides,
+  activities,
   view,
   onViewChange,
 }: MetricViewControlsProps) {
@@ -51,7 +51,7 @@ export function MetricViewControls({
           label="X"
           ariaLabel="Relationship X metric"
           metric={view.xMetric}
-          options={getMetricDefinitionsForRole('relationshipX', rides)}
+          options={getMetricDefinitionsForRole('relationshipX', activities)}
           onMetricChange={(xMetric) => {
             onViewChange({
               ...view,
@@ -63,7 +63,7 @@ export function MetricViewControls({
           label="Y"
           ariaLabel="Relationship Y metric"
           metric={view.yMetric}
-          options={getMetricDefinitionsForRole('relationshipY', rides)}
+          options={getMetricDefinitionsForRole('relationshipY', activities)}
           onMetricChange={(yMetric) => {
             onViewChange({
               ...view,
@@ -85,7 +85,7 @@ export function MetricViewControls({
         label="Metric"
         ariaLabel={singleMetricAriaLabels[view.type]}
         metric={view.yMetric}
-        options={getMetricDefinitionsForRole('trendY', rides)}
+        options={getMetricDefinitionsForRole('trendY', activities)}
         onMetricChange={(yMetric) => {
           onViewChange({
             ...view,

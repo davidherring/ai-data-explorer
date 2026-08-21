@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import type { DayOfWeek, Ride } from '../data/ride.ts'
+import type { DayOfWeek, Activity } from '../data/activity.ts'
 import {
   buildGroupedComparison,
   type GroupedComparison,
 } from './groupComparisons.ts'
 
 describe('buildGroupedComparison', () => {
-  it('groups selected rides by year with deterministic numeric sorting', () => {
+  it('groups selected activities by year with deterministic numeric sorting', () => {
     const comparison = buildGroupedComparison(
       [
-        createRide({ id: 'b', localDate: '2026-01-01' }),
-        createRide({ id: 'a', localDate: '2024-01-01' }),
-        createRide({ id: 'c', localDate: '2025-01-01' }),
+        createActivity({ id: 'b', localDate: '2026-01-01' }),
+        createActivity({ id: 'a', localDate: '2024-01-01' }),
+        createActivity({ id: 'c', localDate: '2025-01-01' }),
       ],
       { groupBy: 'year' },
     )
@@ -26,12 +26,12 @@ describe('buildGroupedComparison', () => {
     expect(comparison.pairwiseDeltas).toBeUndefined()
   })
 
-  it('groups selected rides by month with deterministic numeric sorting', () => {
+  it('groups selected activities by month with deterministic numeric sorting', () => {
     const comparison = buildGroupedComparison(
       [
-        createRide({ id: 'march', localDate: '2025-03-01' }),
-        createRide({ id: 'january', localDate: '2025-01-01' }),
-        createRide({ id: 'february', localDate: '2025-02-01' }),
+        createActivity({ id: 'march', localDate: '2025-03-01' }),
+        createActivity({ id: 'january', localDate: '2025-01-01' }),
+        createActivity({ id: 'february', localDate: '2025-02-01' }),
       ],
       { groupBy: 'month' },
     )
@@ -39,12 +39,12 @@ describe('buildGroupedComparison', () => {
     expect(comparison.groups.map((group) => group.groupValue)).toEqual([1, 2, 3])
   })
 
-  it('groups selected rides by day of week in calendar order', () => {
+  it('groups selected activities by day of week in calendar order', () => {
     const comparison = buildGroupedComparison(
       [
-        createRide({ id: 'sunday', dayOfWeek: 'sunday' }),
-        createRide({ id: 'monday', dayOfWeek: 'monday' }),
-        createRide({ id: 'wednesday', dayOfWeek: 'wednesday' }),
+        createActivity({ id: 'sunday', dayOfWeek: 'sunday' }),
+        createActivity({ id: 'monday', dayOfWeek: 'monday' }),
+        createActivity({ id: 'wednesday', dayOfWeek: 'wednesday' }),
       ],
       { groupBy: 'dayOfWeek' },
     )
@@ -56,11 +56,11 @@ describe('buildGroupedComparison', () => {
     ])
   })
 
-  it('groups selected rides by day mode with weekdays before weekends', () => {
+  it('groups selected activities by day mode with weekdays before weekends', () => {
     const comparison = buildGroupedComparison(
       [
-        createRide({ id: 'weekend', isWeekend: true }),
-        createRide({ id: 'weekday', isWeekend: false }),
+        createActivity({ id: 'weekend', isWeekend: true }),
+        createActivity({ id: 'weekday', isWeekend: false }),
       ],
       { groupBy: 'dayMode' },
     )
@@ -74,9 +74,9 @@ describe('buildGroupedComparison', () => {
   it('preserves explicit requested group order and omits unrequested groups', () => {
     const comparison = buildGroupedComparison(
       [
-        createRide({ id: '2019', localDate: '2019-01-01' }),
-        createRide({ id: '2020', localDate: '2020-01-01' }),
-        createRide({ id: '2026', localDate: '2026-01-01' }),
+        createActivity({ id: '2019', localDate: '2019-01-01' }),
+        createActivity({ id: '2020', localDate: '2020-01-01' }),
+        createActivity({ id: '2026', localDate: '2026-01-01' }),
       ],
       { groupBy: 'year', groups: [2026, 2019] },
     )
@@ -85,12 +85,12 @@ describe('buildGroupedComparison', () => {
       2026,
       2019,
     ])
-    expect(comparison.groups.map((group) => group.rideCount)).toEqual([1, 1])
+    expect(comparison.groups.map((group) => group.activityCount)).toEqual([1, 1])
   })
 
   it('deduplicates requested groups while preserving first occurrence order', () => {
     const comparison = buildGroupedComparison(
-      [createRide({ id: '2026', localDate: '2026-01-01' })],
+      [createActivity({ id: '2026', localDate: '2026-01-01' })],
       { groupBy: 'year', groups: [2026, 2026] },
     )
 
@@ -99,14 +99,14 @@ describe('buildGroupedComparison', () => {
 
   it('represents missing requested groups explicitly', () => {
     const comparison = buildGroupedComparison(
-      [createRide({ id: '2026', localDate: '2026-01-01' })],
+      [createActivity({ id: '2026', localDate: '2026-01-01' })],
       { groupBy: 'year', groups: [2019, 2026] },
     )
 
     expect(comparison.groups[0]).toMatchObject({
       groupValue: 2019,
       status: 'missing-requested-group',
-      rideCount: 0,
+      activityCount: 0,
       warnings: [
         { code: 'missing-requested-group', groupValue: 2019 },
         { code: 'empty-selection' },
@@ -117,14 +117,14 @@ describe('buildGroupedComparison', () => {
     expect(comparison.groups[1]).toMatchObject({
       groupValue: 2026,
       status: 'present',
-      rideCount: 1,
+      activityCount: 1,
     })
   })
 
   it('summarizes each group with finite metric values and additive totals only', () => {
     const comparison = buildGroupedComparison(
       [
-        createRide({
+        createActivity({
           id: '2019-a',
           localDate: '2019-01-01',
           averageSpeedMph: 12,
@@ -134,7 +134,7 @@ describe('buildGroupedComparison', () => {
           elapsedTimeMinutes: 40,
           temperatureF: 60,
         }),
-        createRide({
+        createActivity({
           id: '2019-b',
           localDate: '2019-01-02',
           averageSpeedMph: 16,
@@ -144,7 +144,7 @@ describe('buildGroupedComparison', () => {
           elapsedTimeMinutes: 80,
           temperatureF: Number.NaN,
         }),
-        createRide({
+        createActivity({
           id: '2019-c',
           localDate: '2019-01-03',
           averageSpeedMph: 20,
@@ -194,22 +194,22 @@ describe('buildGroupedComparison', () => {
 
   it('keeps sparse group warnings from the reused selection summary', () => {
     const comparison = buildGroupedComparison(
-      [createRide({ id: 'single', localDate: '2026-01-01' })],
+      [createActivity({ id: 'single', localDate: '2026-01-01' })],
       { groupBy: 'year' },
     )
 
     expect(comparison.groups[0].warnings).toContainEqual({
       code: 'sparse-selection',
-      rideCount: 1,
+      activityCount: 1,
     })
   })
 
   it('reports no finite metric values for a non-empty group', () => {
     const comparison = buildGroupedComparison(
       [
-        createRide({ id: 'a', temperatureF: undefined }),
-        createRide({ id: 'b', temperatureF: Number.POSITIVE_INFINITY }),
-        createRide({ id: 'c', temperatureF: Number.NEGATIVE_INFINITY }),
+        createActivity({ id: 'a', temperatureF: undefined }),
+        createActivity({ id: 'b', temperatureF: Number.POSITIVE_INFINITY }),
+        createActivity({ id: 'c', temperatureF: Number.NEGATIVE_INFINITY }),
       ],
       { groupBy: 'year' },
     )
@@ -227,9 +227,9 @@ describe('buildGroupedComparison', () => {
   it('includes compact sport type composition counts sorted by sport type', () => {
     const comparison = buildGroupedComparison(
       [
-        createRide({ id: 'ride-a', sportType: 'Ride' }),
-        createRide({ id: 'gravel', sportType: 'GravelRide' }),
-        createRide({ id: 'ride-b', sportType: 'Ride' }),
+        createActivity({ id: 'activity-a', sportType: 'Ride' }),
+        createActivity({ id: 'gravel', sportType: 'GravelRide' }),
+        createActivity({ id: 'activity-b', sportType: 'Ride' }),
       ],
       { groupBy: 'year' },
     )
@@ -243,25 +243,25 @@ describe('buildGroupedComparison', () => {
   it('emits pairwise deltas only when exactly two groups are present', () => {
     const twoGroupComparison = buildGroupedComparison(
       [
-        createRide({
+        createActivity({
           id: 'baseline-a',
           localDate: '2019-01-01',
           averageSpeedMph: 10,
           distanceMiles: 10,
         }),
-        createRide({
+        createActivity({
           id: 'baseline-b',
           localDate: '2019-01-02',
           averageSpeedMph: 20,
           distanceMiles: 20,
         }),
-        createRide({
+        createActivity({
           id: 'comparison-a',
           localDate: '2026-01-01',
           averageSpeedMph: 12,
           distanceMiles: 40,
         }),
-        createRide({
+        createActivity({
           id: 'comparison-b',
           localDate: '2026-01-02',
           averageSpeedMph: 22,
@@ -272,9 +272,9 @@ describe('buildGroupedComparison', () => {
     )
     const threeGroupComparison = buildGroupedComparison(
       [
-        createRide({ id: '2019', localDate: '2019-01-01' }),
-        createRide({ id: '2020', localDate: '2020-01-01' }),
-        createRide({ id: '2026', localDate: '2026-01-01' }),
+        createActivity({ id: '2019', localDate: '2019-01-01' }),
+        createActivity({ id: '2020', localDate: '2020-01-01' }),
+        createActivity({ id: '2026', localDate: '2026-01-01' }),
       ],
       { groupBy: 'year' },
     )
@@ -306,8 +306,8 @@ describe('buildGroupedComparison', () => {
   it('omits percent deltas when the baseline value is zero', () => {
     const comparison = buildGroupedComparison(
       [
-        createRide({ id: 'baseline', localDate: '2019-01-01', distanceMiles: 0 }),
-        createRide({ id: 'comparison', localDate: '2026-01-01', distanceMiles: 10 }),
+        createActivity({ id: 'baseline', localDate: '2019-01-01', distanceMiles: 0 }),
+        createActivity({ id: 'comparison', localDate: '2026-01-01', distanceMiles: 10 }),
       ],
       { groupBy: 'year', groups: [2019, 2026] },
     )
@@ -319,18 +319,18 @@ describe('buildGroupedComparison', () => {
     })
   })
 
-  it('does not mutate source data or reorder input rides', () => {
-    const rides = [
-      createRide({ id: 'b', localDate: '2026-01-01' }),
-      createRide({ id: 'a', localDate: '2019-01-01' }),
+  it('does not mutate source data or reorder input activities', () => {
+    const activities = [
+      createActivity({ id: 'b', localDate: '2026-01-01' }),
+      createActivity({ id: 'a', localDate: '2019-01-01' }),
     ]
-    const originalRides = rides.map((ride) => ({ ...ride }))
-    const originalIds = rides.map((ride) => ride.id)
+    const originalActivities = activities.map((activity) => ({ ...activity }))
+    const originalIds = activities.map((activity) => activity.id)
 
-    buildGroupedComparison(rides, { groupBy: 'year', groups: [2019, 2026] })
+    buildGroupedComparison(activities, { groupBy: 'year', groups: [2019, 2026] })
 
-    expect(rides).toEqual(originalRides)
-    expect(rides.map((ride) => ride.id)).toEqual(originalIds)
+    expect(activities).toEqual(originalActivities)
+    expect(activities.map((activity) => activity.id)).toEqual(originalIds)
   })
 })
 
@@ -358,10 +358,10 @@ function getDeltaMetric(
   return result!
 }
 
-function createRide(
+function createActivity(
   overrides: Partial<
     Pick<
-      Ride,
+      Activity,
       | 'id'
       | 'startTime'
       | 'localDate'
@@ -382,11 +382,11 @@ function createRide(
       | 'manual'
     >
   > = {},
-): Ride {
+): Activity {
   const localDate = overrides.localDate ?? '2025-01-01'
 
   return {
-    id: overrides.id ?? 'ride-a',
+    id: overrides.id ?? 'activity-a',
     startTime: overrides.startTime ?? `${localDate}T07:00:00-07:00`,
     localDate,
     year: overrides.year ?? Number(localDate.slice(0, 4)),

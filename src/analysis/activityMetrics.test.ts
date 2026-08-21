@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest'
-import type { DayOfWeek, Ride } from '../data/ride.ts'
+import type { DayOfWeek, Activity } from '../data/activity.ts'
 import type { MetricKey } from '../state/analysisState.ts'
 import {
   getMetricDefinition,
   getMetricDefinitionsForRole,
   getMetricDisplay,
-  getRideMetric,
+  getActivityMetric,
   hasFiniteMetricValue,
   type MetricDefinition,
   type MetricRole,
-} from './rideMetrics.ts'
+} from './activityMetrics.ts'
 
-describe('getRideMetric', () => {
+describe('getActivityMetric', () => {
   it('returns values for every current metric key', () => {
-    const ride = createRide({
+    const activity = createActivity({
       averageSpeedMph: 15.4,
       distanceMiles: 32.1,
       elevationGainFeet: 1840,
@@ -22,28 +22,28 @@ describe('getRideMetric', () => {
       temperatureF: 72,
     })
 
-    expect(getRideMetric(ride, 'averageSpeedMph')).toBe(15.4)
-    expect(getRideMetric(ride, 'distanceMiles')).toBe(32.1)
-    expect(getRideMetric(ride, 'elevationGainFeet')).toBe(1840)
-    expect(getRideMetric(ride, 'movingTimeMinutes')).toBe(125)
-    expect(getRideMetric(ride, 'elapsedTimeMinutes')).toBe(141)
-    expect(getRideMetric(ride, 'temperatureF')).toBe(72)
+    expect(getActivityMetric(activity, 'averageSpeedMph')).toBe(15.4)
+    expect(getActivityMetric(activity, 'distanceMiles')).toBe(32.1)
+    expect(getActivityMetric(activity, 'elevationGainFeet')).toBe(1840)
+    expect(getActivityMetric(activity, 'movingTimeMinutes')).toBe(125)
+    expect(getActivityMetric(activity, 'elapsedTimeMinutes')).toBe(141)
+    expect(getActivityMetric(activity, 'temperatureF')).toBe(72)
   })
 
   it('returns undefined for missing temperature', () => {
-    expect(getRideMetric(createRide({ temperatureF: undefined }), 'temperatureF')).toBeUndefined()
+    expect(getActivityMetric(createActivity({ temperatureF: undefined }), 'temperatureF')).toBeUndefined()
   })
 
   it('does not normalize NaN or non-finite values', () => {
-    const ride = createRide({
+    const activity = createActivity({
       averageSpeedMph: Number.NaN,
       distanceMiles: Number.POSITIVE_INFINITY,
       elevationGainFeet: Number.NEGATIVE_INFINITY,
     })
 
-    expect(getRideMetric(ride, 'averageSpeedMph')).toBeNaN()
-    expect(getRideMetric(ride, 'distanceMiles')).toBe(Number.POSITIVE_INFINITY)
-    expect(getRideMetric(ride, 'elevationGainFeet')).toBe(Number.NEGATIVE_INFINITY)
+    expect(getActivityMetric(activity, 'averageSpeedMph')).toBeNaN()
+    expect(getActivityMetric(activity, 'distanceMiles')).toBe(Number.POSITIVE_INFINITY)
+    expect(getActivityMetric(activity, 'elevationGainFeet')).toBe(Number.NEGATIVE_INFINITY)
   })
 })
 
@@ -152,33 +152,33 @@ describe('getMetricDefinition', () => {
 })
 
 describe('hasFiniteMetricValue', () => {
-  it('returns false when no rides contain a finite value for the metric', () => {
+  it('returns false when no activities contain a finite value for the metric', () => {
     expect(hasFiniteMetricValue([], 'temperatureF')).toBe(false)
     expect(
       hasFiniteMetricValue(
         [
-          createRide({ temperatureF: undefined }),
-          createRide({ temperatureF: Number.NaN }),
-          createRide({ temperatureF: Number.POSITIVE_INFINITY }),
-          createRide({ temperatureF: Number.NEGATIVE_INFINITY }),
+          createActivity({ temperatureF: undefined }),
+          createActivity({ temperatureF: Number.NaN }),
+          createActivity({ temperatureF: Number.POSITIVE_INFINITY }),
+          createActivity({ temperatureF: Number.NEGATIVE_INFINITY }),
         ],
         'temperatureF',
       ),
     ).toBe(false)
   })
 
-  it('returns true when at least one ride contains a finite value for the metric', () => {
+  it('returns true when at least one activity contains a finite value for the metric', () => {
     expect(
       hasFiniteMetricValue(
         [
-          createRide({ temperatureF: undefined }),
-          createRide({ temperatureF: 72 }),
+          createActivity({ temperatureF: undefined }),
+          createActivity({ temperatureF: 72 }),
         ],
         'temperatureF',
       ),
     ).toBe(true)
     expect(
-      hasFiniteMetricValue([createRide({ averageSpeedMph: 15 })], 'averageSpeedMph'),
+      hasFiniteMetricValue([createActivity({ averageSpeedMph: 15 })], 'averageSpeedMph'),
     ).toBe(true)
   })
 })
@@ -195,30 +195,30 @@ describe('getMetricDefinitionsForRole', () => {
 
     for (const role of metricRoles) {
       expect(
-        getMetricDefinitionsForRole(role, [createRide()]).map(
+        getMetricDefinitionsForRole(role, [createActivity()]).map(
           (definition) => definition.key,
         ),
       ).toEqual(requiredMetricKeys)
     }
   })
 
-  it('omits temperature when no supplied rides have finite temperature', () => {
+  it('omits temperature when no supplied activities have finite temperature', () => {
     expect(
       getMetricDefinitionsForRole('trendY', [
-        createRide({ temperatureF: undefined }),
-        createRide({ temperatureF: Number.NaN }),
-        createRide({ temperatureF: Number.POSITIVE_INFINITY }),
-        createRide({ temperatureF: Number.NEGATIVE_INFINITY }),
+        createActivity({ temperatureF: undefined }),
+        createActivity({ temperatureF: Number.NaN }),
+        createActivity({ temperatureF: Number.POSITIVE_INFINITY }),
+        createActivity({ temperatureF: Number.NEGATIVE_INFINITY }),
       ]).map((definition) => definition.key),
     ).not.toContain('temperatureF')
   })
 
-  it('includes temperature when at least one supplied ride has finite temperature', () => {
+  it('includes temperature when at least one supplied activity has finite temperature', () => {
     for (const role of metricRoles) {
       expect(
         getMetricDefinitionsForRole(role, [
-          createRide({ temperatureF: undefined }),
-          createRide({ temperatureF: 72 }),
+          createActivity({ temperatureF: undefined }),
+          createActivity({ temperatureF: 72 }),
         ]).map((definition) => definition.key),
       ).toContain('temperatureF')
     }
@@ -237,10 +237,10 @@ const metricRoles = [
   'relationshipY',
 ] as const satisfies readonly MetricRole[]
 
-function createRide(
+function createActivity(
   overrides: Partial<
     Pick<
-      Ride,
+      Activity,
       | 'averageSpeedMph'
       | 'distanceMiles'
       | 'elevationGainFeet'
@@ -249,9 +249,9 @@ function createRide(
       | 'temperatureF'
     >
   > = {},
-): Ride {
+): Activity {
   return {
-    id: 'ride-a',
+    id: 'activity-a',
     startTime: '2025-01-01T07:00:00-07:00',
     localDate: '2025-01-01',
     year: 2025,

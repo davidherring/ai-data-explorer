@@ -2,25 +2,25 @@ import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport, isToolUIPart, type UIMessage } from 'ai'
 import { useMemo, useState, type FormEvent } from 'react'
 import type { DatasetProfile } from '../analysis/aiContext.ts'
-import type { RideDataSourceId } from '../data/rideDataSource.ts'
-import type { Ride } from '../data/ride.ts'
+import type { ActivityDataSourceId } from '../data/activityDataSource.ts'
+import type { Activity } from '../data/activity.ts'
 import type { AnalysisState } from '../state/analysisState.ts'
 
 type ConversationPanelShellProps = {
   analysisState: AnalysisState
-  selectedRides: Ride[]
+  selectedActivities: Activity[]
   datasetProfile: DatasetProfile
-  selectedRideCount: number
-  totalRideCount: number
-  dataSource: RideDataSourceId
+  selectedActivityCount: number
+  totalActivityCount: number
+  dataSource: ActivityDataSourceId
 }
 
 export function ConversationPanelShell({
   analysisState,
-  selectedRides,
+  selectedActivities,
   datasetProfile,
-  selectedRideCount,
-  totalRideCount,
+  selectedActivityCount,
+  totalActivityCount,
   dataSource,
 }: ConversationPanelShellProps) {
   const [composerText, setComposerText] = useState('')
@@ -49,10 +49,10 @@ export function ConversationPanelShell({
       {
         body: {
           currentAnalysisState: analysisState,
-          selectedRides,
+          selectedActivities,
           datasetProfile,
-          selectedRideCount,
-          totalRideCount,
+          selectedActivityCount,
+          totalActivityCount,
           dataSource,
         },
       },

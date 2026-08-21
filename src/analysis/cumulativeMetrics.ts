@@ -1,64 +1,64 @@
-import type { Ride } from '../data/ride.ts'
+import type { Activity } from '../data/activity.ts'
 import type { MetricKey } from '../state/analysisState.ts'
-import { getRideMetric } from './rideMetrics.ts'
+import { getActivityMetric } from './activityMetrics.ts'
 
 export type CumulativeMetricPoint = {
   date: Date
   localDate: string
-  rideId: string
-  ride: Ride
+  activityId: string
+  activity: Activity
   value: number
   cumulativeValue: number
 }
 
 type CumulativeMetricCandidate = {
-  ride: Ride
+  activity: Activity
   value: number
   sortKey: number
 }
 
 export function buildCumulativeMetricPoints(
-  rides: readonly Ride[],
+  activities: readonly Activity[],
   metricKey: MetricKey,
 ): CumulativeMetricPoint[] {
   const candidates: CumulativeMetricCandidate[] = []
 
-  for (const ride of rides) {
-    const value = getRideMetric(ride, metricKey)
+  for (const activity of activities) {
+    const value = getActivityMetric(activity, metricKey)
 
     if (value === undefined || !Number.isFinite(value)) {
       continue
     }
 
     candidates.push({
-      ride,
+      activity,
       value,
-      sortKey: getRideLocalTimeSortKey(ride),
+      sortKey: getActivityLocalTimeSortKey(activity),
     })
   }
 
   candidates.sort(
-    (a, b) => a.sortKey - b.sortKey || a.ride.id.localeCompare(b.ride.id),
+    (a, b) => a.sortKey - b.sortKey || a.activity.id.localeCompare(b.activity.id),
   )
 
   let cumulativeValue = 0
 
-  return candidates.map(({ ride, value }) => {
+  return candidates.map(({ activity, value }) => {
     cumulativeValue += value
 
     return {
-      date: parseLocalCalendarDate(ride.localDate),
-      localDate: ride.localDate,
-      rideId: ride.id,
-      ride,
+      date: parseLocalCalendarDate(activity.localDate),
+      localDate: activity.localDate,
+      activityId: activity.id,
+      activity,
       value,
       cumulativeValue,
     }
   })
 }
 
-function getRideLocalTimeSortKey(ride: Ride): number {
-  return parseLocalStartTimeSortKey(ride.startTime) ?? parseLocalDateSortKey(ride.localDate)
+function getActivityLocalTimeSortKey(activity: Activity): number {
+  return parseLocalStartTimeSortKey(activity.startTime) ?? parseLocalDateSortKey(activity.localDate)
 }
 
 function parseLocalStartTimeSortKey(startTime: string): number | undefined {

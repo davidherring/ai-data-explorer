@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { DayOfWeek, Ride } from '../data/ride.ts'
+import type { DayOfWeek, Activity } from '../data/activity.ts'
 import { calculateMetricTrend } from './metricTrends.ts'
 
 describe('calculateMetricTrend', () => {
@@ -20,8 +20,8 @@ describe('calculateMetricTrend', () => {
   it('requires at least 3 finite metric points', () => {
     const result = calculateMetricTrend(
       [
-        createRide({ id: 'a', localDate: '2025-01-01', averageSpeedMph: 12 }),
-        createRide({ id: 'b', localDate: '2025-01-02', averageSpeedMph: 14 }),
+        createActivity({ id: 'a', localDate: '2025-01-01', averageSpeedMph: 12 }),
+        createActivity({ id: 'b', localDate: '2025-01-02', averageSpeedMph: 14 }),
       ],
       'averageSpeedMph',
     )
@@ -45,21 +45,21 @@ describe('calculateMetricTrend', () => {
   it('excludes undefined and non-finite metric values and counts them as missing', () => {
     const result = calculateMetricTrend(
       [
-        createRide({ id: 'valid-a', localDate: '2025-01-01', temperatureF: 60 }),
-        createRide({ id: 'missing', localDate: '2025-01-02', temperatureF: undefined }),
-        createRide({ id: 'nan', localDate: '2025-01-03', temperatureF: Number.NaN }),
-        createRide({
+        createActivity({ id: 'valid-a', localDate: '2025-01-01', temperatureF: 60 }),
+        createActivity({ id: 'missing', localDate: '2025-01-02', temperatureF: undefined }),
+        createActivity({ id: 'nan', localDate: '2025-01-03', temperatureF: Number.NaN }),
+        createActivity({
           id: 'infinite',
           localDate: '2025-01-04',
           temperatureF: Number.POSITIVE_INFINITY,
         }),
-        createRide({
+        createActivity({
           id: 'negative-infinite',
           localDate: '2025-01-05',
           temperatureF: Number.NEGATIVE_INFINITY,
         }),
-        createRide({ id: 'valid-b', localDate: '2025-01-06', temperatureF: 70 }),
-        createRide({ id: 'valid-c', localDate: '2025-01-11', temperatureF: 80 }),
+        createActivity({ id: 'valid-b', localDate: '2025-01-06', temperatureF: 70 }),
+        createActivity({ id: 'valid-c', localDate: '2025-01-11', temperatureF: 80 }),
       ],
       'temperatureF',
     )
@@ -85,8 +85,8 @@ describe('calculateMetricTrend', () => {
   it('returns metric-has-no-finite-values when the selected metric is entirely missing', () => {
     const result = calculateMetricTrend(
       [
-        createRide({ id: 'missing', temperatureF: undefined }),
-        createRide({ id: 'nan', temperatureF: Number.NaN }),
+        createActivity({ id: 'missing', temperatureF: undefined }),
+        createActivity({ id: 'nan', temperatureF: Number.NaN }),
       ],
       'temperatureF',
     )
@@ -111,9 +111,9 @@ describe('calculateMetricTrend', () => {
   it('returns zero-time-variance when all valid points share a local date', () => {
     const result = calculateMetricTrend(
       [
-        createRide({ id: 'a', localDate: '2025-04-10', averageSpeedMph: 12 }),
-        createRide({ id: 'b', localDate: '2025-04-10', averageSpeedMph: 14 }),
-        createRide({ id: 'c', localDate: '2025-04-10', averageSpeedMph: 16 }),
+        createActivity({ id: 'a', localDate: '2025-04-10', averageSpeedMph: 12 }),
+        createActivity({ id: 'b', localDate: '2025-04-10', averageSpeedMph: 14 }),
+        createActivity({ id: 'c', localDate: '2025-04-10', averageSpeedMph: 16 }),
       ],
       'averageSpeedMph',
     )
@@ -134,9 +134,9 @@ describe('calculateMetricTrend', () => {
   it('returns zero-metric-variance and flat direction for constant metric values', () => {
     const result = calculateMetricTrend(
       [
-        createRide({ id: 'a', localDate: '2025-01-01', averageSpeedMph: 15 }),
-        createRide({ id: 'b', localDate: '2025-01-11', averageSpeedMph: 15 }),
-        createRide({ id: 'c', localDate: '2025-01-21', averageSpeedMph: 15 }),
+        createActivity({ id: 'a', localDate: '2025-01-01', averageSpeedMph: 15 }),
+        createActivity({ id: 'b', localDate: '2025-01-11', averageSpeedMph: 15 }),
+        createActivity({ id: 'c', localDate: '2025-01-21', averageSpeedMph: 15 }),
       ],
       'averageSpeedMph',
     )
@@ -159,9 +159,9 @@ describe('calculateMetricTrend', () => {
   it('calculates a known increasing trend without rounding', () => {
     const result = calculateMetricTrend(
       [
-        createRide({ id: 'a', localDate: '2025-01-01', averageSpeedMph: 10 }),
-        createRide({ id: 'b', localDate: '2025-01-11', averageSpeedMph: 20 }),
-        createRide({ id: 'c', localDate: '2025-01-21', averageSpeedMph: 30 }),
+        createActivity({ id: 'a', localDate: '2025-01-01', averageSpeedMph: 10 }),
+        createActivity({ id: 'b', localDate: '2025-01-11', averageSpeedMph: 20 }),
+        createActivity({ id: 'c', localDate: '2025-01-21', averageSpeedMph: 30 }),
       ],
       'averageSpeedMph',
     )
@@ -186,9 +186,9 @@ describe('calculateMetricTrend', () => {
   it('calculates a known decreasing trend', () => {
     const result = calculateMetricTrend(
       [
-        createRide({ id: 'a', localDate: '2025-01-01', averageSpeedMph: 30 }),
-        createRide({ id: 'b', localDate: '2025-01-11', averageSpeedMph: 25 }),
-        createRide({ id: 'c', localDate: '2025-01-21', averageSpeedMph: 20 }),
+        createActivity({ id: 'a', localDate: '2025-01-01', averageSpeedMph: 30 }),
+        createActivity({ id: 'b', localDate: '2025-01-11', averageSpeedMph: 25 }),
+        createActivity({ id: 'c', localDate: '2025-01-21', averageSpeedMph: 20 }),
       ],
       'averageSpeedMph',
     )
@@ -205,10 +205,10 @@ describe('calculateMetricTrend', () => {
   it('returns raw trend evidence for noisy data without classifying practical significance', () => {
     const result = calculateMetricTrend(
       [
-        createRide({ id: 'a', localDate: '2025-01-01', averageSpeedMph: 10 }),
-        createRide({ id: 'b', localDate: '2025-01-11', averageSpeedMph: 20 }),
-        createRide({ id: 'c', localDate: '2025-01-21', averageSpeedMph: 15 }),
-        createRide({ id: 'd', localDate: '2025-01-31', averageSpeedMph: 25 }),
+        createActivity({ id: 'a', localDate: '2025-01-01', averageSpeedMph: 10 }),
+        createActivity({ id: 'b', localDate: '2025-01-11', averageSpeedMph: 20 }),
+        createActivity({ id: 'c', localDate: '2025-01-21', averageSpeedMph: 15 }),
+        createActivity({ id: 'd', localDate: '2025-01-31', averageSpeedMph: 25 }),
       ],
       'averageSpeedMph',
     )
@@ -226,9 +226,9 @@ describe('calculateMetricTrend', () => {
   it('emits a large-date-gap warning when the largest adjacent gap exceeds half the trend span', () => {
     const result = calculateMetricTrend(
       [
-        createRide({ id: 'a', localDate: '2025-01-01', distanceMiles: 10 }),
-        createRide({ id: 'b', localDate: '2025-01-02', distanceMiles: 11 }),
-        createRide({ id: 'c', localDate: '2025-01-30', distanceMiles: 12 }),
+        createActivity({ id: 'a', localDate: '2025-01-01', distanceMiles: 10 }),
+        createActivity({ id: 'b', localDate: '2025-01-02', distanceMiles: 11 }),
+        createActivity({ id: 'c', localDate: '2025-01-30', distanceMiles: 12 }),
       ],
       'distanceMiles',
     )
@@ -250,9 +250,9 @@ describe('calculateMetricTrend', () => {
   it('does not emit a large-date-gap warning when the largest gap is exactly half the span', () => {
     const result = calculateMetricTrend(
       [
-        createRide({ id: 'a', localDate: '2025-01-01', distanceMiles: 10 }),
-        createRide({ id: 'b', localDate: '2025-01-11', distanceMiles: 20 }),
-        createRide({ id: 'c', localDate: '2025-01-21', distanceMiles: 30 }),
+        createActivity({ id: 'a', localDate: '2025-01-01', distanceMiles: 10 }),
+        createActivity({ id: 'b', localDate: '2025-01-11', distanceMiles: 20 }),
+        createActivity({ id: 'c', localDate: '2025-01-21', distanceMiles: 30 }),
       ],
       'distanceMiles',
     )
@@ -270,9 +270,9 @@ describe('calculateMetricTrend', () => {
   it('compares local calendar dates without host-timezone shifts', () => {
     const result = calculateMetricTrend(
       [
-        createRide({ id: 'a', localDate: '2025-12-31', averageSpeedMph: 10 }),
-        createRide({ id: 'b', localDate: '2026-01-01', averageSpeedMph: 11 }),
-        createRide({ id: 'c', localDate: '2026-01-02', averageSpeedMph: 12 }),
+        createActivity({ id: 'a', localDate: '2025-12-31', averageSpeedMph: 10 }),
+        createActivity({ id: 'b', localDate: '2026-01-01', averageSpeedMph: 11 }),
+        createActivity({ id: 'c', localDate: '2026-01-02', averageSpeedMph: 12 }),
       ],
       'averageSpeedMph',
     )
@@ -286,27 +286,27 @@ describe('calculateMetricTrend', () => {
     })
   })
 
-  it('sorts copied trend points for date ranges and gaps without mutating input rides', () => {
-    const rides = [
-      createRide({ id: 'c', localDate: '2025-01-21', averageSpeedMph: 30 }),
-      createRide({ id: 'a', localDate: '2025-01-01', averageSpeedMph: 10 }),
-      createRide({ id: 'b', localDate: '2025-01-11', averageSpeedMph: 20 }),
+  it('sorts copied trend points for date ranges and gaps without mutating input activities', () => {
+    const activities = [
+      createActivity({ id: 'c', localDate: '2025-01-21', averageSpeedMph: 30 }),
+      createActivity({ id: 'a', localDate: '2025-01-01', averageSpeedMph: 10 }),
+      createActivity({ id: 'b', localDate: '2025-01-11', averageSpeedMph: 20 }),
     ]
-    const originalRides = rides.map((ride) => ({ ...ride }))
-    const originalIds = rides.map((ride) => ride.id)
+    const originalActivities = activities.map((activity) => ({ ...activity }))
+    const originalIds = activities.map((activity) => activity.id)
 
-    const result = calculateMetricTrend(rides, 'averageSpeedMph')
+    const result = calculateMetricTrend(activities, 'averageSpeedMph')
 
     expect(result.dateRange).toEqual({ start: '2025-01-01', end: '2025-01-21' })
-    expect(rides).toEqual(originalRides)
-    expect(rides.map((ride) => ride.id)).toEqual(originalIds)
+    expect(activities).toEqual(originalActivities)
+    expect(activities.map((activity) => activity.id)).toEqual(originalIds)
   })
 })
 
-function createRide(
+function createActivity(
   overrides: Partial<
     Pick<
-      Ride,
+      Activity,
       | 'id'
       | 'startTime'
       | 'localDate'
@@ -319,11 +319,11 @@ function createRide(
       | 'temperatureF'
     >
   > = {},
-): Ride {
+): Activity {
   const localDate = overrides.localDate ?? '2025-01-01'
 
   return {
-    id: overrides.id ?? 'ride-a',
+    id: overrides.id ?? 'activity-a',
     startTime: overrides.startTime ?? `${localDate}T08:00:00Z`,
     localDate,
     year: overrides.year ?? Number(localDate.slice(0, 4)),

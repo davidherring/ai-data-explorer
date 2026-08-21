@@ -1,7 +1,7 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { MetricTrendChart } from './MetricTrendChart.tsx'
-import type { DayOfWeek, Ride } from '../data/ride.ts'
+import type { DayOfWeek, Activity } from '../data/activity.ts'
 import type { MetricKey } from '../state/analysisState.ts'
 
 describe('MetricTrendChart', () => {
@@ -9,14 +9,14 @@ describe('MetricTrendChart', () => {
     cleanup()
   })
 
-  it('renders an empty chart state for empty rides', () => {
+  it('renders an empty chart state for empty activities', () => {
     renderChart([], 'averageSpeedMph', 2)
 
     expect(
       screen.getByLabelText('Average speed over calendar time'),
     ).toBeInTheDocument()
     expect(
-      screen.getByText('No rides to plot for the current selection.'),
+      screen.getByText('No activities to plot for the current selection.'),
     ).toBeInTheDocument()
     expect(document.querySelector('svg')).not.toBeInTheDocument()
   })
@@ -89,7 +89,7 @@ describe('MetricTrendChart', () => {
     renderChart(
       [
         rideA,
-        createRide({
+        createActivity({
           id: 'invalid-distance',
           localDate: '2025-04-01',
           distanceMiles: Number.NaN,
@@ -106,33 +106,33 @@ describe('MetricTrendChart', () => {
     expect(document.body.textContent).not.toContain('2025-04-01')
   })
 
-  it('renders a metric-specific empty state when selected rides have no valid temperature', () => {
+  it('renders a metric-specific empty state when selected activities have no valid temperature', () => {
     renderChart(
       [
-        createRide({ id: 'missing-temp', temperatureF: undefined }),
-        createRide({ id: 'nan-temp', temperatureF: Number.NaN }),
-        createRide({ id: 'infinite-temp', temperatureF: Number.POSITIVE_INFINITY }),
+        createActivity({ id: 'missing-temp', temperatureF: undefined }),
+        createActivity({ id: 'nan-temp', temperatureF: Number.NaN }),
+        createActivity({ id: 'infinite-temp', temperatureF: Number.POSITIVE_INFINITY }),
       ],
       'temperatureF',
     )
 
     expect(
       screen.getByText(
-        'No rides have valid temperature values for the current selection.',
+        'No activities have valid temperature values for the current selection.',
       ),
     ).toBeInTheDocument()
     expect(document.querySelector('svg')).not.toBeInTheDocument()
   })
 
-  it('renders valid temperature points while excluding invalid temperature rides', async () => {
+  it('renders valid temperature points while excluding invalid temperature activities', async () => {
     renderChart(
       [
-        createRide({
+        createActivity({
           id: 'valid-temp',
           localDate: '2025-06-01',
           temperatureF: 72.4,
         }),
-        createRide({
+        createActivity({
           id: 'missing-temp',
           localDate: '2025-06-02',
           temperatureF: undefined,
@@ -159,8 +159,8 @@ describe('MetricTrendChart', () => {
 
     rerender(
       <MetricTrendChart
-        rides={[rideA]}
-        totalRideCount={1}
+        activities={[rideA]}
+        totalActivityCount={1}
         yMetric="distanceMiles"
       />,
     )
@@ -174,7 +174,7 @@ describe('MetricTrendChart', () => {
     expect(document.querySelectorAll('.trend-chart-container svg')).toHaveLength(1)
   })
 
-  it('replaces Plot output when rides change', async () => {
+  it('replaces Plot output when activities change', async () => {
     const { rerender } = renderChart([rideA], 'averageSpeedMph')
 
     await waitFor(() => {
@@ -183,8 +183,8 @@ describe('MetricTrendChart', () => {
 
     rerender(
       <MetricTrendChart
-        rides={[rideB]}
-        totalRideCount={1}
+        activities={[rideB]}
+        totalActivityCount={1}
         yMetric="averageSpeedMph"
       />,
     )
@@ -199,14 +199,14 @@ describe('MetricTrendChart', () => {
 })
 
 function renderChart(
-  rides: Ride[],
+  activities: Activity[],
   yMetric: MetricKey,
-  totalRideCount = rides.length,
+  totalActivityCount = activities.length,
 ) {
   return render(
     <MetricTrendChart
-      rides={rides}
-      totalRideCount={totalRideCount}
+      activities={activities}
+      totalActivityCount={totalActivityCount}
       yMetric={yMetric}
     />,
   )
@@ -216,8 +216,8 @@ function countTextOccurrences(text: string, searchText: string): number {
   return text.split(searchText).length - 1
 }
 
-const rideA = createRide({
-  id: 'ride-a',
+const rideA = createActivity({
+  id: 'activity-a',
   localDate: '2025-03-12',
   averageSpeedMph: 15.24,
   distanceMiles: 31.44,
@@ -226,8 +226,8 @@ const rideA = createRide({
   sportType: 'Ride',
 })
 
-const rideB = createRide({
-  id: 'ride-b',
+const rideB = createActivity({
+  id: 'activity-b',
   localDate: '2026-07-04',
   averageSpeedMph: 16.01,
   distanceMiles: 42,
@@ -236,10 +236,10 @@ const rideB = createRide({
   sportType: 'GravelRide',
 })
 
-function createRide(
+function createActivity(
   overrides: Partial<
     Pick<
-      Ride,
+      Activity,
       | 'id'
       | 'localDate'
       | 'averageSpeedMph'
@@ -251,11 +251,11 @@ function createRide(
       | 'sportType'
     >
   >,
-): Ride {
+): Activity {
   const localDate = overrides.localDate ?? '2025-03-12'
 
   return {
-    id: overrides.id ?? 'ride-a',
+    id: overrides.id ?? 'activity-a',
     startTime: `${localDate}T07:00:00-07:00`,
     localDate,
     year: Number(localDate.slice(0, 4)),

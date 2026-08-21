@@ -24,7 +24,7 @@ describe('App shell', () => {
     expect(screen.getByLabelText('Analysis workspace')).toBeInTheDocument()
     expect(screen.getByText('Selection / analysis controls')).toBeInTheDocument()
     expect(
-      await screen.findByText('12 of 12 rides selected'),
+      await screen.findByText('12 of 12 activities selected'),
     ).toBeInTheDocument()
     expect(
       screen.getByLabelText('Average speed over calendar time'),
@@ -45,7 +45,7 @@ describe('App shell', () => {
     expect(screen.getByLabelText('Summary and status')).toBeInTheDocument()
   })
 
-  it('updates selected ride count when a filter control changes', async () => {
+  it('updates selected activity count when a filter control changes', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async () =>
@@ -56,12 +56,12 @@ describe('App shell', () => {
     render(<App />)
 
     expect(
-      await screen.findByText('12 of 12 rides selected'),
+      await screen.findByText('12 of 12 activities selected'),
     ).toBeInTheDocument()
 
     fireEvent.click(screen.getByLabelText('2025'))
 
-    expect(screen.getByText('3 of 12 rides selected')).toBeInTheDocument()
+    expect(screen.getByText('3 of 12 activities selected')).toBeInTheDocument()
     expect(document.body.textContent).toContain('2025-05-21')
     expect(document.body.textContent).not.toContain('2024-02-07')
   })
@@ -90,7 +90,7 @@ describe('App shell', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('shows an empty selection state when filters match no rides', async () => {
+  it('shows an empty selection state when filters match no activities', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async () =>
@@ -101,16 +101,16 @@ describe('App shell', () => {
     render(<App />)
 
     expect(
-      await screen.findByText('12 of 12 rides selected'),
+      await screen.findByText('12 of 12 activities selected'),
     ).toBeInTheDocument()
 
     fireEvent.change(screen.getByLabelText('Start'), {
       target: { value: '2030-01-01' },
     })
 
-    expect(screen.getByText('0 of 12 rides selected')).toBeInTheDocument()
+    expect(screen.getByText('0 of 12 activities selected')).toBeInTheDocument()
     expect(
-      screen.getByText('No rides match the current filters.'),
+      screen.getByText('No activities match the current filters.'),
     ).toBeInTheDocument()
   })
 
@@ -125,7 +125,7 @@ describe('App shell', () => {
     render(<App />)
 
     expect(
-      await screen.findByText('12 of 12 rides selected'),
+      await screen.findByText('12 of 12 activities selected'),
     ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Relationship' }))
@@ -144,7 +144,7 @@ describe('App shell', () => {
     expect(screen.getByLabelText('Relationship Y metric')).toHaveValue(
       'averageSpeedMph',
     )
-    expect(screen.getByText('12 of 12 rides selected')).toBeInTheDocument()
+    expect(screen.getByText('12 of 12 activities selected')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Relationship' })).toHaveAttribute(
       'aria-pressed',
       'true',
@@ -172,7 +172,7 @@ describe('App shell', () => {
     render(<App />)
 
     expect(
-      await screen.findByText('12 of 12 rides selected'),
+      await screen.findByText('12 of 12 activities selected'),
     ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Relationship' }))
@@ -208,13 +208,13 @@ describe('App shell', () => {
     render(<App />)
 
     expect(
-      await screen.findByText('12 of 12 rides selected'),
+      await screen.findByText('12 of 12 activities selected'),
     ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Relationship' }))
     fireEvent.click(screen.getByLabelText('2025'))
 
-    expect(screen.getByText('3 of 12 rides selected')).toBeInTheDocument()
+    expect(screen.getByText('3 of 12 activities selected')).toBeInTheDocument()
     expect(screen.getByText('View: relationship')).toBeInTheDocument()
     expect(
       screen.getByLabelText('Elevation gain vs Average speed'),

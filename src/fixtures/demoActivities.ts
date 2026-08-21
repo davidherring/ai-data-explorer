@@ -1,9 +1,9 @@
-import type { Ride } from '../data/ride.ts'
+import type { Activity } from '../data/activity.ts'
 
-// Synthetic public-safe ride data for demo development and tests only.
-export const demoRides: Ride[] = [
+// Synthetic public-safe activity data for demo development and tests only.
+export const demoActivities: Activity[] = [
   {
-    id: 'demo-ride-001',
+    id: 'demo-activity-001',
     startTime: '2023-03-15T07:12:00-07:00',
     localDate: '2023-03-15',
     year: 2023,
@@ -23,7 +23,7 @@ export const demoRides: Ride[] = [
     manual: false,
   },
   {
-    id: 'demo-ride-002',
+    id: 'demo-activity-002',
     startTime: '2023-06-10T06:45:00-07:00',
     localDate: '2023-06-10',
     year: 2023,
@@ -43,7 +43,7 @@ export const demoRides: Ride[] = [
     manual: false,
   },
   {
-    id: 'demo-ride-003',
+    id: 'demo-activity-003',
     startTime: '2023-09-24T08:20:00-07:00',
     localDate: '2023-09-24',
     year: 2023,
@@ -62,7 +62,7 @@ export const demoRides: Ride[] = [
     manual: false,
   },
   {
-    id: 'demo-ride-004',
+    id: 'demo-activity-004',
     startTime: '2024-02-07T17:35:00-07:00',
     localDate: '2024-02-07',
     year: 2024,
@@ -82,7 +82,7 @@ export const demoRides: Ride[] = [
     manual: false,
   },
   {
-    id: 'demo-ride-005',
+    id: 'demo-activity-005',
     startTime: '2024-04-28T07:50:00-07:00',
     localDate: '2024-04-28',
     year: 2024,
@@ -102,7 +102,7 @@ export const demoRides: Ride[] = [
     manual: false,
   },
   {
-    id: 'demo-ride-006',
+    id: 'demo-activity-006',
     startTime: '2024-08-13T06:10:00-07:00',
     localDate: '2024-08-13',
     year: 2024,
@@ -122,7 +122,7 @@ export const demoRides: Ride[] = [
     manual: false,
   },
   {
-    id: 'demo-ride-007',
+    id: 'demo-activity-007',
     startTime: '2025-01-18T09:00:00-07:00',
     localDate: '2025-01-18',
     year: 2025,
@@ -141,7 +141,7 @@ export const demoRides: Ride[] = [
     manual: false,
   },
   {
-    id: 'demo-ride-008',
+    id: 'demo-activity-008',
     startTime: '2025-05-21T06:30:00-07:00',
     localDate: '2025-05-21',
     year: 2025,
@@ -161,7 +161,7 @@ export const demoRides: Ride[] = [
     manual: false,
   },
   {
-    id: 'demo-ride-009',
+    id: 'demo-activity-009',
     startTime: '2025-10-04T07:25:00-07:00',
     localDate: '2025-10-04',
     year: 2025,
@@ -181,7 +181,7 @@ export const demoRides: Ride[] = [
     manual: false,
   },
   {
-    id: 'demo-ride-010',
+    id: 'demo-activity-010',
     startTime: '2026-03-11T07:05:00-07:00',
     localDate: '2026-03-11',
     year: 2026,
@@ -201,7 +201,7 @@ export const demoRides: Ride[] = [
     manual: false,
   },
   {
-    id: 'demo-ride-011',
+    id: 'demo-activity-011',
     startTime: '2026-06-27T06:00:00-07:00',
     localDate: '2026-06-27',
     year: 2026,
@@ -221,7 +221,7 @@ export const demoRides: Ride[] = [
     manual: false,
   },
   {
-    id: 'demo-ride-012',
+    id: 'demo-activity-012',
     startTime: '2026-09-09T17:45:00-07:00',
     localDate: '2026-09-09',
     year: 2026,

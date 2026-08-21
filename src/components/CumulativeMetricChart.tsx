@@ -5,14 +5,14 @@ import type { CumulativeMetricPoint } from '../analysis/cumulativeMetrics.ts'
 import {
   getMetricDefinition,
   type MetricDefinition,
-} from '../analysis/rideMetrics.ts'
+} from '../analysis/activityMetrics.ts'
 import { SelectionStatus } from './SelectionStatus.tsx'
-import type { Ride } from '../data/ride.ts'
+import type { Activity } from '../data/activity.ts'
 import type { MetricKey } from '../state/analysisState.ts'
 
 type CumulativeMetricChartProps = {
-  rides: Ride[]
-  totalRideCount: number
+  activities: Activity[]
+  totalActivityCount: number
   yMetric: MetricKey
   points: CumulativeMetricPoint[]
   headerControls?: ReactNode
@@ -22,8 +22,8 @@ const fallbackChartWidth = 720
 const chartHeight = 320
 
 export function CumulativeMetricChart({
-  rides,
-  totalRideCount,
+  activities,
+  totalActivityCount,
   yMetric,
   points,
   headerControls,
@@ -32,8 +32,8 @@ export function CumulativeMetricChart({
   const [chartWidth, setChartWidth] = useState(fallbackChartWidth)
   const metricDefinition = getMetricDefinition(yMetric)
   const chartLabel = `Cumulative ${metricDefinition.label}`
-  const hasNoSelectedRides = rides.length === 0
-  const hasNoValidMetricValues = rides.length > 0 && points.length === 0
+  const hasNoSelectedActivities = activities.length === 0
+  const hasNoValidMetricValues = activities.length > 0 && points.length === 0
 
   useEffect(() => {
     const container = containerRef.current
@@ -93,7 +93,7 @@ export function CumulativeMetricChart({
         maxWidth: '100%',
       },
       x: {
-        label: 'Ride date',
+        label: 'Activity date',
         grid: false,
       },
       y: {
@@ -147,18 +147,18 @@ export function CumulativeMetricChart({
           <p className="relationship-status">Continuous accumulation</p>
         </div>
         {headerControls}
-        <SelectionStatus rides={rides} totalRideCount={totalRideCount} />
+        <SelectionStatus activities={activities} totalActivityCount={totalActivityCount} />
       </figcaption>
 
       <div ref={containerRef} className="trend-chart-container cumulative-chart-container">
-        {hasNoSelectedRides && (
+        {hasNoSelectedActivities && (
           <div className="chart-empty-state">
-            No rides to plot for the current selection.
+            No activities to plot for the current selection.
           </div>
         )}
         {hasNoValidMetricValues && (
           <div className="chart-empty-state">
-            No rides have valid {metricDefinition.label.toLowerCase()} values
+            No activities have valid {metricDefinition.label.toLowerCase()} values
             for the current selection.
           </div>
         )}
@@ -172,7 +172,7 @@ function formatPointTitle(
   yMetric: MetricKey,
   metricDefinition: MetricDefinition,
 ): string {
-  const { ride } = point
+  const { activity } = point
   const lines = [
     point.localDate,
     `${metricDefinition.label}: ${formatMetricValue(point.value, metricDefinition)}`,
@@ -186,7 +186,7 @@ function formatPointTitle(
     const distanceDefinition = getMetricDefinition('distanceMiles')
     lines.push(
       `${distanceDefinition.label}: ${formatMetricValue(
-        ride.distanceMiles,
+        activity.distanceMiles,
         distanceDefinition,
       )}`,
     )
@@ -196,13 +196,13 @@ function formatPointTitle(
     const elevationDefinition = getMetricDefinition('elevationGainFeet')
     lines.push(
       `${elevationDefinition.label}: ${formatMetricValue(
-        ride.elevationGainFeet,
+        activity.elevationGainFeet,
         elevationDefinition,
       )}`,
     )
   }
 
-  lines.push(`Sport type: ${ride.sportType}`)
+  lines.push(`Sport type: ${activity.sportType}`)
 
   return lines.join('\n')
 }

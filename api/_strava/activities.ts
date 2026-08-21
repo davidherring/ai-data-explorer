@@ -8,7 +8,7 @@ import { normalizeStravaActivities } from './normalizeActivity.js'
 const STRAVA_API_BASE_URL = 'https://www.strava.com/api/v3'
 const STRAVA_ACTIVITIES_PER_PAGE = 200
 
-export const cyclingSportTypes = [
+export const supportedStravaActivityTypes = [
   'Ride',
   'MountainBikeRide',
   'GravelRide',
@@ -17,9 +17,12 @@ export const cyclingSportTypes = [
   'EMountainBikeRide',
   'Velomobile',
   'Handcycle',
+  'Walk',
+  'Hike',
 ] as const
 
-export type CyclingSportType = (typeof cyclingSportTypes)[number]
+export type SupportedStravaActivityType =
+  (typeof supportedStravaActivityTypes)[number]
 
 export type StravaSummaryActivity = {
   id: number
@@ -37,7 +40,7 @@ export type StravaSummaryActivity = {
 }
 
 export type StravaActivitiesResult = {
-  rides: ReturnType<typeof normalizeStravaActivities>['rides']
+  activities: ReturnType<typeof normalizeStravaActivities>['activities']
   total: number
   filteredOut: number
   deduplicated: number
@@ -74,11 +77,13 @@ type StravaRateLimitInfo = {
   usage?: string
 }
 
-export function isCyclingSportType(sportType: string): sportType is CyclingSportType {
-  return (cyclingSportTypes as readonly string[]).includes(sportType)
+export function isSupportedStravaActivityType(
+  sportType: string,
+): sportType is SupportedStravaActivityType {
+  return (supportedStravaActivityTypes as readonly string[]).includes(sportType)
 }
 
-export async function fetchCyclingActivities(
+export async function fetchSupportedActivities(
   accessToken: string,
   options: {
     fetchImplementation?: FetchLike
@@ -107,7 +112,7 @@ export async function fetchCyclingActivities(
     total += pageActivities.length
 
     for (const activity of pageActivities) {
-      if (isCyclingSportType(activity.sport_type)) {
+      if (isSupportedStravaActivityType(activity.sport_type)) {
         activities.push(activity)
       } else {
         filteredOut += 1
@@ -140,11 +145,11 @@ export async function handleStravaActivities(
   }
 
   try {
-    const result = await fetchCyclingActivities(tokenResult.tokenBundle.accessToken)
+    const result = await fetchSupportedActivities(tokenResult.tokenBundle.accessToken)
     const normalized = normalizeStravaActivities(result.activities)
 
     sendJson(response, 200, {
-      rides: normalized.rides,
+      activities: normalized.activities,
       total: result.total,
       filteredOut: result.filteredOut,
       deduplicated: normalized.deduplicated,

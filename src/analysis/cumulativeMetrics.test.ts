@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { DayOfWeek, Ride } from '../data/ride.ts'
+import type { DayOfWeek, Activity } from '../data/activity.ts'
 import { buildCumulativeMetricPoints } from './cumulativeMetrics.ts'
 
 describe('buildCumulativeMetricPoints', () => {
@@ -7,39 +7,39 @@ describe('buildCumulativeMetricPoints', () => {
     expect(buildCumulativeMetricPoints([], 'distanceMiles')).toEqual([])
   })
 
-  it('returns no points when no rides have finite active metric values', () => {
-    const rides = [
-      createRide({ id: 'missing-temp', temperatureF: undefined }),
-      createRide({ id: 'nan-temp', temperatureF: Number.NaN }),
-      createRide({ id: 'infinite-temp', temperatureF: Number.POSITIVE_INFINITY }),
-      createRide({ id: 'negative-infinite-temp', temperatureF: Number.NEGATIVE_INFINITY }),
+  it('returns no points when no activities have finite active metric values', () => {
+    const activities = [
+      createActivity({ id: 'missing-temp', temperatureF: undefined }),
+      createActivity({ id: 'nan-temp', temperatureF: Number.NaN }),
+      createActivity({ id: 'infinite-temp', temperatureF: Number.POSITIVE_INFINITY }),
+      createActivity({ id: 'negative-infinite-temp', temperatureF: Number.NEGATIVE_INFINITY }),
     ]
 
-    expect(buildCumulativeMetricPoints(rides, 'temperatureF')).toEqual([])
+    expect(buildCumulativeMetricPoints(activities, 'temperatureF')).toEqual([])
   })
 
   it('excludes undefined and non-finite active metric values', () => {
     const points = buildCumulativeMetricPoints(
       [
-        createRide({ id: 'valid-a', startTime: '2025-01-01T08:00:00Z', temperatureF: 60 }),
-        createRide({ id: 'missing', startTime: '2025-01-02T08:00:00Z', temperatureF: undefined }),
-        createRide({ id: 'nan', startTime: '2025-01-03T08:00:00Z', temperatureF: Number.NaN }),
-        createRide({
+        createActivity({ id: 'valid-a', startTime: '2025-01-01T08:00:00Z', temperatureF: 60 }),
+        createActivity({ id: 'missing', startTime: '2025-01-02T08:00:00Z', temperatureF: undefined }),
+        createActivity({ id: 'nan', startTime: '2025-01-03T08:00:00Z', temperatureF: Number.NaN }),
+        createActivity({
           id: 'infinite',
           startTime: '2025-01-04T08:00:00Z',
           temperatureF: Number.POSITIVE_INFINITY,
         }),
-        createRide({
+        createActivity({
           id: 'negative-infinite',
           startTime: '2025-01-05T08:00:00Z',
           temperatureF: Number.NEGATIVE_INFINITY,
         }),
-        createRide({ id: 'valid-b', startTime: '2025-01-06T08:00:00Z', temperatureF: 70 }),
+        createActivity({ id: 'valid-b', startTime: '2025-01-06T08:00:00Z', temperatureF: 70 }),
       ],
       'temperatureF',
     )
 
-    expect(points.map((point) => point.rideId)).toEqual(['valid-a', 'valid-b'])
+    expect(points.map((point) => point.activityId)).toEqual(['valid-a', 'valid-b'])
     expect(points.map((point) => point.value)).toEqual([60, 70])
     expect(points.map((point) => point.cumulativeValue)).toEqual([60, 130])
   })
@@ -47,19 +47,19 @@ describe('buildCumulativeMetricPoints', () => {
   it('accumulates distance in athlete-local chronological order', () => {
     const points = buildCumulativeMetricPoints(
       [
-        createRide({
+        createActivity({
           id: 'third',
           startTime: '2025-01-03T08:00:00Z',
           localDate: '2025-01-03',
           distanceMiles: 30,
         }),
-        createRide({
+        createActivity({
           id: 'first',
           startTime: '2025-01-01T08:00:00Z',
           localDate: '2025-01-01',
           distanceMiles: 10,
         }),
-        createRide({
+        createActivity({
           id: 'second',
           startTime: '2025-01-02T08:00:00Z',
           localDate: '2025-01-02',
@@ -69,20 +69,20 @@ describe('buildCumulativeMetricPoints', () => {
       'distanceMiles',
     )
 
-    expect(points.map((point) => point.rideId)).toEqual(['first', 'second', 'third'])
+    expect(points.map((point) => point.activityId)).toEqual(['first', 'second', 'third'])
     expect(points.map((point) => point.cumulativeValue)).toEqual([10, 30, 60])
   })
 
   it('accumulates continuously across year boundaries', () => {
     const points = buildCumulativeMetricPoints(
       [
-        createRide({
+        createActivity({
           id: 'new-year',
           startTime: '2026-01-01T08:00:00Z',
           localDate: '2026-01-01',
           distanceMiles: 25,
         }),
-        createRide({
+        createActivity({
           id: 'prior-year',
           startTime: '2025-12-31T08:00:00Z',
           localDate: '2025-12-31',
@@ -92,26 +92,26 @@ describe('buildCumulativeMetricPoints', () => {
       'distanceMiles',
     )
 
-    expect(points.map((point) => point.rideId)).toEqual(['prior-year', 'new-year'])
+    expect(points.map((point) => point.activityId)).toEqual(['prior-year', 'new-year'])
     expect(points.map((point) => point.cumulativeValue)).toEqual([15, 40])
   })
 
-  it('orders same-day rides by athlete-local start time', () => {
+  it('orders same-day activities by athlete-local start time', () => {
     const points = buildCumulativeMetricPoints(
       [
-        createRide({
+        createActivity({
           id: 'late',
           startTime: '2025-05-10T18:00:00Z',
           localDate: '2025-05-10',
           elevationGainFeet: 300,
         }),
-        createRide({
+        createActivity({
           id: 'early',
           startTime: '2025-05-10T06:00:00Z',
           localDate: '2025-05-10',
           elevationGainFeet: 100,
         }),
-        createRide({
+        createActivity({
           id: 'midday',
           startTime: '2025-05-10T12:00:00Z',
           localDate: '2025-05-10',
@@ -121,20 +121,20 @@ describe('buildCumulativeMetricPoints', () => {
       'elevationGainFeet',
     )
 
-    expect(points.map((point) => point.rideId)).toEqual(['early', 'midday', 'late'])
+    expect(points.map((point) => point.activityId)).toEqual(['early', 'midday', 'late'])
     expect(points.map((point) => point.cumulativeValue)).toEqual([100, 300, 600])
   })
 
   it('compares local-clock timestamp components without timezone shifting', () => {
     const points = buildCumulativeMetricPoints(
       [
-        createRide({
+        createActivity({
           id: 'later-local',
           startTime: '2026-01-01T00:30:00Z',
           localDate: '2026-01-01',
           distanceMiles: 20,
         }),
-        createRide({
+        createActivity({
           id: 'earlier-local',
           startTime: '2025-12-31T23:30:00Z',
           localDate: '2025-12-31',
@@ -144,36 +144,36 @@ describe('buildCumulativeMetricPoints', () => {
       'distanceMiles',
     )
 
-    expect(points.map((point) => point.rideId)).toEqual([
+    expect(points.map((point) => point.activityId)).toEqual([
       'earlier-local',
       'later-local',
     ])
   })
 
-  it('orders identical timestamps by ride id', () => {
+  it('orders identical timestamps by activity id', () => {
     const points = buildCumulativeMetricPoints(
       [
-        createRide({ id: 'ride-c', startTime: '2025-01-01T08:00:00Z', distanceMiles: 30 }),
-        createRide({ id: 'ride-a', startTime: '2025-01-01T08:00:00Z', distanceMiles: 10 }),
-        createRide({ id: 'ride-b', startTime: '2025-01-01T08:00:00Z', distanceMiles: 20 }),
+        createActivity({ id: 'activity-c', startTime: '2025-01-01T08:00:00Z', distanceMiles: 30 }),
+        createActivity({ id: 'activity-a', startTime: '2025-01-01T08:00:00Z', distanceMiles: 10 }),
+        createActivity({ id: 'activity-b', startTime: '2025-01-01T08:00:00Z', distanceMiles: 20 }),
       ],
       'distanceMiles',
     )
 
-    expect(points.map((point) => point.rideId)).toEqual(['ride-a', 'ride-b', 'ride-c'])
+    expect(points.map((point) => point.activityId)).toEqual(['activity-a', 'activity-b', 'activity-c'])
     expect(points.map((point) => point.cumulativeValue)).toEqual([10, 30, 60])
   })
 
   it('falls back to localDate at midnight when startTime is not parseable', () => {
     const points = buildCumulativeMetricPoints(
       [
-        createRide({
+        createActivity({
           id: 'valid-time',
           startTime: '2025-01-02T08:00:00Z',
           localDate: '2025-01-02',
           distanceMiles: 20,
         }),
-        createRide({
+        createActivity({
           id: 'fallback-date',
           startTime: 'not-a-local-time',
           localDate: '2025-01-01',
@@ -183,24 +183,24 @@ describe('buildCumulativeMetricPoints', () => {
       'distanceMiles',
     )
 
-    expect(points.map((point) => point.rideId)).toEqual(['fallback-date', 'valid-time'])
+    expect(points.map((point) => point.activityId)).toEqual(['fallback-date', 'valid-time'])
     expect(points.map((point) => point.cumulativeValue)).toEqual([10, 30])
   })
 
-  it('returns chart-ready points with local calendar dates and source ride references', () => {
-    const ride = createRide({
-      id: 'ride-a',
+  it('returns chart-ready points with local calendar dates and source activity references', () => {
+    const activity = createActivity({
+      id: 'activity-a',
       startTime: '2025-03-12T08:15:30Z',
       localDate: '2025-03-12',
       distanceMiles: 31.4,
     })
-    const [point] = buildCumulativeMetricPoints([ride], 'distanceMiles')
+    const [point] = buildCumulativeMetricPoints([activity], 'distanceMiles')
 
     expect(point).toEqual({
       date: new Date(2025, 2, 12),
       localDate: '2025-03-12',
-      rideId: 'ride-a',
-      ride,
+      activityId: 'activity-a',
+      activity,
       value: 31.4,
       cumulativeValue: 31.4,
     })
@@ -209,8 +209,8 @@ describe('buildCumulativeMetricPoints', () => {
   it('preserves raw numeric precision while accumulating', () => {
     const points = buildCumulativeMetricPoints(
       [
-        createRide({ id: 'a', startTime: '2025-01-01T08:00:00Z', distanceMiles: 10.125 }),
-        createRide({ id: 'b', startTime: '2025-01-02T08:00:00Z', distanceMiles: 20.375 }),
+        createActivity({ id: 'a', startTime: '2025-01-01T08:00:00Z', distanceMiles: 10.125 }),
+        createActivity({ id: 'b', startTime: '2025-01-02T08:00:00Z', distanceMiles: 20.375 }),
       ],
       'distanceMiles',
     )
@@ -218,25 +218,25 @@ describe('buildCumulativeMetricPoints', () => {
     expect(points.map((point) => point.cumulativeValue)).toEqual([10.125, 30.5])
   })
 
-  it('does not mutate source data or reorder input rides', () => {
-    const rides = [
-      createRide({ id: 'b', startTime: '2025-01-02T08:00:00Z', distanceMiles: 20 }),
-      createRide({ id: 'a', startTime: '2025-01-01T08:00:00Z', distanceMiles: 10 }),
+  it('does not mutate source data or reorder input activities', () => {
+    const activities = [
+      createActivity({ id: 'b', startTime: '2025-01-02T08:00:00Z', distanceMiles: 20 }),
+      createActivity({ id: 'a', startTime: '2025-01-01T08:00:00Z', distanceMiles: 10 }),
     ]
-    const originalRides = rides.map((ride) => ({ ...ride }))
-    const originalIds = rides.map((ride) => ride.id)
+    const originalActivities = activities.map((activity) => ({ ...activity }))
+    const originalIds = activities.map((activity) => activity.id)
 
-    buildCumulativeMetricPoints(rides, 'distanceMiles')
+    buildCumulativeMetricPoints(activities, 'distanceMiles')
 
-    expect(rides).toEqual(originalRides)
-    expect(rides.map((ride) => ride.id)).toEqual(originalIds)
+    expect(activities).toEqual(originalActivities)
+    expect(activities.map((activity) => activity.id)).toEqual(originalIds)
   })
 })
 
-function createRide(
+function createActivity(
   overrides: Partial<
     Pick<
-      Ride,
+      Activity,
       | 'id'
       | 'startTime'
       | 'localDate'
@@ -249,11 +249,11 @@ function createRide(
       | 'temperatureF'
     >
   > = {},
-): Ride {
+): Activity {
   const localDate = overrides.localDate ?? '2025-01-01'
 
   return {
-    id: overrides.id ?? 'ride-a',
+    id: overrides.id ?? 'activity-a',
     startTime: overrides.startTime ?? `${localDate}T08:00:00Z`,
     localDate,
     year: overrides.year ?? Number(localDate.slice(0, 4)),

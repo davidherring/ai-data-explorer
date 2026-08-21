@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Dispatch, SetStateAction } from 'react'
 import { AnalysisWorkspaceShell } from './AnalysisWorkspaceShell.tsx'
-import type { DayOfWeek, Ride } from '../data/ride.ts'
+import type { DayOfWeek, Activity } from '../data/activity.ts'
 import {
   defaultCumulativeView,
   defaultRelationshipView,
@@ -384,7 +384,7 @@ describe('AnalysisWorkspaceShell', () => {
     expect(screen.queryByLabelText('Cumulative Distance')).not.toBeInTheDocument()
   })
 
-  it('passes empty selected rides through seasonal and cumulative charts', () => {
+  it('passes empty selected activities through seasonal and cumulative charts', () => {
     renderWorkspace(
       {
         selection: {
@@ -398,7 +398,7 @@ describe('AnalysisWorkspaceShell', () => {
     )
 
     expect(
-      screen.getByText('No rides to plot for the current selection.'),
+      screen.getByText('No activities to plot for the current selection.'),
     ).toBeInTheDocument()
 
     cleanup()
@@ -416,7 +416,7 @@ describe('AnalysisWorkspaceShell', () => {
     )
 
     expect(
-      screen.getByText('No rides to plot for the current selection.'),
+      screen.getByText('No activities to plot for the current selection.'),
     ).toBeInTheDocument()
   })
 })
@@ -424,12 +424,12 @@ describe('AnalysisWorkspaceShell', () => {
 function renderWorkspace(
   analysisState: AnalysisState,
   onAnalysisStateChange: Dispatch<SetStateAction<AnalysisState>> = vi.fn(),
-  selectedRides: Ride[] = [ride],
+  selectedActivities: Activity[] = [activity],
 ) {
   return render(
     <AnalysisWorkspaceShell
-      rides={[ride]}
-      selectedRides={selectedRides}
+      activities={[activity]}
+      selectedActivities={selectedActivities}
       analysisState={analysisState}
       onAnalysisStateChange={onAnalysisStateChange}
     />,
@@ -453,8 +453,8 @@ function applyStateUpdateAt(
   return typeof update === 'function' ? update(initialState) : update
 }
 
-const ride: Ride = {
-  id: 'ride-a',
+const activity: Activity = {
+  id: 'activity-a',
   startTime: '2025-01-01T07:00:00-07:00',
   localDate: '2025-01-01',
   year: 2025,

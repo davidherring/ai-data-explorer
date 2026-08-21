@@ -5,18 +5,18 @@ import type { SeasonalMetricBucket } from '../analysis/seasonalMetrics.ts'
 import {
   getMetricDefinition,
   type MetricDefinition,
-} from '../analysis/rideMetrics.ts'
+} from '../analysis/activityMetrics.ts'
 import { SelectionStatus } from './SelectionStatus.tsx'
 import {
   getSeasonalLineSegmentPoints,
   type SeasonalLineSegmentPoint,
 } from './seasonalLineSegments.ts'
-import type { Ride } from '../data/ride.ts'
+import type { Activity } from '../data/activity.ts'
 import type { MetricKey } from '../state/analysisState.ts'
 
 type SeasonalMetricChartProps = {
-  rides: Ride[]
-  totalRideCount: number
+  activities: Activity[]
+  totalActivityCount: number
   yMetric: MetricKey
   buckets: SeasonalMetricBucket[]
   headerControls?: ReactNode
@@ -26,8 +26,8 @@ const fallbackChartWidth = 720
 const chartHeight = 320
 
 export function SeasonalMetricChart({
-  rides,
-  totalRideCount,
+  activities,
+  totalActivityCount,
   yMetric,
   buckets,
   headerControls,
@@ -40,8 +40,8 @@ export function SeasonalMetricChart({
     () => getSeasonalLineSegmentPoints(buckets),
     [buckets],
   )
-  const hasNoSelectedRides = rides.length === 0
-  const hasNoValidMetricValues = rides.length > 0 && buckets.length === 0
+  const hasNoSelectedActivities = activities.length === 0
+  const hasNoValidMetricValues = activities.length > 0 && buckets.length === 0
 
   useEffect(() => {
     const container = containerRef.current
@@ -160,18 +160,18 @@ export function SeasonalMetricChart({
           <p className="relationship-status">Biweekly median by year</p>
         </div>
         {headerControls}
-        <SelectionStatus rides={rides} totalRideCount={totalRideCount} />
+        <SelectionStatus activities={activities} totalActivityCount={totalActivityCount} />
       </figcaption>
 
       <div ref={containerRef} className="trend-chart-container seasonal-chart-container">
-        {hasNoSelectedRides && (
+        {hasNoSelectedActivities && (
           <div className="chart-empty-state">
-            No rides to plot for the current selection.
+            No activities to plot for the current selection.
           </div>
         )}
         {hasNoValidMetricValues && (
           <div className="chart-empty-state">
-            No rides have valid {metricDefinition.label.toLowerCase()} values
+            No activities have valid {metricDefinition.label.toLowerCase()} values
             for the current selection.
           </div>
         )}
@@ -217,7 +217,7 @@ function formatWeekRange(bucket: SeasonalMetricBucket): string {
 }
 
 function formatRideCount(sampleCount: number): string {
-  return sampleCount === 1 ? 'ride' : 'rides'
+  return sampleCount === 1 ? 'activity' : 'activities'
 }
 
 function formatMetricValue(

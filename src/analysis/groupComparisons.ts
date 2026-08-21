@@ -1,4 +1,4 @@
-import type { DayOfWeek, Ride } from '../data/ride.js'
+import type { DayOfWeek, Activity } from '../data/activity.js'
 import type { DayMode, GroupingKey, MetricKey } from '../state/analysisState.js'
 import {
   summarizeSelection,
@@ -31,7 +31,7 @@ export type GroupComparisonGroup = {
   groupValue: GroupComparisonGroupValue
   label: string
   status: GroupComparisonGroupStatus
-  rideCount: number
+  activityCount: number
   dateRange?: {
     start?: string
     end?: string
@@ -102,10 +102,10 @@ const dayModeSortOrder: readonly GroupComparisonDayMode[] = [
 ]
 
 export function buildGroupedComparison(
-  rides: readonly Ride[],
+  activities: readonly Activity[],
   options: GroupedComparisonOptions,
 ): GroupedComparison {
-  const groupedRides = groupRides(rides, options.groupBy)
+  const groupedRides = groupRides(activities, options.groupBy)
   const groupValues = getOutputGroupValues(groupedRides, options)
   const groups = groupValues.map((groupValue) =>
     buildComparisonGroup(groupValue, groupedRides.get(getGroupMapKey(groupValue))),
@@ -115,27 +115,27 @@ export function buildGroupedComparison(
 
   return {
     groupBy: options.groupBy,
-    sampleCount: rides.length,
+    sampleCount: activities.length,
     groups,
     ...(pairwiseDeltas !== undefined ? { pairwiseDeltas } : {}),
   }
 }
 
 function groupRides(
-  rides: readonly Ride[],
+  activities: readonly Activity[],
   groupBy: GroupComparisonGroupBy,
-): Map<string, Ride[]> {
-  const groupedRides = new Map<string, Ride[]>()
+): Map<string, Activity[]> {
+  const groupedRides = new Map<string, Activity[]>()
 
-  for (const ride of rides) {
-    const groupValue = getRideGroupValue(ride, groupBy)
+  for (const activity of activities) {
+    const groupValue = getRideGroupValue(activity, groupBy)
     const groupKey = getGroupMapKey(groupValue)
     const group = groupedRides.get(groupKey)
 
     if (group) {
-      group.push(ride)
+      group.push(activity)
     } else {
-      groupedRides.set(groupKey, [ride])
+      groupedRides.set(groupKey, [activity])
     }
   }
 
@@ -143,7 +143,7 @@ function groupRides(
 }
 
 function getOutputGroupValues(
-  groupedRides: ReadonlyMap<string, readonly Ride[]>,
+  groupedRides: ReadonlyMap<string, readonly Activity[]>,
   options: GroupedComparisonOptions,
 ): GroupComparisonGroupValue[] {
   if (options.groups !== undefined) {
@@ -152,8 +152,8 @@ function getOutputGroupValues(
 
   const discoveredValues: GroupComparisonGroupValue[] = []
 
-  for (const rides of groupedRides.values()) {
-    const firstRide = rides[0]
+  for (const activities of groupedRides.values()) {
+    const firstRide = activities[0]
 
     if (firstRide !== undefined) {
       discoveredValues.push(getRideGroupValue(firstRide, options.groupBy))
@@ -185,17 +185,17 @@ function getUniqueRequestedGroups(
 
 function buildComparisonGroup(
   groupValue: GroupComparisonGroupValue,
-  rides: readonly Ride[] | undefined,
+  activities: readonly Activity[] | undefined,
 ): GroupComparisonGroup {
-  const groupRides = rides ?? []
+  const groupRides = activities ?? []
   const summary = summarizeSelection(groupRides)
-  const missing = rides === undefined
+  const missing = activities === undefined
 
   return {
     groupValue,
     label: String(groupValue),
     status: missing ? 'missing-requested-group' : 'present',
-    rideCount: summary.rideCount,
+    activityCount: summary.activityCount,
     ...(summary.dateRange !== undefined ? { dateRange: summary.dateRange } : {}),
     metrics: summary.metrics,
     warnings: [
@@ -209,14 +209,14 @@ function buildComparisonGroup(
 }
 
 function buildSportTypeComposition(
-  rides: readonly Ride[],
+  activities: readonly Activity[],
 ): GroupCompositionCount[] {
   const countsBySportType = new Map<string, number>()
 
-  for (const ride of rides) {
+  for (const activity of activities) {
     countsBySportType.set(
-      ride.sportType,
-      (countsBySportType.get(ride.sportType) ?? 0) + 1,
+      activity.sportType,
+      (countsBySportType.get(activity.sportType) ?? 0) + 1,
     )
   }
 
@@ -291,18 +291,18 @@ function getMetricSummary(
 }
 
 function getRideGroupValue(
-  ride: Ride,
+  activity: Activity,
   groupBy: GroupComparisonGroupBy,
 ): GroupComparisonGroupValue {
   switch (groupBy) {
     case 'year':
-      return ride.year
+      return activity.year
     case 'month':
-      return ride.month
+      return activity.month
     case 'dayOfWeek':
-      return ride.dayOfWeek
+      return activity.dayOfWeek
     case 'dayMode':
-      return ride.isWeekend ? 'weekend' : 'weekday'
+      return activity.isWeekend ? 'weekend' : 'weekday'
   }
 }
 

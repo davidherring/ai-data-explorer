@@ -1,6 +1,6 @@
-import type { Ride } from '../data/ride.js'
+import type { Activity } from '../data/activity.js'
 import type { MetricKey } from '../state/analysisState.js'
-import { getRideMetric } from './rideMetrics.js'
+import { getActivityMetric } from './activityMetrics.js'
 
 export type MetricRelationshipStatus =
   | 'ready'
@@ -27,16 +27,16 @@ type MetricPair = {
 }
 
 export type MetricRelationshipPoint = MetricPair & {
-  ride: Ride
+  activity: Activity
 }
 
 export function relationshipBetweenMetrics(
-  rides: readonly Ride[],
+  activities: readonly Activity[],
   xMetric: MetricKey,
   yMetric: MetricKey,
 ): MetricRelationshipResult {
-  const pairs = getMetricRelationshipPoints(rides, xMetric, yMetric)
-  const baseResult = buildBaseResult(rides.length, pairs, xMetric, yMetric)
+  const pairs = getMetricRelationshipPoints(activities, xMetric, yMetric)
+  const baseResult = buildBaseResult(activities.length, pairs, xMetric, yMetric)
 
   if (pairs.length < 3) {
     return {
@@ -81,18 +81,18 @@ export function relationshipBetweenMetrics(
 }
 
 export function getMetricRelationshipPoints(
-  rides: readonly Ride[],
+  activities: readonly Activity[],
   xMetric: MetricKey,
   yMetric: MetricKey,
 ): MetricRelationshipPoint[] {
   const points: MetricRelationshipPoint[] = []
 
-  for (const ride of rides) {
-    const x = getRideMetric(ride, xMetric)
-    const y = getRideMetric(ride, yMetric)
+  for (const activity of activities) {
+    const x = getActivityMetric(activity, xMetric)
+    const y = getActivityMetric(activity, yMetric)
 
     if (x !== undefined && y !== undefined && Number.isFinite(x) && Number.isFinite(y)) {
-      points.push({ ride, x, y })
+      points.push({ activity, x, y })
     }
   }
 

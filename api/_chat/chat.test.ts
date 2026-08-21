@@ -10,7 +10,7 @@ import { buildDatasetProfile } from '../../src/analysis/aiContext.js'
 import type { SelectionSummary } from '../../src/analysis/aiContext.js'
 import type { GroupedComparison } from '../../src/analysis/groupComparisons.js'
 import type { MetricTrendAnalysis } from '../../src/analysis/metricTrends.js'
-import type { DayOfWeek, Ride } from '../../src/data/ride.js'
+import type { DayOfWeek, Activity } from '../../src/data/activity.js'
 import { defaultAnalysisState } from '../../src/state/analysisState.js'
 import chatHandler from '../chat.js'
 import {
@@ -22,7 +22,7 @@ import {
   calculateTrendToolInputSchema,
   compareGroupsToolInputSchema,
   MAX_CHAT_REQUEST_BYTES,
-  MAX_SELECTED_RIDES_FOR_CHAT,
+  MAX_SELECTED_ACTIVITIES_FOR_CHAT,
   relationshipToolInputSchema,
 } from './schema.js'
 import { AI_CHAT_MODEL_ID, createChatModel } from './model.js'
@@ -102,10 +102,10 @@ describe('handleChat', () => {
     expect(streamTextMock).toHaveBeenCalledTimes(1)
   })
 
-  it('rejects selectedRideCount mismatches', async () => {
+  it('rejects selectedActivityCount mismatches', async () => {
     const body = createValidChatBody({
-      selectedRides: [createRide({ id: 'a' })],
-      selectedRideCount: 2,
+      selectedActivities: [createActivity({ id: 'a' })],
+      selectedActivityCount: 2,
     })
     const response = createMockResponse()
 
@@ -120,12 +120,12 @@ describe('handleChat', () => {
   })
 
   it('logs compact validation issues without raw request content', async () => {
-    const privateRideId = 'private-ride-id'
+    const privateRideId = 'private-activity-id'
     const privateMessageText = 'private question text'
     const body = {
       ...createValidChatBody({
-        selectedRides: [createRide({ id: privateRideId })],
-        selectedRideCount: 2,
+        selectedActivities: [createActivity({ id: privateRideId })],
+        selectedActivityCount: 2,
       }),
       messages: [
         {
@@ -152,9 +152,9 @@ describe('handleChat', () => {
         expect.objectContaining({
           issues: expect.arrayContaining([
             expect.objectContaining({
-              path: ['selectedRideCount'],
+              path: ['selectedActivityCount'],
               code: 'custom',
-              message: 'selectedRideCount must match submitted ride count',
+              message: 'selectedActivityCount must match submitted activity count',
             }),
           ]),
         }),
@@ -162,21 +162,21 @@ describe('handleChat', () => {
       const loggedPayload = JSON.stringify(warnSpy.mock.calls)
       expect(loggedPayload).not.toContain(privateRideId)
       expect(loggedPayload).not.toContain(privateMessageText)
-      expect(loggedPayload).not.toContain('selectedRides')
+      expect(loggedPayload).not.toContain('selectedActivities')
       expect(loggedPayload).not.toContain('messages')
     } finally {
       warnSpy.mockRestore()
     }
   })
 
-  it('rejects unreasonable selected ride payloads', async () => {
-    const selectedRides = Array.from(
-      { length: MAX_SELECTED_RIDES_FOR_CHAT + 1 },
-      (_, index) => createRide({ id: `ride-${index}` }),
+  it('rejects unreasonable selected activity payloads', async () => {
+    const selectedActivities = Array.from(
+      { length: MAX_SELECTED_ACTIVITIES_FOR_CHAT + 1 },
+      (_, index) => createActivity({ id: `activity-${index}` }),
     )
     const body = createValidChatBody({
-      selectedRides,
-      selectedRideCount: selectedRides.length,
+      selectedActivities,
+      selectedActivityCount: selectedActivities.length,
     })
     const response = createMockResponse()
 
@@ -203,23 +203,23 @@ describe('handleChat', () => {
     expect(JSON.parse(response.body)).toEqual({ error: 'chat_payload_too_large' })
   })
 
-  it('builds compact context without serializing raw rides into the system prompt', async () => {
+  it('builds compact context without serializing raw activities into the system prompt', async () => {
     const body = createValidChatBody({
-      selectedRides: [
-        createRide({
-          id: 'private-ride-id',
+      selectedActivities: [
+        createActivity({
+          id: 'private-activity-id',
           startTime: '2026-04-01T07:32:00-07:00',
           localDate: '2026-04-01',
           distanceMiles: 12,
         }),
-        createRide({
-          id: 'private-ride-id-2',
+        createActivity({
+          id: 'private-activity-id-2',
           startTime: '2026-04-02T07:32:00-07:00',
           localDate: '2026-04-02',
           distanceMiles: 18,
         }),
-        createRide({
-          id: 'private-ride-id-3',
+        createActivity({
+          id: 'private-activity-id-3',
           startTime: '2026-04-03T07:32:00-07:00',
           localDate: '2026-04-03',
           distanceMiles: 24,
@@ -241,8 +241,8 @@ describe('handleChat', () => {
     const system = streamTextCalls[0][0].system
     expect(system).toContain('Current structured analysis context:')
     expect(system).toContain('selectionSummary')
-    expect(system).not.toContain('selectedRides')
-    expect(system).not.toContain('private-ride-id')
+    expect(system).not.toContain('selectedActivities')
+    expect(system).not.toContain('private-activity-id')
     expect(system).not.toContain('2026-04-01T07:32:00-07:00')
   })
 
@@ -269,18 +269,18 @@ describe('handleChat', () => {
   })
 
   it('strips stale assistant tool output from model-visible history while preserving text and current context', async () => {
-    const selectedRides = [
-      createRide({
+    const selectedActivities = [
+      createActivity({
         id: 'current-2025-a',
         localDate: '2025-01-01',
         averageSpeedMph: 14,
       }),
-      createRide({
+      createActivity({
         id: 'current-2025-b',
         localDate: '2025-01-02',
         averageSpeedMph: 15,
       }),
-      createRide({
+      createActivity({
         id: 'current-2025-c',
         localDate: '2025-01-03',
         averageSpeedMph: 16,
@@ -288,8 +288,8 @@ describe('handleChat', () => {
     ]
     const body = {
       ...createValidChatBody({
-        selectedRides,
-        selectedRideCount: selectedRides.length,
+        selectedActivities,
+        selectedActivityCount: selectedActivities.length,
       }),
       messages: [
         {
@@ -330,8 +330,8 @@ describe('handleChat', () => {
         ...defaultAnalysisState,
         selection: { years: [2025] },
       },
-      datasetProfile: buildDatasetProfile(selectedRides),
-      totalRideCount: selectedRides.length,
+      datasetProfile: buildDatasetProfile(selectedActivities),
+      totalActivityCount: selectedActivities.length,
     }
     const streamTextMock = vi.fn(() => ({
       pipeUIMessageStreamToResponse: vi.fn(),
@@ -363,7 +363,7 @@ describe('handleChat', () => {
     expect(modelMessagesJson).not.toContain('2025-12-31')
     expect(modelMessagesJson).not.toContain('tool-calculateTrend')
     expect(system).toContain('"years":[2025]')
-    expect(system).toContain('"selectedRideCount":3')
+    expect(system).toContain('"selectedActivityCount":3')
     expect(system).not.toContain('current-2025-a')
   })
 
@@ -407,16 +407,16 @@ describe('handleChat', () => {
 })
 
 describe('analysis chat tools', () => {
-  it('executes summarizeSelection deterministically over submitted rides', async () => {
+  it('executes summarizeSelection deterministically over submitted activities', async () => {
     const tools = createAnalysisTools([
-      createRide({ id: 'a', distanceMiles: 10 }),
-      createRide({ id: 'b', distanceMiles: 20 }),
-      createRide({ id: 'c', distanceMiles: 30 }),
+      createActivity({ id: 'a', distanceMiles: 10 }),
+      createActivity({ id: 'b', distanceMiles: 20 }),
+      createActivity({ id: 'c', distanceMiles: 30 }),
     ])
     const output = await executeTool<SelectionSummary>(tools.summarizeSelection, {})
 
     expect(output).toMatchObject({
-      rideCount: 3,
+      activityCount: 3,
       metrics: expect.arrayContaining([
         expect.objectContaining({
           metric: 'distanceMiles',
@@ -430,9 +430,9 @@ describe('analysis chat tools', () => {
 
   it('executes relationshipBetweenMetrics deterministically with metric metadata', async () => {
     const tools = createAnalysisTools([
-      createRide({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 12 }),
-      createRide({ id: 'b', elevationGainFeet: 200, averageSpeedMph: 14 }),
-      createRide({ id: 'c', elevationGainFeet: 300, averageSpeedMph: 16 }),
+      createActivity({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 12 }),
+      createActivity({ id: 'b', elevationGainFeet: 200, averageSpeedMph: 14 }),
+      createActivity({ id: 'c', elevationGainFeet: 300, averageSpeedMph: 16 }),
     ])
     const output = await executeTool<RelationshipToolOutput>(
       tools.relationshipBetweenMetrics,
@@ -464,27 +464,27 @@ describe('analysis chat tools', () => {
     ).toBe(false)
   })
 
-  it('executes compareGroups deterministically over submitted rides', async () => {
+  it('executes compareGroups deterministically over submitted activities', async () => {
     const tools = createAnalysisTools([
-      createRide({
+      createActivity({
         id: '2019-a',
         localDate: '2019-01-01',
         averageSpeedMph: 12,
         distanceMiles: 10,
       }),
-      createRide({
+      createActivity({
         id: '2019-b',
         localDate: '2019-01-02',
         averageSpeedMph: 18,
         distanceMiles: 20,
       }),
-      createRide({
+      createActivity({
         id: '2026-a',
         localDate: '2026-01-01',
         averageSpeedMph: 10,
         distanceMiles: 30,
       }),
-      createRide({
+      createActivity({
         id: '2026-b',
         localDate: '2026-01-02',
         averageSpeedMph: 14,
@@ -503,12 +503,12 @@ describe('analysis chat tools', () => {
         expect.objectContaining({
           groupValue: 2019,
           status: 'present',
-          rideCount: 2,
+          activityCount: 2,
         }),
         expect.objectContaining({
           groupValue: 2026,
           status: 'present',
-          rideCount: 2,
+          activityCount: 2,
         }),
       ],
       pairwiseDeltas: expect.objectContaining({
@@ -539,7 +539,7 @@ describe('analysis chat tools', () => {
 
   it('returns missing requested group status from compareGroups', async () => {
     const tools = createAnalysisTools([
-      createRide({ id: '2026-a', localDate: '2026-01-01' }),
+      createActivity({ id: '2026-a', localDate: '2026-01-01' }),
     ])
     const output = await executeTool<GroupedComparison>(tools.compareGroups, {
       groupBy: 'year',
@@ -549,7 +549,7 @@ describe('analysis chat tools', () => {
     expect(output.groups[0]).toMatchObject({
       groupValue: 2019,
       status: 'missing-requested-group',
-      rideCount: 0,
+      activityCount: 0,
       warnings: [
         { code: 'missing-requested-group', groupValue: 2019 },
         { code: 'empty-selection' },
@@ -626,19 +626,19 @@ describe('analysis chat tools', () => {
     ).toBe(false)
   })
 
-  it('executes calculateTrend deterministically over submitted rides', async () => {
+  it('executes calculateTrend deterministically over submitted activities', async () => {
     const tools = createAnalysisTools([
-      createRide({
+      createActivity({
         id: 'private-a',
         localDate: '2026-01-01',
         averageSpeedMph: 10,
       }),
-      createRide({
+      createActivity({
         id: 'private-b',
         localDate: '2026-01-11',
         averageSpeedMph: 20,
       }),
-      createRide({
+      createActivity({
         id: 'private-c',
         localDate: '2026-01-21',
         averageSpeedMph: 30,
@@ -671,8 +671,8 @@ describe('analysis chat tools', () => {
     expect(JSON.stringify(output)).not.toContain('private-a')
     expect(JSON.stringify(output)).not.toContain('private-b')
     expect(JSON.stringify(output)).not.toContain('private-c')
-    expect(JSON.stringify(output)).not.toContain('selectedRides')
-    expect(JSON.stringify(output)).not.toContain('"ride"')
+    expect(JSON.stringify(output)).not.toContain('selectedActivities')
+    expect(JSON.stringify(output)).not.toContain('"activity"')
   })
 
   it('validates calculateTrend metric input', () => {
@@ -738,16 +738,16 @@ function createValidChatBody(
     id: string
     trigger: 'submit-message' | 'regenerate-message'
     messageId: string
-    selectedRides: Ride[]
-    selectedRideCount: number
+    selectedActivities: Activity[]
+    selectedActivityCount: number
   }> = {},
 ) {
-  const selectedRides =
-    overrides.selectedRides ??
+  const selectedActivities =
+    overrides.selectedActivities ??
     [
-      createRide({ id: 'a', localDate: '2026-01-01' }),
-      createRide({ id: 'b', localDate: '2026-01-02' }),
-      createRide({ id: 'c', localDate: '2026-01-03' }),
+      createActivity({ id: 'a', localDate: '2026-01-01' }),
+      createActivity({ id: 'b', localDate: '2026-01-02' }),
+      createActivity({ id: 'c', localDate: '2026-01-03' }),
     ]
 
   return {
@@ -764,10 +764,10 @@ function createValidChatBody(
       ? { messageId: overrides.messageId }
       : {}),
     currentAnalysisState: defaultAnalysisState,
-    selectedRides,
-    datasetProfile: buildDatasetProfile(selectedRides),
-    selectedRideCount: overrides.selectedRideCount ?? selectedRides.length,
-    totalRideCount: selectedRides.length,
+    selectedActivities,
+    datasetProfile: buildDatasetProfile(selectedActivities),
+    selectedActivityCount: overrides.selectedActivityCount ?? selectedActivities.length,
+    totalActivityCount: selectedActivities.length,
     dataSource: 'demo',
   }
 }
@@ -813,10 +813,10 @@ function createMockResponse(): ServerResponse & {
   }
 }
 
-function createRide(
+function createActivity(
   overrides: Partial<
     Pick<
-      Ride,
+      Activity,
       | 'id'
       | 'startTime'
       | 'localDate'
@@ -837,11 +837,11 @@ function createRide(
       | 'manual'
     >
   > = {},
-): Ride {
+): Activity {
   const localDate = overrides.localDate ?? '2026-01-01'
 
   return {
-    id: overrides.id ?? 'ride-a',
+    id: overrides.id ?? 'activity-a',
     startTime: overrides.startTime ?? `${localDate}T07:00:00-07:00`,
     localDate,
     year: overrides.year ?? Number(localDate.slice(0, 4)),

@@ -1,5 +1,5 @@
 import type { MetricRelationshipResult } from '../analysis/metricRelationships.ts'
-import { getMetricDefinition } from '../analysis/rideMetrics.ts'
+import { getMetricDefinition } from '../analysis/activityMetrics.ts'
 import type { MetricKey } from '../state/analysisState.ts'
 
 type RelationshipStatusProps = {
@@ -31,7 +31,7 @@ function formatRelationshipStatus(
         relationship.pearsonR,
       )}`
     case 'insufficient-valid-pairs':
-      return 'Too few valid rides to calculate Pearson r.'
+      return 'Too few valid activities to calculate Pearson r.'
     case 'zero-x-variance':
       return `${getMetricDefinition(
         xMetric,
@@ -44,7 +44,7 @@ function formatRelationshipStatus(
 }
 
 function formatPairCount(relationship: MetricRelationshipResult): string {
-  const rideLabel = relationship.validPairCount === 1 ? 'ride' : 'rides'
+  const rideLabel = relationship.validPairCount === 1 ? 'activity' : 'activities'
 
   if (relationship.sampleCount === relationship.validPairCount) {
     return `${relationship.validPairCount} ${rideLabel}`

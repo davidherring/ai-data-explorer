@@ -3,23 +3,23 @@ import type { ReactNode } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   getMetricDefinition,
-  getRideMetric,
+  getActivityMetric,
   type MetricDefinition,
-} from '../analysis/rideMetrics.ts'
+} from '../analysis/activityMetrics.ts'
 import { SelectionStatus } from './SelectionStatus.tsx'
-import type { Ride } from '../data/ride.ts'
+import type { Activity } from '../data/activity.ts'
 import type { MetricKey } from '../state/analysisState.ts'
 
 type MetricTrendChartProps = {
-  rides: Ride[]
-  totalRideCount: number
+  activities: Activity[]
+  totalActivityCount: number
   yMetric: MetricKey
   headerControls?: ReactNode
 }
 
 type TrendPoint = {
   date: Date
-  ride: Ride
+  activity: Activity
   value: number
 }
 
@@ -27,8 +27,8 @@ const fallbackChartWidth = 720
 const chartHeight = 320
 
 export function MetricTrendChart({
-  rides,
-  totalRideCount,
+  activities,
+  totalActivityCount,
   yMetric,
   headerControls,
 }: MetricTrendChartProps) {
@@ -40,26 +40,26 @@ export function MetricTrendChart({
     () => {
       const nextPoints: TrendPoint[] = []
 
-      for (const ride of rides) {
-        const value = getRideMetric(ride, yMetric)
+      for (const activity of activities) {
+        const value = getActivityMetric(activity, yMetric)
 
         if (value === undefined || !Number.isFinite(value)) {
           continue
         }
 
         nextPoints.push({
-          date: parseLocalCalendarDate(ride.localDate),
-          ride,
+          date: parseLocalCalendarDate(activity.localDate),
+          activity,
           value,
         })
       }
 
       return nextPoints
     },
-    [rides, yMetric],
+    [activities, yMetric],
   )
-  const hasNoSelectedRides = rides.length === 0
-  const hasNoValidMetricValues = rides.length > 0 && points.length === 0
+  const hasNoSelectedActivities = activities.length === 0
+  const hasNoValidMetricValues = activities.length > 0 && points.length === 0
 
   useEffect(() => {
     const container = containerRef.current
@@ -119,7 +119,7 @@ export function MetricTrendChart({
         maxWidth: '100%',
       },
       x: {
-        label: 'Ride date',
+        label: 'Activity date',
         grid: false,
       },
       y: {
@@ -139,7 +139,7 @@ export function MetricTrendChart({
           title: (point: TrendPoint) =>
             formatRideTitle(point, yMetric, metricDefinition),
           ariaLabel: (point: TrendPoint) =>
-            `${point.ride.localDate}, ${metricDefinition.label.toLowerCase()} ${formatMetricValue(
+            `${point.activity.localDate}, ${metricDefinition.label.toLowerCase()} ${formatMetricValue(
               point.value,
               metricDefinition,
             )}`,
@@ -162,18 +162,18 @@ export function MetricTrendChart({
           <strong>{chartLabel}</strong>
         </div>
         {headerControls}
-        <SelectionStatus rides={rides} totalRideCount={totalRideCount} />
+        <SelectionStatus activities={activities} totalActivityCount={totalActivityCount} />
       </figcaption>
 
       <div ref={containerRef} className="trend-chart-container">
-        {hasNoSelectedRides && (
+        {hasNoSelectedActivities && (
           <div className="chart-empty-state">
-            No rides to plot for the current selection.
+            No activities to plot for the current selection.
           </div>
         )}
         {hasNoValidMetricValues && (
           <div className="chart-empty-state">
-            No rides have valid {metricDefinition.label.toLowerCase()} values
+            No activities have valid {metricDefinition.label.toLowerCase()} values
             for the current selection.
           </div>
         )}
@@ -193,9 +193,9 @@ function formatRideTitle(
   yMetric: MetricKey,
   metricDefinition: MetricDefinition,
 ): string {
-  const { ride } = point
+  const { activity } = point
   const lines = [
-    ride.localDate,
+    activity.localDate,
     `${metricDefinition.label}: ${formatMetricValue(point.value, metricDefinition)}`,
   ]
 
@@ -203,7 +203,7 @@ function formatRideTitle(
     const distanceDefinition = getMetricDefinition('distanceMiles')
     lines.push(
       `${distanceDefinition.label}: ${formatMetricValue(
-        ride.distanceMiles,
+        activity.distanceMiles,
         distanceDefinition,
       )}`,
     )
@@ -213,13 +213,13 @@ function formatRideTitle(
     const elevationDefinition = getMetricDefinition('elevationGainFeet')
     lines.push(
       `${elevationDefinition.label}: ${formatMetricValue(
-        ride.elevationGainFeet,
+        activity.elevationGainFeet,
         elevationDefinition,
       )}`,
     )
   }
 
-  lines.push(`Sport type: ${ride.sportType}`)
+  lines.push(`Sport type: ${activity.sportType}`)
 
   return lines.join('\n')
 }

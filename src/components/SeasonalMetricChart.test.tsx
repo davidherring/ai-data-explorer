@@ -1,7 +1,7 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { SeasonalMetricBucket } from '../analysis/seasonalMetrics.ts'
-import type { DayOfWeek, Ride } from '../data/ride.ts'
+import type { DayOfWeek, Activity } from '../data/activity.ts'
 import type { MetricKey } from '../state/analysisState.ts'
 import { getSeasonalLineSegmentPoints } from './seasonalLineSegments.ts'
 import { SeasonalMetricChart } from './SeasonalMetricChart.tsx'
@@ -11,29 +11,29 @@ describe('SeasonalMetricChart', () => {
     cleanup()
   })
 
-  it('renders an empty chart state for empty selected rides', () => {
+  it('renders an empty chart state for empty selected activities', () => {
     renderChart([], 'averageSpeedMph', [], 2)
 
     expect(screen.getByLabelText('Average speed by season')).toBeInTheDocument()
     expect(
-      screen.getByText('No rides to plot for the current selection.'),
+      screen.getByText('No activities to plot for the current selection.'),
     ).toBeInTheDocument()
     expect(document.querySelector('svg')).not.toBeInTheDocument()
   })
 
-  it('renders a metric-specific empty state when selected rides have no valid buckets', () => {
-    renderChart([createRide()], 'temperatureF', [])
+  it('renders a metric-specific empty state when selected activities have no valid buckets', () => {
+    renderChart([createActivity()], 'temperatureF', [])
 
     expect(
       screen.getByText(
-        'No rides have valid temperature values for the current selection.',
+        'No activities have valid temperature values for the current selection.',
       ),
     ).toBeInTheDocument()
     expect(document.querySelector('svg')).not.toBeInTheDocument()
   })
 
   it('renders the seasonal title, supporting text, and chart output', async () => {
-    renderChart([createRide()], 'averageSpeedMph', [
+    renderChart([createActivity()], 'averageSpeedMph', [
       createBucket({ year: 2025, bucketIndex: 6, startWeek: 11, endWeek: 12 }),
       createBucket({ year: 2026, bucketIndex: 6, startWeek: 11, endWeek: 12 }),
     ])
@@ -48,7 +48,7 @@ describe('SeasonalMetricChart', () => {
   })
 
   it('uses metric metadata in tooltip text', async () => {
-    renderChart([createRide()], 'distanceMiles', [
+    renderChart([createActivity()], 'distanceMiles', [
       createBucket({
         year: 2025,
         bucketIndex: 2,
@@ -68,11 +68,11 @@ describe('SeasonalMetricChart', () => {
     expect(document.body.textContent).toContain('Year: 2025')
     expect(document.body.textContent).toContain('Weeks: 3-4')
     expect(document.body.textContent).toContain('Distance: 31.4 mi')
-    expect(document.body.textContent).toContain('Sample count: 3 rides')
+    expect(document.body.textContent).toContain('Sample count: 3 activities')
   })
 
   it('keeps sparse buckets visible as points with sparse tooltip text', async () => {
-    renderChart([createRide()], 'elevationGainFeet', [
+    renderChart([createActivity()], 'elevationGainFeet', [
       createBucket({
         year: 2025,
         bucketIndex: 27,
@@ -90,12 +90,12 @@ describe('SeasonalMetricChart', () => {
 
     expect(document.body.textContent).toContain('Week: 53')
     expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
-    expect(document.body.textContent).toContain('Sample count: 1 ride')
+    expect(document.body.textContent).toContain('Sample count: 1 activity')
     expect(document.body.textContent).toContain('Sparse bucket')
   })
 
   it('replaces Plot output when metric and buckets change', async () => {
-    const { rerender } = renderChart([createRide()], 'averageSpeedMph', [
+    const { rerender } = renderChart([createActivity()], 'averageSpeedMph', [
       createBucket({ value: 15.2 }),
     ])
 
@@ -105,8 +105,8 @@ describe('SeasonalMetricChart', () => {
 
     rerender(
       <SeasonalMetricChart
-        rides={[createRide()]}
-        totalRideCount={1}
+        activities={[createActivity()]}
+        totalActivityCount={1}
         yMetric="distanceMiles"
         buckets={[createBucket({ value: 31.44 })]}
       />,
@@ -169,15 +169,15 @@ describe('getSeasonalLineSegmentPoints', () => {
 })
 
 function renderChart(
-  rides: Ride[],
+  activities: Activity[],
   yMetric: MetricKey,
   buckets: SeasonalMetricBucket[],
-  totalRideCount = rides.length,
+  totalActivityCount = activities.length,
 ) {
   return render(
     <SeasonalMetricChart
-      rides={rides}
-      totalRideCount={totalRideCount}
+      activities={activities}
+      totalActivityCount={totalActivityCount}
       yMetric={yMetric}
       buckets={buckets}
     />,
@@ -201,10 +201,10 @@ function createBucket(
   }
 }
 
-function createRide(
+function createActivity(
   overrides: Partial<
     Pick<
-      Ride,
+      Activity,
       | 'id'
       | 'localDate'
       | 'averageSpeedMph'
@@ -216,11 +216,11 @@ function createRide(
       | 'sportType'
     >
   > = {},
-): Ride {
+): Activity {
   const localDate = overrides.localDate ?? '2025-03-12'
 
   return {
-    id: overrides.id ?? 'ride-a',
+    id: overrides.id ?? 'activity-a',
     startTime: `${localDate}T07:00:00-07:00`,
     localDate,
     year: Number(localDate.slice(0, 4)),

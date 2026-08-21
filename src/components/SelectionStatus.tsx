@@ -1,8 +1,8 @@
-import type { Ride } from '../data/ride.ts'
+import type { Activity } from '../data/activity.ts'
 
 type SelectionStatusProps = {
-  rides: Ride[]
-  totalRideCount: number
+  activities: Activity[]
+  totalActivityCount: number
 }
 
 const sparseSelectionThreshold = 3
@@ -14,17 +14,17 @@ const wholeNumberFormatter = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 0,
 })
 
-export function SelectionStatus({ rides, totalRideCount }: SelectionStatusProps) {
-  const selectedRideCount = rides.length
-  const isEmpty = selectedRideCount === 0
+export function SelectionStatus({ activities, totalActivityCount }: SelectionStatusProps) {
+  const selectedActivityCount = activities.length
+  const isEmpty = selectedActivityCount === 0
   const isSparse =
-    selectedRideCount > 0 && selectedRideCount < sparseSelectionThreshold
+    selectedActivityCount > 0 && selectedActivityCount < sparseSelectionThreshold
 
   return (
     <section className="selection-status" aria-label="Selection status">
       <div className="selection-status-primary">
         <strong>
-          {selectedRideCount} of {totalRideCount} {pluralizeRide(totalRideCount)}{' '}
+          {selectedActivityCount} of {totalActivityCount} {pluralizeActivity(totalActivityCount)}{' '}
           selected
         </strong>
         <span>{getSelectionMessage(isEmpty, isSparse)}</span>
@@ -34,15 +34,15 @@ export function SelectionStatus({ rides, totalRideCount }: SelectionStatusProps)
         <dl className="selection-metrics" aria-label="Selection averages">
           <div>
             <dt>Avg speed</dt>
-            <dd>{formatDecimal(mean(rides, 'averageSpeedMph'))} mph</dd>
+            <dd>{formatDecimal(mean(activities, 'averageSpeedMph'))} mph</dd>
           </div>
           <div>
             <dt>Avg distance</dt>
-            <dd>{formatDecimal(mean(rides, 'distanceMiles'))} mi</dd>
+            <dd>{formatDecimal(mean(activities, 'distanceMiles'))} mi</dd>
           </div>
           <div>
             <dt>Avg elevation</dt>
-            <dd>{formatWhole(mean(rides, 'elevationGainFeet'))} ft</dd>
+            <dd>{formatWhole(mean(activities, 'elevationGainFeet'))} ft</dd>
           </div>
         </dl>
       )}
@@ -52,25 +52,25 @@ export function SelectionStatus({ rides, totalRideCount }: SelectionStatusProps)
 
 function getSelectionMessage(isEmpty: boolean, isSparse: boolean): string {
   if (isEmpty) {
-    return 'No rides match the current filters.'
+    return 'No activities match the current filters.'
   }
 
   if (isSparse) {
-    return 'Too few rides for a meaningful trend.'
+    return 'Too few activities for a meaningful trend.'
   }
 
   return 'Selection ready.'
 }
 
-function pluralizeRide(count: number): string {
-  return count === 1 ? 'ride' : 'rides'
+function pluralizeActivity(count: number): string {
+  return count === 1 ? 'activity' : 'activities'
 }
 
-function mean(rides: readonly Ride[], metric: keyof Pick<
-  Ride,
+function mean(activities: readonly Activity[], metric: keyof Pick<
+  Activity,
   'averageSpeedMph' | 'distanceMiles' | 'elevationGainFeet'
 >): number {
-  return rides.reduce((total, ride) => total + ride[metric], 0) / rides.length
+  return activities.reduce((total, activity) => total + activity[metric], 0) / activities.length
 }
 
 function formatDecimal(value: number): string {

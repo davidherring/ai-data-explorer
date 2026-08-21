@@ -6,8 +6,8 @@ import {
 import type { StravaSummaryActivity } from './activities.js'
 
 describe('Strava activity normalization', () => {
-  it('converts Strava units into the Ride model without rounding', () => {
-    const ride = normalizeStravaActivity(
+  it('converts Strava units into the Activity model without rounding', () => {
+    const activity = normalizeStravaActivity(
       createActivity({
         distance: 16093.4,
         moving_time: 3661,
@@ -17,15 +17,15 @@ describe('Strava activity normalization', () => {
       }),
     )
 
-    expect(ride.distanceMiles).toBeCloseTo(9.9999978314)
-    expect(ride.movingTimeMinutes).toBeCloseTo(61.0166666667)
-    expect(ride.elapsedTimeMinutes).toBeCloseTo(65.0166666667)
-    expect(ride.elevationGainFeet).toBeCloseTo(1000.000032)
-    expect(ride.averageSpeedMph).toBeCloseTo(10.000027776)
+    expect(activity.distanceMiles).toBeCloseTo(9.9999978314)
+    expect(activity.movingTimeMinutes).toBeCloseTo(61.0166666667)
+    expect(activity.elapsedTimeMinutes).toBeCloseTo(65.0166666667)
+    expect(activity.elevationGainFeet).toBeCloseTo(1000.000032)
+    expect(activity.averageSpeedMph).toBeCloseTo(10.000027776)
   })
 
   it('maps identity, sport, flags, and omits live temperature', () => {
-    const ride = normalizeStravaActivity(
+    const activity = normalizeStravaActivity(
       createActivity({
         id: 123456789,
         sport_type: 'GravelRide',
@@ -35,42 +35,53 @@ describe('Strava activity normalization', () => {
       }),
     )
 
-    expect(ride).toMatchObject({
+    expect(activity).toMatchObject({
       id: '123456789',
       sportType: 'GravelRide',
       trainer: true,
       commute: true,
       manual: true,
     })
-    expect(ride.temperatureF).toBeUndefined()
+    expect(activity.temperatureF).toBeUndefined()
+  })
+
+  it('preserves supported walk and hike sport types', () => {
+    expect(
+      normalizeStravaActivity(createActivity({ id: 10, sport_type: 'Walk' }))
+        .sportType,
+    ).toBe('Walk')
+    expect(
+      normalizeStravaActivity(createActivity({ id: 11, sport_type: 'Hike' }))
+        .sportType,
+    ).toBe('Hike')
   })
 
   it('derives local date fields from start_date_local local-clock components', () => {
-    const ride = normalizeStravaActivity(
+    const activity = normalizeStravaActivity(
       createActivity({
         start_date: '2026-01-02T06:30:00Z',
         start_date_local: '2026-01-01T23:30:00Z',
       }),
     )
 
-    expect(ride.startTime).toBe('2026-01-01T23:30:00Z')
-    expect(ride.localDate).toBe('2026-01-01')
-    expect(ride.year).toBe(2026)
-    expect(ride.month).toBe(1)
-    expect(ride.dayOfWeek).toBe('thursday')
-    expect(ride.isWeekend).toBe(false)
+    expect(activity.startTime).toBe('2026-01-01T23:30:00Z')
+    expect(activity.localDate).toBe('2026-01-01')
+    expect(activity.year).toBe(2026)
+    expect(activity.month).toBe(1)
+    expect(activity.dayOfWeek).toBe('thursday')
+    expect(activity.isWeekend).toBe(false)
   })
 
   it('does not shift UTC-looking start_date_local values by host timezone', () => {
-    const ride = normalizeStravaActivity(
+    const activity = normalizeStravaActivity(
       createActivity({
         start_date_local: '2026-03-08T00:30:00Z',
       }),
     )
 
-    expect(ride.localDate).toBe('2026-03-08')
-    expect(ride.dayOfWeek).toBe('sunday')
-    expect(ride.isWeekend).toBe(true)
+    expect(activity.localDate).toBe('2026-03-08')
+    expect(activity.dayOfWeek).toBe('sunday')
+    expect(activity.isWeekend).toBe(true)
   })
 
   it('uses ISO week numbers around year boundaries', () => {
@@ -104,13 +115,13 @@ describe('Strava activity normalization', () => {
     ])
 
     expect(result.deduplicated).toBe(1)
-    expect(result.rides.map((ride) => ride.id)).toEqual(['1', '2'])
-    expect(result.rides[0]?.sportType).toBe('Ride')
+    expect(result.activities.map((activity) => activity.id)).toEqual(['1', '2'])
+    expect(result.activities[0]?.sportType).toBe('Ride')
   })
 
   it('does not expose raw Strava field names after normalization', () => {
-    const ride = normalizeStravaActivity(createActivity())
-    const serialized = JSON.stringify(ride)
+    const activity = normalizeStravaActivity(createActivity())
+    const serialized = JSON.stringify(activity)
 
     expect(serialized).not.toContain('sport_type')
     expect(serialized).not.toContain('start_date_local')
@@ -140,4 +151,3 @@ function createActivity(
     ...overrides,
   }
 }
-

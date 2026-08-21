@@ -1,4 +1,4 @@
-import type { Ride } from '../data/ride.js'
+import type { Activity } from '../data/activity.js'
 import type { MetricKey } from '../state/analysisState.js'
 
 export type MetricRole = 'trendY' | 'relationshipX' | 'relationshipY'
@@ -84,23 +84,23 @@ export const metricDefinitions: Record<MetricKey, MetricDefinition> = {
   },
 }
 
-export function getRideMetric(
-  ride: Ride,
+export function getActivityMetric(
+  activity: Activity,
   metricKey: MetricKey,
 ): number | undefined {
   switch (metricKey) {
     case 'averageSpeedMph':
-      return ride.averageSpeedMph
+      return activity.averageSpeedMph
     case 'distanceMiles':
-      return ride.distanceMiles
+      return activity.distanceMiles
     case 'elevationGainFeet':
-      return ride.elevationGainFeet
+      return activity.elevationGainFeet
     case 'movingTimeMinutes':
-      return ride.movingTimeMinutes
+      return activity.movingTimeMinutes
     case 'elapsedTimeMinutes':
-      return ride.elapsedTimeMinutes
+      return activity.elapsedTimeMinutes
     case 'temperatureF':
-      return ride.temperatureF
+      return activity.temperatureF
   }
 }
 
@@ -115,11 +115,11 @@ export function getMetricDisplay(metricKey: MetricKey): MetricDisplay {
 }
 
 export function hasFiniteMetricValue(
-  rides: readonly Ride[],
+  activities: readonly Activity[],
   metricKey: MetricKey,
 ): boolean {
-  return rides.some((ride) => {
-    const value = getRideMetric(ride, metricKey)
+  return activities.some((activity) => {
+    const value = getActivityMetric(activity, metricKey)
 
     return value !== undefined && Number.isFinite(value)
   })
@@ -127,12 +127,12 @@ export function hasFiniteMetricValue(
 
 export function getMetricDefinitionsForRole(
   role: MetricRole,
-  rides: readonly Ride[],
+  activities: readonly Activity[],
 ): MetricDefinition[] {
   return Object.values(metricDefinitions).filter(
     (definition) =>
       definition.role[role] &&
-      (!definition.optional || hasFiniteMetricValue(rides, definition.key)),
+      (!definition.optional || hasFiniteMetricValue(activities, definition.key)),
   )
 }
 

@@ -1,6 +1,6 @@
-import type { Ride } from '../data/ride.js'
+import type { Activity } from '../data/activity.js'
 import type { DateRange, MetricKey } from '../state/analysisState.js'
-import { getMetricDefinition, getRideMetric } from './rideMetrics.js'
+import { getMetricDefinition, getActivityMetric } from './activityMetrics.js'
 
 export type MetricTrendDirection =
   | 'increasing'
@@ -69,13 +69,13 @@ const daysPerYear = 365.25
 const millisecondsPerDay = 86_400_000
 
 export function calculateMetricTrend(
-  rides: readonly Ride[],
+  activities: readonly Activity[],
   metric: MetricKey,
 ): MetricTrendAnalysis {
-  const points = getTrendPoints(rides, metric)
-  const baseResult = buildBaseResult(rides.length, points, metric)
+  const points = getTrendPoints(activities, metric)
+  const baseResult = buildBaseResult(activities.length, points, metric)
 
-  if (rides.length === 0) {
+  if (activities.length === 0) {
     return {
       ...baseResult,
       direction: 'unavailable',
@@ -157,21 +157,21 @@ export function calculateMetricTrend(
 }
 
 function getTrendPoints(
-  rides: readonly Ride[],
+  activities: readonly Activity[],
   metric: MetricKey,
 ): TrendPoint[] {
   const points: TrendPoint[] = []
 
-  for (const ride of rides) {
-    const value = getRideMetric(ride, metric)
+  for (const activity of activities) {
+    const value = getActivityMetric(activity, metric)
 
     if (value === undefined || !Number.isFinite(value)) {
       continue
     }
 
     points.push({
-      localDate: ride.localDate,
-      dayOrdinal: parseLocalDateDayOrdinal(ride.localDate),
+      localDate: activity.localDate,
+      dayOrdinal: parseLocalDateDayOrdinal(activity.localDate),
       value,
     })
   }

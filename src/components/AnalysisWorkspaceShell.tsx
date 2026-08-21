@@ -12,7 +12,7 @@ import { MetricTrendChart } from './MetricTrendChart.tsx'
 import { MetricViewControls } from './MetricViewControls.tsx'
 import { RelationshipScatterChart } from './RelationshipScatterChart.tsx'
 import { SeasonalMetricChart } from './SeasonalMetricChart.tsx'
-import type { Ride } from '../data/ride.ts'
+import type { Activity } from '../data/activity.ts'
 import {
   defaultRelationshipView,
   defaultCumulativeView,
@@ -23,15 +23,15 @@ import {
 } from '../state/analysisState.ts'
 
 type AnalysisWorkspaceShellProps = {
-  rides: Ride[]
-  selectedRides: Ride[]
+  activities: Activity[]
+  selectedActivities: Activity[]
   analysisState: AnalysisState
   onAnalysisStateChange: Dispatch<SetStateAction<AnalysisState>>
 }
 
 export function AnalysisWorkspaceShell({
-  rides,
-  selectedRides,
+  activities,
+  selectedActivities,
   analysisState,
   onAnalysisStateChange,
 }: AnalysisWorkspaceShellProps) {
@@ -50,28 +50,28 @@ export function AnalysisWorkspaceShell({
   const relationshipPoints = useMemo(
     () =>
       getMetricRelationshipPoints(
-        selectedRides,
+        selectedActivities,
         relationshipView.xMetric,
         relationshipView.yMetric,
       ),
-    [relationshipView.xMetric, relationshipView.yMetric, selectedRides],
+    [relationshipView.xMetric, relationshipView.yMetric, selectedActivities],
   )
   const relationship = useMemo(
     () =>
       relationshipBetweenMetrics(
-        selectedRides,
+        selectedActivities,
         relationshipView.xMetric,
         relationshipView.yMetric,
       ),
-    [relationshipView.xMetric, relationshipView.yMetric, selectedRides],
+    [relationshipView.xMetric, relationshipView.yMetric, selectedActivities],
   )
   const seasonalBuckets = useMemo(
-    () => buildSeasonalMetricBuckets(selectedRides, seasonalView.yMetric),
-    [seasonalView.yMetric, selectedRides],
+    () => buildSeasonalMetricBuckets(selectedActivities, seasonalView.yMetric),
+    [seasonalView.yMetric, selectedActivities],
   )
   const cumulativePoints = useMemo(
-    () => buildCumulativeMetricPoints(selectedRides, cumulativeView.yMetric),
-    [cumulativeView.yMetric, selectedRides],
+    () => buildCumulativeMetricPoints(selectedActivities, cumulativeView.yMetric),
+    [cumulativeView.yMetric, selectedActivities],
   )
   const activeView = analysisState.view.type
   const viewSwitcher = (
@@ -87,7 +87,7 @@ export function AnalysisWorkspaceShell({
   )
   const metricControls = (
     <MetricViewControls
-      rides={rides}
+      activities={activities}
       view={analysisState.view}
       onViewChange={(view) => {
         onAnalysisStateChange((current) => ({
@@ -108,8 +108,8 @@ export function AnalysisWorkspaceShell({
     <section className="analysis-workspace" aria-label="Analysis workspace">
       {activeView === 'trend' && (
         <MetricTrendChart
-          rides={selectedRides}
-          totalRideCount={rides.length}
+          activities={selectedActivities}
+          totalActivityCount={activities.length}
           yMetric={analysisState.view.yMetric}
           headerControls={headerControls}
         />
@@ -117,8 +117,8 @@ export function AnalysisWorkspaceShell({
 
       {activeView === 'relationship' && (
         <RelationshipScatterChart
-          rides={selectedRides}
-          totalRideCount={rides.length}
+          activities={selectedActivities}
+          totalActivityCount={activities.length}
           xMetric={analysisState.view.xMetric}
           yMetric={analysisState.view.yMetric}
           relationship={relationship}
@@ -129,8 +129,8 @@ export function AnalysisWorkspaceShell({
 
       {activeView === 'seasonal' && (
         <SeasonalMetricChart
-          rides={selectedRides}
-          totalRideCount={rides.length}
+          activities={selectedActivities}
+          totalActivityCount={activities.length}
           yMetric={analysisState.view.yMetric}
           buckets={seasonalBuckets}
           headerControls={headerControls}
@@ -139,8 +139,8 @@ export function AnalysisWorkspaceShell({
 
       {activeView === 'cumulative' && (
         <CumulativeMetricChart
-          rides={selectedRides}
-          totalRideCount={rides.length}
+          activities={selectedActivities}
+          totalActivityCount={activities.length}
           yMetric={analysisState.view.yMetric}
           points={cumulativePoints}
           headerControls={headerControls}
@@ -150,7 +150,7 @@ export function AnalysisWorkspaceShell({
       <div className="controls-placeholder">
         <p className="section-label">Selection / analysis controls</p>
         <ActivitySelectionControls
-          rides={rides}
+          activities={activities}
           selection={analysisState.selection}
           onSelectionChange={(selection) => {
             onAnalysisStateChange((current) => ({

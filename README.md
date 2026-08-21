@@ -31,10 +31,10 @@ The deployed AI chat endpoint requires `OPENAI_API_KEY` to be configured in the 
 
 ## AI Conversation Behavior
 
-The assistant is grounded in the same typed analysis state that drives the visualization. Each submitted chat message sends the current `AnalysisState` snapshot, selected normalized rides, compact dataset profile, source metadata, and counts to `/api/chat`. The app captures this context only when the user submits a message; changing filters or views does not send a request by itself.
+The assistant is grounded in the same typed analysis state that drives the visualization. Each submitted chat message sends the current `AnalysisState` snapshot, selected normalized activities, compact dataset profile, source metadata, and counts to `/api/chat`. The app captures this context only when the user submits a message; changing filters or views does not send a request by itself.
 
 The chat transcript is browser-memory only. New Chat clears the visible transcript without changing the analysis state, and there is no database, saved chat, server session, or persistence layer.
 
-Deterministic tools perform analytical calculations server-side over the submitted selected rides. The model interprets structured tool results; raw ride arrays are available to tools but are not pasted into the model prompt text.
+Deterministic tools perform analytical calculations server-side over the submitted selected activities. The model interprets structured tool results; raw activity arrays are available to tools but are not pasted into the model prompt text.
 
-Grouped comparison tools can compare years, months, weekdays/weekends, or days of week only within the rides included in the submitted selection; they do not reach outside the current selection. Their outputs are deterministic observations and associations for the assistant to interpret, not causal proof.
+Grouped comparison tools can compare years, months, weekdays/weekends, or days of week only within the activities included in the submitted selection; they do not reach outside the current selection. Their outputs are deterministic observations and associations for the assistant to interpret, not causal proof.

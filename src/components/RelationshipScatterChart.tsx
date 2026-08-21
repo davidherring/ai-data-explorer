@@ -8,15 +8,15 @@ import type {
 import {
   getMetricDefinition,
   type MetricDefinition,
-} from '../analysis/rideMetrics.ts'
+} from '../analysis/activityMetrics.ts'
 import { RelationshipStatus } from './RelationshipStatus.tsx'
 import { SelectionStatus } from './SelectionStatus.tsx'
-import type { Ride } from '../data/ride.ts'
+import type { Activity } from '../data/activity.ts'
 import type { MetricKey } from '../state/analysisState.ts'
 
 type RelationshipScatterChartProps = {
-  rides: Ride[]
-  totalRideCount: number
+  activities: Activity[]
+  totalActivityCount: number
   xMetric: MetricKey
   yMetric: MetricKey
   relationship: MetricRelationshipResult
@@ -28,8 +28,8 @@ const fallbackChartWidth = 720
 const chartHeight = 320
 
 export function RelationshipScatterChart({
-  rides,
-  totalRideCount,
+  activities,
+  totalActivityCount,
   xMetric,
   yMetric,
   relationship,
@@ -41,8 +41,8 @@ export function RelationshipScatterChart({
   const xDefinition = getMetricDefinition(xMetric)
   const yDefinition = getMetricDefinition(yMetric)
   const chartLabel = `${xDefinition.label} vs ${yDefinition.label}`
-  const hasNoSelectedRides = rides.length === 0
-  const hasNoValidPairs = rides.length > 0 && points.length === 0
+  const hasNoSelectedActivities = activities.length === 0
+  const hasNoValidPairs = activities.length > 0 && points.length === 0
 
   useEffect(() => {
     const container = containerRef.current
@@ -154,13 +154,13 @@ export function RelationshipScatterChart({
           />
         </div>
         {headerControls}
-        <SelectionStatus rides={rides} totalRideCount={totalRideCount} />
+        <SelectionStatus activities={activities} totalActivityCount={totalActivityCount} />
       </figcaption>
 
       <div ref={containerRef} className="trend-chart-container relationship-chart-container">
-        {hasNoSelectedRides && (
+        {hasNoSelectedActivities && (
           <div className="chart-empty-state">
-            No rides to plot for the current selection.
+            No activities to plot for the current selection.
           </div>
         )}
         {hasNoValidPairs && (
@@ -180,9 +180,9 @@ function formatRideTitle(
   xDefinition: MetricDefinition,
   yDefinition: MetricDefinition,
 ): string {
-  const { ride } = point
+  const { activity } = point
   const lines = [
-    ride.localDate,
+    activity.localDate,
     `${xDefinition.label}: ${formatMetricValue(point.x, xDefinition)}`,
   ]
 
@@ -190,9 +190,9 @@ function formatRideTitle(
     lines.push(`${yDefinition.label}: ${formatMetricValue(point.y, yDefinition)}`)
   }
 
-  addContextLines(lines, ride, xMetric, yMetric)
+  addContextLines(lines, activity, xMetric, yMetric)
 
-  lines.push(`Sport type: ${ride.sportType}`)
+  lines.push(`Sport type: ${activity.sportType}`)
 
   return lines.join('\n')
 }
@@ -217,12 +217,12 @@ function formatPointAriaLabel(
     )
   }
 
-  return `${point.ride.localDate}, ${metricParts.join(', ')}`
+  return `${point.activity.localDate}, ${metricParts.join(', ')}`
 }
 
 function addContextLines(
   lines: string[],
-  ride: Ride,
+  activity: Activity,
   xMetric: MetricKey,
   yMetric: MetricKey,
 ): void {
@@ -230,7 +230,7 @@ function addContextLines(
     const distanceDefinition = getMetricDefinition('distanceMiles')
     lines.push(
       `${distanceDefinition.label}: ${formatMetricValue(
-        ride.distanceMiles,
+        activity.distanceMiles,
         distanceDefinition,
       )}`,
     )
@@ -240,7 +240,7 @@ function addContextLines(
     const elevationDefinition = getMetricDefinition('elevationGainFeet')
     lines.push(
       `${elevationDefinition.label}: ${formatMetricValue(
-        ride.elevationGainFeet,
+        activity.elevationGainFeet,
         elevationDefinition,
       )}`,
     )
@@ -254,10 +254,10 @@ function formatNoValidPairsMessage(
   yDefinition: MetricDefinition,
 ): string {
   if (xMetric === yMetric) {
-    return `No rides have valid ${xDefinition.label.toLowerCase()} values for the current selection.`
+    return `No activities have valid ${xDefinition.label.toLowerCase()} values for the current selection.`
   }
 
-  return `No rides have valid ${xDefinition.label.toLowerCase()} and ${yDefinition.label.toLowerCase()} values for the current selection.`
+  return `No activities have valid ${xDefinition.label.toLowerCase()} and ${yDefinition.label.toLowerCase()} values for the current selection.`
 }
 
 function formatMetricValue(

@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { UIMessage } from 'ai'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { buildDatasetProfile, type DatasetProfile } from '../analysis/aiContext.ts'
-import type { DayOfWeek, Ride } from '../data/ride.ts'
+import type { DayOfWeek, Activity } from '../data/activity.ts'
 import {
   defaultAnalysisState,
   type AnalysisState,
@@ -33,17 +33,17 @@ afterEach(() => {
 })
 
 describe('ConversationPanelShell', () => {
-  it('sends the current analysis and selected ride data with a user message', () => {
-    const selectedRides = [createRide({ id: 'a' }), createRide({ id: 'b' })]
-    const datasetProfile = buildDatasetProfile(selectedRides)
+  it('sends the current analysis and selected activity data with a user message', () => {
+    const selectedActivities = [createActivity({ id: 'a' }), createActivity({ id: 'b' })]
+    const datasetProfile = buildDatasetProfile(selectedActivities)
 
     render(
       <ConversationPanelShell
         analysisState={defaultAnalysisState}
-        selectedRides={selectedRides}
+        selectedActivities={selectedActivities}
         datasetProfile={datasetProfile}
-        selectedRideCount={selectedRides.length}
-        totalRideCount={12}
+        selectedActivityCount={selectedActivities.length}
+        totalActivityCount={12}
         dataSource="demo"
       />,
     )
@@ -58,10 +58,10 @@ describe('ConversationPanelShell', () => {
       {
         body: {
           currentAnalysisState: defaultAnalysisState,
-          selectedRides,
+          selectedActivities,
           datasetProfile,
-          selectedRideCount: selectedRides.length,
-          totalRideCount: 12,
+          selectedActivityCount: selectedActivities.length,
+          totalActivityCount: 12,
           dataSource: 'demo',
         },
       },
@@ -70,8 +70,8 @@ describe('ConversationPanelShell', () => {
   })
 
   it('uses a fresh snapshot on a later send after props change', () => {
-    const initialRides = [createRide({ id: 'a' }), createRide({ id: 'b' })]
-    const nextRides = [createRide({ id: 'next', localDate: '2026-05-01' })]
+    const initialRides = [createActivity({ id: 'a' }), createActivity({ id: 'b' })]
+    const nextRides = [createActivity({ id: 'next', localDate: '2026-05-01' })]
     const nextAnalysisState: AnalysisState = {
       ...defaultAnalysisState,
       view: {
@@ -83,10 +83,10 @@ describe('ConversationPanelShell', () => {
     const { rerender } = render(
       <ConversationPanelShell
         analysisState={defaultAnalysisState}
-        selectedRides={initialRides}
+        selectedActivities={initialRides}
         datasetProfile={buildDatasetProfile(initialRides)}
-        selectedRideCount={initialRides.length}
-        totalRideCount={12}
+        selectedActivityCount={initialRides.length}
+        totalActivityCount={12}
         dataSource="demo"
       />,
     )
@@ -99,10 +99,10 @@ describe('ConversationPanelShell', () => {
     rerender(
       <ConversationPanelShell
         analysisState={nextAnalysisState}
-        selectedRides={nextRides}
+        selectedActivities={nextRides}
         datasetProfile={buildDatasetProfile(nextRides)}
-        selectedRideCount={nextRides.length}
-        totalRideCount={20}
+        selectedActivityCount={nextRides.length}
+        totalActivityCount={20}
         dataSource="strava"
       />,
     )
@@ -115,23 +115,23 @@ describe('ConversationPanelShell', () => {
     expect(chatState.sendMessage.mock.calls[1][1]).toMatchObject({
       body: {
         currentAnalysisState: nextAnalysisState,
-        selectedRides: nextRides,
-        selectedRideCount: 1,
-        totalRideCount: 20,
+        selectedActivities: nextRides,
+        selectedActivityCount: 1,
+        totalActivityCount: 20,
         dataSource: 'strava',
       },
     })
   })
 
   it('does not send merely because analysis props change', () => {
-    const rides = [createRide({ id: 'a' })]
+    const activities = [createActivity({ id: 'a' })]
     const { rerender } = render(
       <ConversationPanelShell
         analysisState={defaultAnalysisState}
-        selectedRides={rides}
-        datasetProfile={buildDatasetProfile(rides)}
-        selectedRideCount={rides.length}
-        totalRideCount={12}
+        selectedActivities={activities}
+        datasetProfile={buildDatasetProfile(activities)}
+        selectedActivityCount={activities.length}
+        totalActivityCount={12}
         dataSource="demo"
       />,
     )
@@ -142,10 +142,10 @@ describe('ConversationPanelShell', () => {
           ...defaultAnalysisState,
           view: { type: 'cumulative', yMetric: 'distanceMiles', accumulation: 'continuous' },
         }}
-        selectedRides={[]}
-        datasetProfile={buildDatasetProfile(rides)}
-        selectedRideCount={0}
-        totalRideCount={12}
+        selectedActivities={[]}
+        datasetProfile={buildDatasetProfile(activities)}
+        selectedActivityCount={0}
+        totalActivityCount={12}
         dataSource="demo"
       />,
     )
@@ -156,13 +156,13 @@ describe('ConversationPanelShell', () => {
   it('renders user and streamed assistant text parts', () => {
     chatState.messages = [
       createMessage('user-message', 'user', 'Does this look slower?'),
-      createMessage('assistant-message', 'assistant', 'The selected rides are sparse.'),
+      createMessage('assistant-message', 'assistant', 'The selected activities are sparse.'),
     ]
 
     render(createPanel())
 
     expect(screen.getByText('Does this look slower?')).toBeInTheDocument()
-    expect(screen.getByText('The selected rides are sparse.')).toBeInTheDocument()
+    expect(screen.getByText('The selected activities are sparse.')).toBeInTheDocument()
   })
 
   it('renders one minimal tool status for assistant tool activity', () => {
@@ -171,13 +171,13 @@ describe('ConversationPanelShell', () => {
         id: 'assistant-message',
         role: 'assistant',
         parts: [
-          { type: 'text', text: 'I checked the selected rides.' },
+          { type: 'text', text: 'I checked the selected activities.' },
           {
             type: 'tool-summarizeSelection',
             toolCallId: 'tool-a',
             state: 'output-available',
             input: {},
-            output: { rideCount: 3 },
+            output: { activityCount: 3 },
           },
         ],
       } as UIMessage,
@@ -185,9 +185,9 @@ describe('ConversationPanelShell', () => {
 
     render(createPanel())
 
-    expect(screen.getByText('I checked the selected rides.')).toBeInTheDocument()
+    expect(screen.getByText('I checked the selected activities.')).toBeInTheDocument()
     expect(screen.getByText('Analyzed selection')).toBeInTheDocument()
-    expect(screen.queryByText('rideCount')).not.toBeInTheDocument()
+    expect(screen.queryByText('activityCount')).not.toBeInTheDocument()
   })
 
   it('clears transcript state and composer text for New Chat', () => {
@@ -249,26 +249,26 @@ describe('ConversationPanelShell', () => {
 function createPanel(
   overrides: Partial<{
     analysisState: AnalysisState
-    selectedRides: Ride[]
+    selectedActivities: Activity[]
     datasetProfile: DatasetProfile
-    selectedRideCount: number
-    totalRideCount: number
+    selectedActivityCount: number
+    totalActivityCount: number
     dataSource: 'demo' | 'strava'
   }> = {},
 ) {
-  const selectedRides = overrides.selectedRides ?? [
-    createRide({ id: 'a' }),
-    createRide({ id: 'b' }),
-    createRide({ id: 'c' }),
+  const selectedActivities = overrides.selectedActivities ?? [
+    createActivity({ id: 'a' }),
+    createActivity({ id: 'b' }),
+    createActivity({ id: 'c' }),
   ]
 
   return (
     <ConversationPanelShell
       analysisState={overrides.analysisState ?? defaultAnalysisState}
-      selectedRides={selectedRides}
-      datasetProfile={overrides.datasetProfile ?? buildDatasetProfile(selectedRides)}
-      selectedRideCount={overrides.selectedRideCount ?? selectedRides.length}
-      totalRideCount={overrides.totalRideCount ?? selectedRides.length}
+      selectedActivities={selectedActivities}
+      datasetProfile={overrides.datasetProfile ?? buildDatasetProfile(selectedActivities)}
+      selectedActivityCount={overrides.selectedActivityCount ?? selectedActivities.length}
+      totalActivityCount={overrides.totalActivityCount ?? selectedActivities.length}
       dataSource={overrides.dataSource ?? 'demo'}
     />
   )
@@ -286,10 +286,10 @@ function createMessage(
   }
 }
 
-function createRide(
+function createActivity(
   overrides: Partial<
     Pick<
-      Ride,
+      Activity,
       | 'id'
       | 'startTime'
       | 'localDate'
@@ -310,11 +310,11 @@ function createRide(
       | 'manual'
     >
   > = {},
-): Ride {
+): Activity {
   const localDate = overrides.localDate ?? '2026-01-01'
 
   return {
-    id: overrides.id ?? 'ride-a',
+    id: overrides.id ?? 'activity-a',
     startTime: overrides.startTime ?? `${localDate}T07:00:00-07:00`,
     localDate,
     year: overrides.year ?? Number(localDate.slice(0, 4)),

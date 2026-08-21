@@ -4,7 +4,7 @@ import {
   getMetricRelationshipPoints,
   relationshipBetweenMetrics,
 } from '../analysis/metricRelationships.ts'
-import type { DayOfWeek, Ride } from '../data/ride.ts'
+import type { DayOfWeek, Activity } from '../data/activity.ts'
 import type { MetricKey } from '../state/analysisState.ts'
 import { RelationshipScatterChart } from './RelationshipScatterChart.tsx'
 
@@ -32,28 +32,28 @@ describe('RelationshipScatterChart', () => {
     expect(document.body.textContent).toContain('Sport type: Ride')
   })
 
-  it('renders an empty chart state for empty selected rides', () => {
+  it('renders an empty chart state for empty selected activities', () => {
     renderChart([])
 
     expect(
       screen.getByLabelText('Elevation gain vs Average speed'),
     ).toBeInTheDocument()
     expect(
-      screen.getByText('No rides to plot for the current selection.'),
+      screen.getByText('No activities to plot for the current selection.'),
     ).toBeInTheDocument()
     expect(document.querySelector('svg')).not.toBeInTheDocument()
   })
 
-  it('renders a metric-specific invalid-pair state when selected rides have no valid pairs', () => {
+  it('renders a metric-specific invalid-pair state when selected activities have no valid pairs', () => {
     renderChart(
       [
-        createRide({
+        createActivity({
           id: 'invalid-a',
           localDate: '2025-01-01',
           distanceMiles: Number.NaN,
           averageSpeedMph: 14,
         }),
-        createRide({
+        createActivity({
           id: 'invalid-b',
           localDate: '2025-01-02',
           distanceMiles: 12,
@@ -66,7 +66,7 @@ describe('RelationshipScatterChart', () => {
 
     expect(
       screen.getByText(
-        'No rides have valid distance and average speed values for the current selection.',
+        'No activities have valid distance and average speed values for the current selection.',
       ),
     ).toBeInTheDocument()
     expect(document.querySelector('svg')).not.toBeInTheDocument()
@@ -75,12 +75,12 @@ describe('RelationshipScatterChart', () => {
   it('renders a same-metric invalid-pair state with one metric label', () => {
     renderChart(
       [
-        createRide({
+        createActivity({
           id: 'invalid-a',
           localDate: '2025-01-01',
           temperatureF: undefined,
         }),
-        createRide({
+        createActivity({
           id: 'invalid-b',
           localDate: '2025-01-02',
           temperatureF: Number.NaN,
@@ -92,7 +92,7 @@ describe('RelationshipScatterChart', () => {
 
     expect(
       screen.getByText(
-        'No rides have valid temperature values for the current selection.',
+        'No activities have valid temperature values for the current selection.',
       ),
     ).toBeInTheDocument()
     expect(document.querySelector('svg')).not.toBeInTheDocument()
@@ -102,7 +102,7 @@ describe('RelationshipScatterChart', () => {
     renderChart([rideA])
 
     expect(
-      screen.getByText('Too few valid rides to calculate Pearson r.'),
+      screen.getByText('Too few valid activities to calculate Pearson r.'),
     ).toBeInTheDocument()
 
     await waitFor(() => {
@@ -114,7 +114,7 @@ describe('RelationshipScatterChart', () => {
     renderChart([rideA, rideB])
 
     expect(
-      screen.getByText('Too few valid rides to calculate Pearson r.'),
+      screen.getByText('Too few valid activities to calculate Pearson r.'),
     ).toBeInTheDocument()
 
     await waitFor(() => {
@@ -126,10 +126,10 @@ describe('RelationshipScatterChart', () => {
     renderChart([rideA, rideB, rideC])
 
     expect(
-      screen.queryByText('Too few valid rides to calculate Pearson r.'),
+      screen.queryByText('Too few valid activities to calculate Pearson r.'),
     ).not.toBeInTheDocument()
     expect(screen.getByLabelText('Relationship status')).toHaveTextContent(
-      '3 rides · Pearson r =',
+      '3 activities · Pearson r =',
     )
 
     await waitFor(() => {
@@ -177,7 +177,7 @@ describe('RelationshipScatterChart', () => {
       expect(document.querySelector('svg')).toBeInTheDocument()
     })
 
-    expect(document.body.textContent).toContain('3 rides · Pearson r = 1.00')
+    expect(document.body.textContent).toContain('3 activities · Pearson r = 1.00')
     expect(countTextOccurrences(getPointTitleText('2025-03-12'), 'Distance:')).toBe(1)
   })
 
@@ -194,10 +194,10 @@ describe('RelationshipScatterChart', () => {
     ).toBe(1)
   })
 
-  it('does not include invalid rides in plotted tooltip data', async () => {
+  it('does not include invalid activities in plotted tooltip data', async () => {
     renderChart([
       rideA,
-      createRide({
+      createActivity({
         id: 'invalid-a',
         localDate: '2025-04-01',
         elevationGainFeet: Number.NaN,
@@ -219,9 +219,9 @@ describe('RelationshipScatterChart', () => {
   it('renders observations when x variance is zero', async () => {
     renderChart(
       [
-        createRide({ id: 'zero-x-a', localDate: '2025-01-01', distanceMiles: 20, averageSpeedMph: 12 }),
-        createRide({ id: 'zero-x-b', localDate: '2025-01-02', distanceMiles: 20, averageSpeedMph: 14 }),
-        createRide({ id: 'zero-x-c', localDate: '2025-01-03', distanceMiles: 20, averageSpeedMph: 16 }),
+        createActivity({ id: 'zero-x-a', localDate: '2025-01-01', distanceMiles: 20, averageSpeedMph: 12 }),
+        createActivity({ id: 'zero-x-b', localDate: '2025-01-02', distanceMiles: 20, averageSpeedMph: 14 }),
+        createActivity({ id: 'zero-x-c', localDate: '2025-01-03', distanceMiles: 20, averageSpeedMph: 16 }),
       ],
       'distanceMiles',
       'averageSpeedMph',
@@ -239,9 +239,9 @@ describe('RelationshipScatterChart', () => {
   it('renders observations when y variance is zero', async () => {
     renderChart(
       [
-        createRide({ id: 'zero-y-a', localDate: '2025-01-01', distanceMiles: 10, movingTimeMinutes: 60 }),
-        createRide({ id: 'zero-y-b', localDate: '2025-01-02', distanceMiles: 20, movingTimeMinutes: 60 }),
-        createRide({ id: 'zero-y-c', localDate: '2025-01-03', distanceMiles: 30, movingTimeMinutes: 60 }),
+        createActivity({ id: 'zero-y-a', localDate: '2025-01-01', distanceMiles: 10, movingTimeMinutes: 60 }),
+        createActivity({ id: 'zero-y-b', localDate: '2025-01-02', distanceMiles: 20, movingTimeMinutes: 60 }),
+        createActivity({ id: 'zero-y-c', localDate: '2025-01-03', distanceMiles: 30, movingTimeMinutes: 60 }),
       ],
       'distanceMiles',
       'movingTimeMinutes',
@@ -279,7 +279,7 @@ describe('RelationshipScatterChart', () => {
     expect(document.querySelectorAll('.relationship-chart-container svg')).toHaveLength(1)
   })
 
-  it('replaces Plot output when rides change', async () => {
+  it('replaces Plot output when activities change', async () => {
     const { rerender } = renderChart([rideA, rideB, rideC])
 
     await waitFor(() => {
@@ -298,26 +298,26 @@ describe('RelationshipScatterChart', () => {
 })
 
 function renderChart(
-  rides: Ride[],
+  activities: Activity[],
   xMetric: MetricKey = 'elevationGainFeet',
   yMetric: MetricKey = 'averageSpeedMph',
 ) {
-  return render(createChartElement(rides, xMetric, yMetric))
+  return render(createChartElement(activities, xMetric, yMetric))
 }
 
 function createChartElement(
-  rides: Ride[],
+  activities: Activity[],
   xMetric: MetricKey = 'elevationGainFeet',
   yMetric: MetricKey = 'averageSpeedMph',
 ) {
   return (
     <RelationshipScatterChart
-      rides={rides}
-      totalRideCount={rides.length}
+      activities={activities}
+      totalActivityCount={activities.length}
       xMetric={xMetric}
       yMetric={yMetric}
-      relationship={relationshipBetweenMetrics(rides, xMetric, yMetric)}
-      points={getMetricRelationshipPoints(rides, xMetric, yMetric)}
+      relationship={relationshipBetweenMetrics(activities, xMetric, yMetric)}
+      points={getMetricRelationshipPoints(activities, xMetric, yMetric)}
     />
   )
 }
@@ -338,8 +338,8 @@ function getPointTitleText(searchText: string): string {
   return title.textContent ?? ''
 }
 
-const rideA = createRide({
-  id: 'ride-a',
+const rideA = createActivity({
+  id: 'activity-a',
   localDate: '2025-03-12',
   averageSpeedMph: 15.24,
   distanceMiles: 31.44,
@@ -348,8 +348,8 @@ const rideA = createRide({
   sportType: 'Ride',
 })
 
-const rideB = createRide({
-  id: 'ride-b',
+const rideB = createActivity({
+  id: 'activity-b',
   localDate: '2025-06-14',
   averageSpeedMph: 14.87,
   distanceMiles: 42,
@@ -358,8 +358,8 @@ const rideB = createRide({
   sportType: 'GravelRide',
 })
 
-const rideC = createRide({
-  id: 'ride-c',
+const rideC = createActivity({
+  id: 'activity-c',
   localDate: '2025-09-20',
   averageSpeedMph: 16.1,
   distanceMiles: 25.5,
@@ -368,8 +368,8 @@ const rideC = createRide({
   sportType: 'Ride',
 })
 
-const rideD = createRide({
-  id: 'ride-d',
+const rideD = createActivity({
+  id: 'activity-d',
   localDate: '2026-07-04',
   averageSpeedMph: 16.01,
   distanceMiles: 40,
@@ -378,8 +378,8 @@ const rideD = createRide({
   sportType: 'Ride',
 })
 
-const rideE = createRide({
-  id: 'ride-e',
+const rideE = createActivity({
+  id: 'activity-e',
   localDate: '2026-08-04',
   averageSpeedMph: 15.2,
   distanceMiles: 38,
@@ -388,8 +388,8 @@ const rideE = createRide({
   sportType: 'Ride',
 })
 
-const rideF = createRide({
-  id: 'ride-f',
+const rideF = createActivity({
+  id: 'activity-f',
   localDate: '2026-09-04',
   averageSpeedMph: 14.9,
   distanceMiles: 37,
@@ -398,10 +398,10 @@ const rideF = createRide({
   sportType: 'Ride',
 })
 
-function createRide(
+function createActivity(
   overrides: Partial<
     Pick<
-      Ride,
+      Activity,
       | 'id'
       | 'localDate'
       | 'averageSpeedMph'
@@ -413,11 +413,11 @@ function createRide(
       | 'sportType'
     >
   > = {},
-): Ride {
+): Activity {
   const localDate = overrides.localDate ?? '2025-03-12'
 
   return {
-    id: overrides.id ?? 'ride-a',
+    id: overrides.id ?? 'activity-a',
     startTime: `${localDate}T07:00:00-07:00`,
     localDate,
     year: Number(localDate.slice(0, 4)),

@@ -1,7 +1,7 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { CumulativeMetricPoint } from '../analysis/cumulativeMetrics.ts'
-import type { DayOfWeek, Ride } from '../data/ride.ts'
+import type { DayOfWeek, Activity } from '../data/activity.ts'
 import type { MetricKey } from '../state/analysisState.ts'
 import { CumulativeMetricChart } from './CumulativeMetricChart.tsx'
 
@@ -10,22 +10,22 @@ describe('CumulativeMetricChart', () => {
     cleanup()
   })
 
-  it('renders an empty chart state for empty selected rides', () => {
+  it('renders an empty chart state for empty selected activities', () => {
     renderChart([], 'distanceMiles', [], 2)
 
     expect(screen.getByLabelText('Cumulative Distance')).toBeInTheDocument()
     expect(
-      screen.getByText('No rides to plot for the current selection.'),
+      screen.getByText('No activities to plot for the current selection.'),
     ).toBeInTheDocument()
     expect(document.querySelector('svg')).not.toBeInTheDocument()
   })
 
-  it('renders a metric-specific empty state when selected rides have no valid points', () => {
-    renderChart([createRide()], 'temperatureF', [])
+  it('renders a metric-specific empty state when selected activities have no valid points', () => {
+    renderChart([createActivity()], 'temperatureF', [])
 
     expect(
       screen.getByText(
-        'No rides have valid temperature values for the current selection.',
+        'No activities have valid temperature values for the current selection.',
       ),
     ).toBeInTheDocument()
     expect(document.querySelector('svg')).not.toBeInTheDocument()
@@ -33,8 +33,8 @@ describe('CumulativeMetricChart', () => {
 
   it('renders the cumulative title, supporting text, and chart output', async () => {
     renderChart([rideA, rideB], 'distanceMiles', [
-      createPoint({ ride: rideA, value: 31.44, cumulativeValue: 31.44 }),
-      createPoint({ ride: rideB, value: 42, cumulativeValue: 73.44 }),
+      createPoint({ activity: rideA, value: 31.44, cumulativeValue: 31.44 }),
+      createPoint({ activity: rideB, value: 42, cumulativeValue: 73.44 }),
     ])
 
     expect(screen.getByLabelText('Cumulative Distance')).toBeInTheDocument()
@@ -48,7 +48,7 @@ describe('CumulativeMetricChart', () => {
 
   it('uses metric metadata in tooltip text', async () => {
     renderChart([rideA], 'distanceMiles', [
-      createPoint({ ride: rideA, value: 31.44, cumulativeValue: 31.44 }),
+      createPoint({ activity: rideA, value: 31.44, cumulativeValue: 31.44 }),
     ])
 
     await waitFor(() => {
@@ -65,7 +65,7 @@ describe('CumulativeMetricChart', () => {
 
   it('renders non-default metric formatting and avoids duplicate elevation context', async () => {
     renderChart([rideA], 'elevationGainFeet', [
-      createPoint({ ride: rideA, value: 1250, cumulativeValue: 1250 }),
+      createPoint({ activity: rideA, value: 1250, cumulativeValue: 1250 }),
     ])
 
     expect(screen.getByLabelText('Cumulative Elevation gain')).toBeInTheDocument()
@@ -86,7 +86,7 @@ describe('CumulativeMetricChart', () => {
 
   it('renders time metric values with context lines', async () => {
     renderChart([rideA], 'movingTimeMinutes', [
-      createPoint({ ride: rideA, value: 125.6, cumulativeValue: 125.6 }),
+      createPoint({ activity: rideA, value: 125.6, cumulativeValue: 125.6 }),
     ])
 
     expect(screen.getByLabelText('Cumulative Moving time')).toBeInTheDocument()
@@ -103,7 +103,7 @@ describe('CumulativeMetricChart', () => {
 
   it('replaces Plot output when metric and points change', async () => {
     const { rerender } = renderChart([rideA], 'distanceMiles', [
-      createPoint({ ride: rideA, value: 31.44, cumulativeValue: 31.44 }),
+      createPoint({ activity: rideA, value: 31.44, cumulativeValue: 31.44 }),
     ])
 
     await waitFor(() => {
@@ -112,10 +112,10 @@ describe('CumulativeMetricChart', () => {
 
     rerender(
       <CumulativeMetricChart
-        rides={[rideA]}
-        totalRideCount={1}
+        activities={[rideA]}
+        totalActivityCount={1}
         yMetric="elevationGainFeet"
-        points={[createPoint({ ride: rideA, value: 1250, cumulativeValue: 1250 })]}
+        points={[createPoint({ activity: rideA, value: 1250, cumulativeValue: 1250 })]}
       />,
     )
 
@@ -130,15 +130,15 @@ describe('CumulativeMetricChart', () => {
 })
 
 function renderChart(
-  rides: Ride[],
+  activities: Activity[],
   yMetric: MetricKey,
   points: CumulativeMetricPoint[],
-  totalRideCount = rides.length,
+  totalActivityCount = activities.length,
 ) {
   return render(
     <CumulativeMetricChart
-      rides={rides}
-      totalRideCount={totalRideCount}
+      activities={activities}
+      totalActivityCount={totalActivityCount}
       yMetric={yMetric}
       points={points}
     />,
@@ -147,16 +147,16 @@ function renderChart(
 
 function createPoint(
   overrides: {
-    ride: Ride
+    activity: Activity
     value: number
     cumulativeValue: number
   },
 ): CumulativeMetricPoint {
   return {
-    date: parseLocalCalendarDate(overrides.ride.localDate),
-    localDate: overrides.ride.localDate,
-    rideId: overrides.ride.id,
-    ride: overrides.ride,
+    date: parseLocalCalendarDate(overrides.activity.localDate),
+    localDate: overrides.activity.localDate,
+    activityId: overrides.activity.id,
+    activity: overrides.activity,
     value: overrides.value,
     cumulativeValue: overrides.cumulativeValue,
   }
@@ -180,8 +180,8 @@ function parseLocalCalendarDate(localDate: string): Date {
   return new Date(year, month - 1, day)
 }
 
-const rideA = createRide({
-  id: 'ride-a',
+const rideA = createActivity({
+  id: 'activity-a',
   localDate: '2025-03-12',
   distanceMiles: 31.44,
   elevationGainFeet: 1250,
@@ -189,8 +189,8 @@ const rideA = createRide({
   sportType: 'Ride',
 })
 
-const rideB = createRide({
-  id: 'ride-b',
+const rideB = createActivity({
+  id: 'activity-b',
   localDate: '2025-04-12',
   distanceMiles: 42,
   elevationGainFeet: 2200,
@@ -198,10 +198,10 @@ const rideB = createRide({
   sportType: 'GravelRide',
 })
 
-function createRide(
+function createActivity(
   overrides: Partial<
     Pick<
-      Ride,
+      Activity,
       | 'id'
       | 'localDate'
       | 'averageSpeedMph'
@@ -213,11 +213,11 @@ function createRide(
       | 'sportType'
     >
   > = {},
-): Ride {
+): Activity {
   const localDate = overrides.localDate ?? '2025-03-12'
 
   return {
-    id: overrides.id ?? 'ride-a',
+    id: overrides.id ?? 'activity-a',
     startTime: `${localDate}T07:00:00-07:00`,
     localDate,
     year: Number(localDate.slice(0, 4)),

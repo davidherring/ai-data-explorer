@@ -1,6 +1,6 @@
-import { demoRides } from '../fixtures/demoRides.ts'
-import type { Ride } from './ride.ts'
+import { demoActivities } from '../fixtures/demoActivities.ts'
+import type { Activity } from './activity.ts'
 
-export function loadDemoRides(): Ride[] {
-  return [...demoRides]
+export function loadDemoActivities(): Activity[] {
+  return [...demoActivities]
 }

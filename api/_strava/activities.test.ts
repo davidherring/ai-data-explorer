@@ -1,10 +1,10 @@
 import type { IncomingHttpHeaders, IncomingMessage, ServerResponse } from 'node:http'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
-  cyclingSportTypes,
-  fetchCyclingActivities,
+  supportedStravaActivityTypes,
+  fetchSupportedActivities,
   handleStravaActivities,
-  isCyclingSportType,
+  isSupportedStravaActivityType,
   StravaActivitiesError,
 } from './activities.js'
 import { createStravaTokenCookie, type StravaTokenBundle } from './tokenCookie.js'
@@ -32,9 +32,9 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('Strava cycling activity client', () => {
-  it('uses the approved cycling sport_type allowlist', () => {
-    expect(cyclingSportTypes).toEqual([
+describe('Strava supported activity client', () => {
+  it('uses the approved supported sport_type allowlist', () => {
+    expect(supportedStravaActivityTypes).toEqual([
       'Ride',
       'MountainBikeRide',
       'GravelRide',
@@ -43,12 +43,16 @@ describe('Strava cycling activity client', () => {
       'EMountainBikeRide',
       'Velomobile',
       'Handcycle',
+      'Walk',
+      'Hike',
     ])
-    expect(isCyclingSportType('Ride')).toBe(true)
-    expect(isCyclingSportType('Run')).toBe(false)
+    expect(isSupportedStravaActivityType('Ride')).toBe(true)
+    expect(isSupportedStravaActivityType('Walk')).toBe(true)
+    expect(isSupportedStravaActivityType('Hike')).toBe(true)
+    expect(isSupportedStravaActivityType('Run')).toBe(false)
   })
 
-  it('paginates full history until a short page and filters cycling sport types', async () => {
+  it('paginates full history until a short page and filters supported sport types', async () => {
     const pageOne = Array.from({ length: 200 }, (_, index) =>
       createRawActivity({
         id: index + 1,
@@ -65,7 +69,7 @@ describe('Strava cycling activity client', () => {
       .mockResolvedValueOnce(Response.json(pageOne))
       .mockResolvedValueOnce(Response.json(pageTwo))
 
-    const result = await fetchCyclingActivities('access-token', {
+    const result = await fetchSupportedActivities('access-token', {
       fetchImplementation: fetchMock as typeof fetch,
     })
 
@@ -80,9 +84,9 @@ describe('Strava cycling activity client', () => {
       '2',
     )
     expect(result.total).toBe(203)
-    expect(result.filteredOut).toBe(101)
-    expect(result.activities).toHaveLength(102)
-    expect(result.activities.every((activity) => isCyclingSportType(activity.sport_type))).toBe(
+    expect(result.filteredOut).toBe(100)
+    expect(result.activities).toHaveLength(103)
+    expect(result.activities.every((activity) => isSupportedStravaActivityType(activity.sport_type))).toBe(
       true,
     )
   })
@@ -101,7 +105,7 @@ describe('Strava cycling activity client', () => {
       ]),
     )
 
-    const result = await fetchCyclingActivities('access-token', {
+    const result = await fetchSupportedActivities('access-token', {
       fetchImplementation: fetchMock as typeof fetch,
     })
 
@@ -128,7 +132,7 @@ describe('Strava cycling activity client', () => {
 
   it('rejects malformed response arrays', async () => {
     await expect(
-      fetchCyclingActivities('access-token', {
+      fetchSupportedActivities('access-token', {
         fetchImplementation: vi.fn(async () =>
           Response.json([{ id: 1, sport_type: 'Ride' }]),
         ) as typeof fetch,
@@ -141,7 +145,7 @@ describe('Strava cycling activity client', () => {
 
   it('rejects malformed non-array responses', async () => {
     await expect(
-      fetchCyclingActivities('access-token', {
+      fetchSupportedActivities('access-token', {
         fetchImplementation: vi.fn(async () =>
           Response.json({ message: 'not an array' }),
         ) as typeof fetch,
@@ -158,7 +162,7 @@ describe('Strava cycling activity client', () => {
     [500, 'strava_upstream_error', 502],
   ] as const)('maps Strava HTTP %s to %s', async (status, code, statusCode) => {
     await expect(
-      fetchCyclingActivities('access-token', {
+      fetchSupportedActivities('access-token', {
         fetchImplementation: vi.fn(async () => new Response(null, { status })) as typeof fetch,
       }),
     ).rejects.toMatchObject({ code, statusCode })
@@ -166,7 +170,7 @@ describe('Strava cycling activity client', () => {
 
   it('maps rate limiting with server-side rate-limit metadata', async () => {
     await expect(
-      fetchCyclingActivities('access-token', {
+      fetchSupportedActivities('access-token', {
         fetchImplementation: vi.fn(
           async () =>
             new Response(null, {
@@ -200,7 +204,7 @@ describe('Strava activities endpoint handler', () => {
     expect(JSON.parse(response.body)).toEqual({ error: 'not_connected' })
   })
 
-  it('uses a refreshed token for activity retrieval and returns normalized rides', async () => {
+  it('uses a refreshed token for activity retrieval and returns normalized activities', async () => {
     stubStravaEnv()
 
     const nearExpiredToken: StravaTokenBundle = {
@@ -247,8 +251,8 @@ describe('Strava activities endpoint handler', () => {
       deduplicated: 0,
       refreshed: true,
     })
-    expect(body.rides).toHaveLength(1)
-    expect(body.rides[0]).toMatchObject({
+    expect(body.activities).toHaveLength(1)
+    expect(body.activities[0]).toMatchObject({
       id: '1',
       startTime: '2026-01-01T08:00:00Z',
       localDate: '2026-01-01',
@@ -294,9 +298,9 @@ describe('Strava activities endpoint handler', () => {
       refreshed: false,
     })
     expect(
-      body.rides.map((ride: { id: string; sportType: string }) => ({
-        id: ride.id,
-        sportType: ride.sportType,
+      body.activities.map((activity: { id: string; sportType: string }) => ({
+        id: activity.id,
+        sportType: activity.sportType,
       })),
     ).toEqual([{ id: '1', sportType: 'Ride' }])
   })

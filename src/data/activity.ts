@@ -7,7 +7,7 @@ export type DayOfWeek =
   | 'saturday'
   | 'sunday'
 
-export type Ride = {
+export type Activity = {
   id: string
 
   startTime: string

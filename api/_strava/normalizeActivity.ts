@@ -1,4 +1,4 @@
-import type { Ride, DayOfWeek } from '../../src/data/ride.js'
+import type { Activity, DayOfWeek } from '../../src/data/activity.js'
 import type { StravaSummaryActivity } from './activities.js'
 
 const METERS_TO_MILES = 0.000621371
@@ -22,7 +22,7 @@ type LocalDateParts = {
   day: number
 }
 
-export function normalizeStravaActivity(activity: StravaSummaryActivity): Ride {
+export function normalizeStravaActivity(activity: StravaSummaryActivity): Activity {
   const localDate = getLocalDate(activity.start_date_local)
   const localDateParts = parseLocalDate(localDate)
   const dayOfWeek = getDayOfWeek(localDateParts)
@@ -51,11 +51,11 @@ export function normalizeStravaActivity(activity: StravaSummaryActivity): Ride {
 export function normalizeStravaActivities(
   activities: readonly StravaSummaryActivity[],
 ): {
-  rides: Ride[]
+  activities: Activity[]
   deduplicated: number
 } {
   const seenIds = new Set<string>()
-  const rides: Ride[] = []
+  const normalizedActivities: Activity[] = []
   let deduplicated = 0
 
   for (const activity of activities) {
@@ -67,10 +67,10 @@ export function normalizeStravaActivities(
     }
 
     seenIds.add(id)
-    rides.push(normalizeStravaActivity(activity))
+    normalizedActivities.push(normalizeStravaActivity(activity))
   }
 
-  return { rides, deduplicated }
+  return { activities: normalizedActivities, deduplicated }
 }
 
 function getLocalDate(startDateLocal: string): string {
@@ -117,4 +117,3 @@ function getIsoWeekOfYear(localDate: LocalDateParts): number {
 
   return Math.ceil(daysSinceYearStart / 7)
 }
-

@@ -1,82 +1,82 @@
-import { loadDemoRides } from './demoDataset.ts'
-import type { Ride, DayOfWeek } from './ride.ts'
+import { loadDemoActivities } from './demoDataset.ts'
+import type { Activity, DayOfWeek } from './activity.ts'
 
-export type RideDataSourceId = 'demo' | 'strava'
+export type ActivityDataSourceId = 'demo' | 'strava'
 
-export type RideDataSourceMetadata = {
+export type ActivityDataSourceMetadata = {
   total?: number
   filteredOut?: number
   deduplicated?: number
   refreshed?: boolean
 }
 
-export type RideDataSourceLoadResult = {
-  rides: Ride[]
-  metadata?: RideDataSourceMetadata
+export type ActivityDataSourceLoadResult = {
+  activities: Activity[]
+  metadata?: ActivityDataSourceMetadata
 }
 
 export type StravaActivitiesResponse = {
-  rides: Ride[]
+  activities: Activity[]
   total: number
   filteredOut: number
   deduplicated: number
   refreshed: boolean
 }
 
-export type RideDataSourceErrorCode =
+export type ActivityDataSourceErrorCode =
   | 'notConnected'
   | 'requestFailed'
   | 'invalidResponse'
 
-export class RideDataSourceError extends Error {
-  readonly code: RideDataSourceErrorCode
+export class ActivityDataSourceError extends Error {
+  readonly code: ActivityDataSourceErrorCode
 
-  constructor(code: RideDataSourceErrorCode, message: string) {
+  constructor(code: ActivityDataSourceErrorCode, message: string) {
     super(message)
-    this.name = 'RideDataSourceError'
+    this.name = 'ActivityDataSourceError'
     this.code = code
   }
 }
 
-export async function loadRidesForSource(
-  source: RideDataSourceId,
+export async function loadActivitiesForSource(
+  source: ActivityDataSourceId,
   fetchImplementation: typeof fetch = fetch,
-): Promise<RideDataSourceLoadResult> {
+): Promise<ActivityDataSourceLoadResult> {
   if (source === 'demo') {
-    return loadDemoRideSource()
+    return loadDemoActivitySource()
   }
 
-  return loadStravaRideSource(fetchImplementation)
+  return loadStravaActivitySource(fetchImplementation)
 }
 
-export async function loadDemoRideSource(): Promise<RideDataSourceLoadResult> {
-  const rides = loadDemoRides()
+export async function loadDemoActivitySource(): Promise<ActivityDataSourceLoadResult> {
+  const activities = loadDemoActivities()
 
   return {
-    rides,
+    activities,
     metadata: {
-      total: rides.length,
+      total: activities.length,
     },
   }
 }
 
-export async function loadStravaRideSource(
+export async function loadStravaActivitySource(
   fetchImplementation: typeof fetch = fetch,
-): Promise<RideDataSourceLoadResult> {
+): Promise<ActivityDataSourceLoadResult> {
   const response = await fetchImplementation('/api/strava/activities')
 
   if (response.status === 401) {
-    throw new RideDataSourceError('notConnected', 'Strava is not connected.')
+    throw new ActivityDataSourceError('notConnected', 'Strava is not connected.')
   }
 
   if (!response.ok) {
-    throw new RideDataSourceError('requestFailed', 'Unable to load Strava rides.')
+    throw new ActivityDataSourceError('requestFailed', 'Unable to load Strava activities.')
   }
 
   const payload = parseStravaActivitiesResponse(await response.json())
 
   return {
-    rides: payload.rides,
+    activities: payload.activities,
     metadata: {
       total: payload.total,
       filteredOut: payload.filteredOut,
@@ -88,23 +88,23 @@ export async function loadStravaRideSource(
 
 function parseStravaActivitiesResponse(value: unknown): StravaActivitiesResponse {
   if (!value || typeof value !== 'object') {
-    throw new RideDataSourceError('invalidResponse', 'Invalid Strava ride response.')
+    throw new ActivityDataSourceError('invalidResponse', 'Invalid Strava activity response.')
   }
 
   const candidate = value as Partial<StravaActivitiesResponse>
 
   if (
-    !Array.isArray(candidate.rides) ||
+    !Array.isArray(candidate.activities) ||
     typeof candidate.total !== 'number' ||
     typeof candidate.filteredOut !== 'number' ||
     typeof candidate.deduplicated !== 'number' ||
     typeof candidate.refreshed !== 'boolean'
   ) {
-    throw new RideDataSourceError('invalidResponse', 'Invalid Strava ride response.')
+    throw new ActivityDataSourceError('invalidResponse', 'Invalid Strava activity response.')
   }
 
   return {
-    rides: candidate.rides.map(parseRide),
+    activities: candidate.activities.map(parseActivity),
     total: candidate.total,
     filteredOut: candidate.filteredOut,
     deduplicated: candidate.deduplicated,
@@ -112,12 +112,12 @@ function parseStravaActivitiesResponse(value: unknown): StravaActivitiesResponse
   }
 }
 
-function parseRide(value: unknown): Ride {
+function parseActivity(value: unknown): Activity {
   if (!value || typeof value !== 'object') {
-    throw new RideDataSourceError('invalidResponse', 'Invalid Strava ride.')
+    throw new ActivityDataSourceError('invalidResponse', 'Invalid Strava activity.')
   }
 
-  const candidate = value as Partial<Ride>
+  const candidate = value as Partial<Activity>
 
   if (
     typeof candidate.id !== 'string' ||
@@ -139,14 +139,14 @@ function parseRide(value: unknown): Ride {
     typeof candidate.commute !== 'boolean' ||
     typeof candidate.manual !== 'boolean'
   ) {
-    throw new RideDataSourceError('invalidResponse', 'Invalid Strava ride.')
+    throw new ActivityDataSourceError('invalidResponse', 'Invalid Strava activity.')
   }
 
   if (
     candidate.temperatureF !== undefined &&
     typeof candidate.temperatureF !== 'number'
   ) {
-    throw new RideDataSourceError('invalidResponse', 'Invalid Strava ride.')
+    throw new ActivityDataSourceError('invalidResponse', 'Invalid Strava activity.')
   }
 
   return {

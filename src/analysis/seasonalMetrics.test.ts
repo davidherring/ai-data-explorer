@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { DayOfWeek, Ride } from '../data/ride.ts'
+import type { DayOfWeek, Activity } from '../data/activity.ts'
 import { buildSeasonalMetricBuckets } from './seasonalMetrics.ts'
 
 describe('buildSeasonalMetricBuckets', () => {
@@ -7,34 +7,34 @@ describe('buildSeasonalMetricBuckets', () => {
     expect(buildSeasonalMetricBuckets([], 'averageSpeedMph')).toEqual([])
   })
 
-  it('returns no buckets when no rides have finite active metric values', () => {
-    const rides = [
-      createRide({ id: 'missing-temp', temperatureF: undefined }),
-      createRide({ id: 'nan-temp', temperatureF: Number.NaN }),
-      createRide({ id: 'infinite-temp', temperatureF: Number.POSITIVE_INFINITY }),
-      createRide({ id: 'negative-infinite-temp', temperatureF: Number.NEGATIVE_INFINITY }),
+  it('returns no buckets when no activities have finite active metric values', () => {
+    const activities = [
+      createActivity({ id: 'missing-temp', temperatureF: undefined }),
+      createActivity({ id: 'nan-temp', temperatureF: Number.NaN }),
+      createActivity({ id: 'infinite-temp', temperatureF: Number.POSITIVE_INFINITY }),
+      createActivity({ id: 'negative-infinite-temp', temperatureF: Number.NEGATIVE_INFINITY }),
     ]
 
-    expect(buildSeasonalMetricBuckets(rides, 'temperatureF')).toEqual([])
+    expect(buildSeasonalMetricBuckets(activities, 'temperatureF')).toEqual([])
   })
 
   it('excludes undefined and non-finite active metric values', () => {
     const buckets = buildSeasonalMetricBuckets(
       [
-        createRide({ id: 'valid-a', weekOfYear: 11, temperatureF: 60 }),
-        createRide({ id: 'missing', weekOfYear: 11, temperatureF: undefined }),
-        createRide({ id: 'nan', weekOfYear: 11, temperatureF: Number.NaN }),
-        createRide({
+        createActivity({ id: 'valid-a', weekOfYear: 11, temperatureF: 60 }),
+        createActivity({ id: 'missing', weekOfYear: 11, temperatureF: undefined }),
+        createActivity({ id: 'nan', weekOfYear: 11, temperatureF: Number.NaN }),
+        createActivity({
           id: 'infinite',
           weekOfYear: 11,
           temperatureF: Number.POSITIVE_INFINITY,
         }),
-        createRide({
+        createActivity({
           id: 'negative-infinite',
           weekOfYear: 11,
           temperatureF: Number.NEGATIVE_INFINITY,
         }),
-        createRide({ id: 'valid-b', weekOfYear: 12, temperatureF: 70 }),
+        createActivity({ id: 'valid-b', weekOfYear: 12, temperatureF: 70 }),
       ],
       'temperatureF',
     )
@@ -52,14 +52,14 @@ describe('buildSeasonalMetricBuckets', () => {
     ])
   })
 
-  it('groups rides by year and biweekly week bucket', () => {
+  it('groups activities by year and biweekly week bucket', () => {
     const buckets = buildSeasonalMetricBuckets(
       [
-        createRide({ id: '2024-a', year: 2024, weekOfYear: 1, averageSpeedMph: 12 }),
-        createRide({ id: '2024-b', year: 2024, weekOfYear: 2, averageSpeedMph: 14 }),
-        createRide({ id: '2025-a', year: 2025, weekOfYear: 1, averageSpeedMph: 16 }),
-        createRide({ id: '2025-b', year: 2025, weekOfYear: 2, averageSpeedMph: 18 }),
-        createRide({ id: '2025-c', year: 2025, weekOfYear: 3, averageSpeedMph: 20 }),
+        createActivity({ id: '2024-a', year: 2024, weekOfYear: 1, averageSpeedMph: 12 }),
+        createActivity({ id: '2024-b', year: 2024, weekOfYear: 2, averageSpeedMph: 14 }),
+        createActivity({ id: '2025-a', year: 2025, weekOfYear: 1, averageSpeedMph: 16 }),
+        createActivity({ id: '2025-b', year: 2025, weekOfYear: 2, averageSpeedMph: 18 }),
+        createActivity({ id: '2025-c', year: 2025, weekOfYear: 3, averageSpeedMph: 20 }),
       ],
       'averageSpeedMph',
     )
@@ -98,11 +98,11 @@ describe('buildSeasonalMetricBuckets', () => {
   it('uses the approved biweekly bucket formula including week 53', () => {
     const buckets = buildSeasonalMetricBuckets(
       [
-        createRide({ id: 'week-1', weekOfYear: 1, distanceMiles: 10 }),
-        createRide({ id: 'week-2', weekOfYear: 2, distanceMiles: 14 }),
-        createRide({ id: 'week-3', weekOfYear: 3, distanceMiles: 30 }),
-        createRide({ id: 'week-52', weekOfYear: 52, distanceMiles: 520 }),
-        createRide({ id: 'week-53', weekOfYear: 53, distanceMiles: 530 }),
+        createActivity({ id: 'week-1', weekOfYear: 1, distanceMiles: 10 }),
+        createActivity({ id: 'week-2', weekOfYear: 2, distanceMiles: 14 }),
+        createActivity({ id: 'week-3', weekOfYear: 3, distanceMiles: 30 }),
+        createActivity({ id: 'week-52', weekOfYear: 52, distanceMiles: 520 }),
+        createActivity({ id: 'week-53', weekOfYear: 53, distanceMiles: 530 }),
       ],
       'distanceMiles',
     )
@@ -150,10 +150,10 @@ describe('buildSeasonalMetricBuckets', () => {
   it('skips invalid weekOfYear values outside 1 through 53', () => {
     const buckets = buildSeasonalMetricBuckets(
       [
-        createRide({ id: 'week-0', weekOfYear: 0, distanceMiles: 999 }),
-        createRide({ id: 'week-54', weekOfYear: 54, distanceMiles: 999 }),
-        createRide({ id: 'fractional-week', weekOfYear: 1.5, distanceMiles: 999 }),
-        createRide({ id: 'valid-week', weekOfYear: 1, distanceMiles: 10 }),
+        createActivity({ id: 'week-0', weekOfYear: 0, distanceMiles: 999 }),
+        createActivity({ id: 'week-54', weekOfYear: 54, distanceMiles: 999 }),
+        createActivity({ id: 'fractional-week', weekOfYear: 1.5, distanceMiles: 999 }),
+        createActivity({ id: 'valid-week', weekOfYear: 1, distanceMiles: 10 }),
       ],
       'distanceMiles',
     )
@@ -174,9 +174,9 @@ describe('buildSeasonalMetricBuckets', () => {
   it('calculates the median for odd sample counts', () => {
     const buckets = buildSeasonalMetricBuckets(
       [
-        createRide({ id: 'a', weekOfYear: 9, elevationGainFeet: 300 }),
-        createRide({ id: 'b', weekOfYear: 9, elevationGainFeet: 100 }),
-        createRide({ id: 'c', weekOfYear: 10, elevationGainFeet: 200 }),
+        createActivity({ id: 'a', weekOfYear: 9, elevationGainFeet: 300 }),
+        createActivity({ id: 'b', weekOfYear: 9, elevationGainFeet: 100 }),
+        createActivity({ id: 'c', weekOfYear: 10, elevationGainFeet: 200 }),
       ],
       'elevationGainFeet',
     )
@@ -191,10 +191,10 @@ describe('buildSeasonalMetricBuckets', () => {
   it('calculates the median for even sample counts', () => {
     const buckets = buildSeasonalMetricBuckets(
       [
-        createRide({ id: 'a', weekOfYear: 9, movingTimeMinutes: 10 }),
-        createRide({ id: 'b', weekOfYear: 9, movingTimeMinutes: 20 }),
-        createRide({ id: 'c', weekOfYear: 10, movingTimeMinutes: 30 }),
-        createRide({ id: 'd', weekOfYear: 10, movingTimeMinutes: 40 }),
+        createActivity({ id: 'a', weekOfYear: 9, movingTimeMinutes: 10 }),
+        createActivity({ id: 'b', weekOfYear: 9, movingTimeMinutes: 20 }),
+        createActivity({ id: 'c', weekOfYear: 10, movingTimeMinutes: 30 }),
+        createActivity({ id: 'd', weekOfYear: 10, movingTimeMinutes: 40 }),
       ],
       'movingTimeMinutes',
     )
@@ -209,8 +209,8 @@ describe('buildSeasonalMetricBuckets', () => {
   it('preserves raw numeric precision for median values', () => {
     const buckets = buildSeasonalMetricBuckets(
       [
-        createRide({ id: 'a', weekOfYear: 15, averageSpeedMph: 15.125 }),
-        createRide({ id: 'b', weekOfYear: 16, averageSpeedMph: 15.375 }),
+        createActivity({ id: 'a', weekOfYear: 15, averageSpeedMph: 15.125 }),
+        createActivity({ id: 'b', weekOfYear: 16, averageSpeedMph: 15.375 }),
       ],
       'averageSpeedMph',
     )
@@ -221,8 +221,8 @@ describe('buildSeasonalMetricBuckets', () => {
   it('omits missing buckets', () => {
     const buckets = buildSeasonalMetricBuckets(
       [
-        createRide({ id: 'bucket-1', weekOfYear: 1, distanceMiles: 10 }),
-        createRide({ id: 'bucket-4', weekOfYear: 7, distanceMiles: 40 }),
+        createActivity({ id: 'bucket-1', weekOfYear: 1, distanceMiles: 10 }),
+        createActivity({ id: 'bucket-4', weekOfYear: 7, distanceMiles: 40 }),
       ],
       'distanceMiles',
     )
@@ -233,10 +233,10 @@ describe('buildSeasonalMetricBuckets', () => {
   it('sorts output by year and then bucket index', () => {
     const buckets = buildSeasonalMetricBuckets(
       [
-        createRide({ id: '2025-bucket-3', year: 2025, weekOfYear: 5 }),
-        createRide({ id: '2024-bucket-3', year: 2024, weekOfYear: 5 }),
-        createRide({ id: '2025-bucket-1', year: 2025, weekOfYear: 1 }),
-        createRide({ id: '2024-bucket-1', year: 2024, weekOfYear: 1 }),
+        createActivity({ id: '2025-bucket-3', year: 2025, weekOfYear: 5 }),
+        createActivity({ id: '2024-bucket-3', year: 2024, weekOfYear: 5 }),
+        createActivity({ id: '2025-bucket-1', year: 2025, weekOfYear: 1 }),
+        createActivity({ id: '2024-bucket-1', year: 2024, weekOfYear: 1 }),
       ],
       'averageSpeedMph',
     )
@@ -246,25 +246,25 @@ describe('buildSeasonalMetricBuckets', () => {
     ).toEqual(['2024:1', '2024:3', '2025:1', '2025:3'])
   })
 
-  it('does not mutate source data or reorder input rides', () => {
-    const rides = [
-      createRide({ id: 'b', year: 2025, weekOfYear: 5, averageSpeedMph: 16 }),
-      createRide({ id: 'a', year: 2024, weekOfYear: 1, averageSpeedMph: 14 }),
+  it('does not mutate source data or reorder input activities', () => {
+    const activities = [
+      createActivity({ id: 'b', year: 2025, weekOfYear: 5, averageSpeedMph: 16 }),
+      createActivity({ id: 'a', year: 2024, weekOfYear: 1, averageSpeedMph: 14 }),
     ]
-    const originalRides = rides.map((ride) => ({ ...ride }))
-    const originalIds = rides.map((ride) => ride.id)
+    const originalActivities = activities.map((activity) => ({ ...activity }))
+    const originalIds = activities.map((activity) => activity.id)
 
-    buildSeasonalMetricBuckets(rides, 'averageSpeedMph')
+    buildSeasonalMetricBuckets(activities, 'averageSpeedMph')
 
-    expect(rides).toEqual(originalRides)
-    expect(rides.map((ride) => ride.id)).toEqual(originalIds)
+    expect(activities).toEqual(originalActivities)
+    expect(activities.map((activity) => activity.id)).toEqual(originalIds)
   })
 })
 
-function createRide(
+function createActivity(
   overrides: Partial<
     Pick<
-      Ride,
+      Activity,
       | 'id'
       | 'year'
       | 'localDate'
@@ -277,12 +277,12 @@ function createRide(
       | 'temperatureF'
     >
   > = {},
-): Ride {
+): Activity {
   const year = overrides.year ?? 2025
   const localDate = overrides.localDate ?? `${year}-01-01`
 
   return {
-    id: overrides.id ?? 'ride-a',
+    id: overrides.id ?? 'activity-a',
     startTime: `${localDate}T07:00:00-07:00`,
     localDate,
     year,

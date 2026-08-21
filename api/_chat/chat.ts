@@ -69,9 +69,9 @@ export async function handleChat(
     logValidationIssues(parseResult.error.issues)
     sendJson(
       response,
-      hasTooManySelectedRidesIssue(parseResult.error.issues) ? 413 : 400,
+      hasTooManySelectedActivitiesIssue(parseResult.error.issues) ? 413 : 400,
       {
-        error: hasTooManySelectedRidesIssue(parseResult.error.issues)
+        error: hasTooManySelectedActivitiesIssue(parseResult.error.issues)
           ? 'chat_payload_too_large'
           : 'invalid_chat_request',
       },
@@ -95,7 +95,7 @@ export async function streamChatResponse(
     model: dependencies.createModel(),
     system,
     messages,
-    tools: createAnalysisTools(chatRequest.selectedRides),
+    tools: createAnalysisTools(chatRequest.selectedActivities),
     stopWhen: stepCountIs(3),
   })
 
@@ -139,10 +139,10 @@ async function readJsonBody(request: IncomingMessage): Promise<unknown> {
   return JSON.parse(rawBody)
 }
 
-function hasTooManySelectedRidesIssue(
+function hasTooManySelectedActivitiesIssue(
   issues: readonly { message: string }[],
 ): boolean {
-  return issues.some((issue) => issue.message === 'too_many_selected_rides')
+  return issues.some((issue) => issue.message === 'too_many_selected_activities')
 }
 
 function logValidationIssues(

@@ -1,13 +1,13 @@
-import type { Ride } from '../data/ride.js'
+import type { Activity } from '../data/activity.js'
 import type { DateRange, MetricKey } from '../state/analysisState.js'
 import {
   getMetricDefinition,
-  getRideMetric,
+  getActivityMetric,
   metricDefinitions,
-} from './rideMetrics.js'
+} from './activityMetrics.js'
 
 export type DatasetProfile = {
-  rideCount: number
+  activityCount: number
   dateRange?: DateRange
   years: number[]
   sportTypes: string[]
@@ -25,7 +25,7 @@ export type DatasetMetricAvailability = {
 }
 
 export type SelectionSummary = {
-  rideCount: number
+  activityCount: number
   dateRange?: DateRange
   metrics: SelectionMetricSummary[]
   warnings: SelectionSummaryWarning[]
@@ -46,7 +46,7 @@ export type SelectionMetricSummary = {
 
 export type SelectionSummaryWarning =
   | { code: 'empty-selection' }
-  | { code: 'sparse-selection'; rideCount: number }
+  | { code: 'sparse-selection'; activityCount: number }
   | { code: 'metric-has-no-finite-values'; metric: MetricKey }
   | { code: 'metric-has-missing-values'; metric: MetricKey; missingCount: number }
 
@@ -57,41 +57,41 @@ const additiveMetricKeys = new Set<MetricKey>([
   'elapsedTimeMinutes',
 ])
 
-export function buildDatasetProfile(rides: readonly Ride[]): DatasetProfile {
+export function buildDatasetProfile(activities: readonly Activity[]): DatasetProfile {
   return {
-    rideCount: rides.length,
-    dateRange: getDateRange(rides),
-    years: getSortedUniqueValues(rides.map((ride) => ride.year), compareNumbers),
+    activityCount: activities.length,
+    dateRange: getDateRange(activities),
+    years: getSortedUniqueValues(activities.map((activity) => activity.year), compareNumbers),
     sportTypes: getSortedUniqueValues(
-      rides.map((ride) => ride.sportType),
+      activities.map((activity) => activity.sportType),
       compareStrings,
     ),
     metrics: getMetricKeys().map((metric) =>
-      buildDatasetMetricAvailability(rides, metric),
+      buildDatasetMetricAvailability(activities, metric),
     ),
   }
 }
 
-export function summarizeSelection(rides: readonly Ride[]): SelectionSummary {
+export function summarizeSelection(activities: readonly Activity[]): SelectionSummary {
   const metricSummaries = getMetricKeys().map((metric) =>
-    buildSelectionMetricSummary(rides, metric),
+    buildSelectionMetricSummary(activities, metric),
   )
 
   return {
-    rideCount: rides.length,
-    dateRange: getDateRange(rides),
+    activityCount: activities.length,
+    dateRange: getDateRange(activities),
     metrics: metricSummaries,
-    warnings: buildSelectionWarnings(rides.length, metricSummaries),
+    warnings: buildSelectionWarnings(activities.length, metricSummaries),
   }
 }
 
 function buildDatasetMetricAvailability(
-  rides: readonly Ride[],
+  activities: readonly Activity[],
   metric: MetricKey,
 ): DatasetMetricAvailability {
   const definition = getMetricDefinition(metric)
-  const finiteCount = getFiniteMetricValues(rides, metric).length
-  const missingCount = rides.length - finiteCount
+  const finiteCount = getFiniteMetricValues(activities, metric).length
+  const missingCount = activities.length - finiteCount
 
   return {
     metric,
@@ -105,11 +105,11 @@ function buildDatasetMetricAvailability(
 }
 
 function buildSelectionMetricSummary(
-  rides: readonly Ride[],
+  activities: readonly Activity[],
   metric: MetricKey,
 ): SelectionMetricSummary {
   const definition = getMetricDefinition(metric)
-  const values = getFiniteMetricValues(rides, metric)
+  const values = getFiniteMetricValues(activities, metric)
   const valueSummary = summarizeValues(values)
 
   return {
@@ -117,7 +117,7 @@ function buildSelectionMetricSummary(
     label: definition.label,
     unit: definition.unit,
     finiteCount: values.length,
-    missingCount: rides.length - values.length,
+    missingCount: activities.length - values.length,
     ...valueSummary,
     ...(valueSummary !== undefined && additiveMetricKeys.has(metric)
       ? { total: sum(values) }
@@ -126,17 +126,17 @@ function buildSelectionMetricSummary(
 }
 
 function buildSelectionWarnings(
-  rideCount: number,
+  activityCount: number,
   metricSummaries: readonly SelectionMetricSummary[],
 ): SelectionSummaryWarning[] {
-  if (rideCount === 0) {
+  if (activityCount === 0) {
     return [{ code: 'empty-selection' }]
   }
 
   const warnings: SelectionSummaryWarning[] = []
 
-  if (rideCount < 3) {
-    warnings.push({ code: 'sparse-selection', rideCount })
+  if (activityCount < 3) {
+    warnings.push({ code: 'sparse-selection', activityCount })
   }
 
   for (const summary of metricSummaries) {
@@ -160,13 +160,13 @@ function buildSelectionWarnings(
 }
 
 function getFiniteMetricValues(
-  rides: readonly Ride[],
+  activities: readonly Activity[],
   metric: MetricKey,
 ): number[] {
   const values: number[] = []
 
-  for (const ride of rides) {
-    const value = getRideMetric(ride, metric)
+  for (const activity of activities) {
+    const value = getActivityMetric(activity, metric)
 
     if (value !== undefined && Number.isFinite(value)) {
       values.push(value)
@@ -219,17 +219,17 @@ function sum(values: readonly number[]): number {
   return values.reduce((total, value) => total + value, 0)
 }
 
-function getDateRange(rides: readonly Ride[]): DateRange | undefined {
-  if (rides.length === 0) {
+function getDateRange(activities: readonly Activity[]): DateRange | undefined {
+  if (activities.length === 0) {
     return undefined
   }
 
-  let start = rides[0].localDate
-  let end = rides[0].localDate
+  let start = activities[0].localDate
+  let end = activities[0].localDate
 
-  for (const ride of rides.slice(1)) {
-    start = ride.localDate < start ? ride.localDate : start
-    end = ride.localDate > end ? ride.localDate : end
+  for (const activity of activities.slice(1)) {
+    start = activity.localDate < start ? activity.localDate : start
+    end = activity.localDate > end ? activity.localDate : end
   }
 
   return { start, end }
