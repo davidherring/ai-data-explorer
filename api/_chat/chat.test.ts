@@ -119,6 +119,93 @@ describe('handleChat', () => {
     expect(JSON.parse(response.body)).toEqual({ error: 'invalid_chat_request' })
   })
 
+  it('accepts valid recurring month-day ranges in the analysis state', async () => {
+    const streamTextMock = vi.fn(() => ({
+      pipeUIMessageStreamToResponse: vi.fn(),
+    }))
+    const body = createValidChatBody({
+      currentAnalysisState: {
+        ...defaultAnalysisState,
+        selection: {
+          ...defaultAnalysisState.selection,
+          recurringDateRange: {
+            type: 'recurring-month-day',
+            start: { month: 3, day: 15 },
+            end: { month: 6, day: 20 },
+          },
+        },
+      },
+    })
+    const response = createMockResponse()
+
+    await handleChat(
+      createMockRequest('POST', JSON.stringify(body)),
+      response,
+      createMockDependencies({ streamText: streamTextMock }),
+    )
+
+    expect(streamTextMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('rejects invalid or reversed recurring month-day ranges', async () => {
+    const invalidDayBody = createValidChatBody({
+      currentAnalysisState: {
+        ...defaultAnalysisState,
+        selection: {
+          recurringDateRange: {
+            type: 'recurring-month-day',
+            start: { month: 2, day: 30 },
+            end: { month: 3, day: 15 },
+          },
+        },
+      },
+    })
+    const reversedBody = createValidChatBody({
+      currentAnalysisState: {
+        ...defaultAnalysisState,
+        selection: {
+          recurringDateRange: {
+            type: 'recurring-month-day',
+            start: { month: 6, day: 20 },
+            end: { month: 3, day: 15 },
+          },
+        },
+      },
+    })
+
+    for (const body of [invalidDayBody, reversedBody]) {
+      const response = createMockResponse()
+
+      await handleChat(
+        createMockRequest('POST', JSON.stringify(body)),
+        response,
+        createMockDependencies(),
+      )
+
+      expect(response.statusCode).toBe(400)
+      expect(JSON.parse(response.body)).toEqual({ error: 'invalid_chat_request' })
+    }
+  })
+
+  it('rejects obsolete top-level aggregation state', async () => {
+    const body = createValidChatBody({
+      currentAnalysisState: {
+        ...defaultAnalysisState,
+        aggregation: 'raw',
+      },
+    })
+    const response = createMockResponse()
+
+    await handleChat(
+      createMockRequest('POST', JSON.stringify(body)),
+      response,
+      createMockDependencies(),
+    )
+
+    expect(response.statusCode).toBe(400)
+    expect(JSON.parse(response.body)).toEqual({ error: 'invalid_chat_request' })
+  })
+
   it('logs compact validation issues without raw request content', async () => {
     const privateRideId = 'private-activity-id'
     const privateMessageText = 'private question text'
@@ -738,6 +825,7 @@ function createValidChatBody(
     id: string
     trigger: 'submit-message' | 'regenerate-message'
     messageId: string
+    currentAnalysisState: unknown
     selectedActivities: Activity[]
     selectedActivityCount: number
   }> = {},
@@ -763,7 +851,7 @@ function createValidChatBody(
     ...(overrides.messageId !== undefined
       ? { messageId: overrides.messageId }
       : {}),
-    currentAnalysisState: defaultAnalysisState,
+    currentAnalysisState: overrides.currentAnalysisState ?? defaultAnalysisState,
     selectedActivities,
     datasetProfile: buildDatasetProfile(selectedActivities),
     selectedActivityCount: overrides.selectedActivityCount ?? selectedActivities.length,

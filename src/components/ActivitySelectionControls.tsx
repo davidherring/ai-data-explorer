@@ -1,9 +1,12 @@
+import { useEffect, useState } from 'react'
 import type { Activity, DayOfWeek } from '../data/activity.ts'
 import {
   defaultAnalysisState,
   type ActivitySelection,
   type DateRange,
+  type MonthDay,
   type NumericRange,
+  type RecurringDateRange,
 } from '../state/analysisState.ts'
 
 type ActivitySelectionControlsProps = {
@@ -29,6 +32,17 @@ export function ActivitySelectionControls({
 }: ActivitySelectionControlsProps) {
   const availableYears = getAvailableYears(activities)
   const availableSportTypes = getAvailableSportTypes(activities)
+  const [recurringStartInput, setRecurringStartInput] = useState(
+    formatMonthDay(selection.recurringDateRange?.start),
+  )
+  const [recurringEndInput, setRecurringEndInput] = useState(
+    formatMonthDay(selection.recurringDateRange?.end),
+  )
+
+  useEffect(() => {
+    setRecurringStartInput(formatMonthDay(selection.recurringDateRange?.start))
+    setRecurringEndInput(formatMonthDay(selection.recurringDateRange?.end))
+  }, [selection.recurringDateRange])
 
   return (
     <form className="selection-controls" aria-label="Activity selection controls">
@@ -79,6 +93,49 @@ export function ActivitySelectionControls({
             />
           </label>
         </div>
+      </fieldset>
+
+      <fieldset className="control-group control-group-seasonal-window">
+        <legend>Seasonal window</legend>
+        <div className="bounds-row">
+          <label>
+            <span>Season start</span>
+            <input
+              inputMode="numeric"
+              placeholder="MM-DD"
+              value={recurringStartInput}
+              onChange={(event) => {
+                const value = event.currentTarget.value
+                setRecurringStartInput(value)
+                commitRecurringDateRange(selection, value, recurringEndInput, onSelectionChange)
+              }}
+            />
+          </label>
+          <label>
+            <span>Season end</span>
+            <input
+              inputMode="numeric"
+              placeholder="MM-DD"
+              value={recurringEndInput}
+              onChange={(event) => {
+                const value = event.currentTarget.value
+                setRecurringEndInput(value)
+                commitRecurringDateRange(selection, recurringStartInput, value, onSelectionChange)
+              }}
+            />
+          </label>
+        </div>
+        <button
+          className="secondary-button"
+          type="button"
+          onClick={() => {
+            setRecurringStartInput('')
+            setRecurringEndInput('')
+            onSelectionChange(withOptionalValue(selection, 'recurringDateRange', undefined))
+          }}
+        >
+          Clear seasonal window
+        </button>
       </fieldset>
 
       <fieldset className="control-group control-group-days control-group-compact">
@@ -286,6 +343,26 @@ function updateDateRange(
   )
 }
 
+function commitRecurringDateRange(
+  selection: ActivitySelection,
+  startInput: string,
+  endInput: string,
+  onSelectionChange: (selection: ActivitySelection) => void,
+): void {
+  if (startInput === '' && endInput === '') {
+    onSelectionChange(withOptionalValue(selection, 'recurringDateRange', undefined))
+    return
+  }
+
+  const range = parseRecurringDateRange(startInput, endInput)
+
+  if (range === undefined) {
+    return
+  }
+
+  onSelectionChange(withOptionalValue(selection, 'recurringDateRange', range))
+}
+
 function updateDaysOfWeek(
   selection: ActivitySelection,
   selectedDay: DayOfWeek,
@@ -350,6 +427,81 @@ function withOptionalValue<Key extends keyof ActivitySelection>(
   }
 
   return nextSelection
+}
+
+function parseRecurringDateRange(
+  startInput: string,
+  endInput: string,
+): RecurringDateRange | undefined {
+  const start = parseMonthDayInput(startInput)
+  const end = parseMonthDayInput(endInput)
+
+  if (
+    start === undefined ||
+    end === undefined ||
+    compareMonthDay(start, end) > 0
+  ) {
+    return undefined
+  }
+
+  return {
+    type: 'recurring-month-day',
+    start,
+    end,
+  }
+}
+
+function parseMonthDayInput(value: string): MonthDay | undefined {
+  const match = /^(\d{2})-(\d{2})$/.exec(value)
+
+  if (!match) {
+    return undefined
+  }
+
+  const month = Number(match[1])
+  const day = Number(match[2])
+  const monthDay = { month, day }
+
+  return isValidMonthDay(monthDay) ? monthDay : undefined
+}
+
+function formatMonthDay(monthDay: MonthDay | undefined): string {
+  if (monthDay === undefined) {
+    return ''
+  }
+
+  return `${monthDay.month.toString().padStart(2, '0')}-${monthDay.day
+    .toString()
+    .padStart(2, '0')}`
+}
+
+function isValidMonthDay(monthDay: MonthDay): boolean {
+  return (
+    Number.isInteger(monthDay.month) &&
+    Number.isInteger(monthDay.day) &&
+    monthDay.month >= 1 &&
+    monthDay.month <= 12 &&
+    monthDay.day >= 1 &&
+    monthDay.day <= getDaysInMonth(monthDay.month)
+  )
+}
+
+function getDaysInMonth(month: number): number {
+  switch (month) {
+    case 2:
+      return 29
+    case 4:
+    case 6:
+    case 9:
+    case 11:
+      return 30
+    default:
+      return 31
+  }
+}
+
+function compareMonthDay(left: MonthDay, right: MonthDay): number {
+  return left.month - right.month || left.day - right.day
 }
 
 function formatDayOfWeek(day: DayOfWeek): string {

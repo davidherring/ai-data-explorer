@@ -29,9 +29,9 @@ describe('analysis state contract', () => {
         dayMode: 'all',
       },
       view: defaultTrendView,
-      aggregation: 'raw',
     })
     expect(defaultAnalysisState.comparison).toBeUndefined()
+    expect(defaultAnalysisState).not.toHaveProperty('aggregation')
   })
 
   it('defines the default trend view configuration', () => {
@@ -119,6 +119,26 @@ describe('analysis state contract', () => {
     })
   })
 
+  it('represents a recurring month-day selection explicitly', () => {
+    const state: AnalysisState = {
+      selection: {
+        years: [2017, 2020, 2025],
+        recurringDateRange: {
+          type: 'recurring-month-day',
+          start: { month: 3, day: 15 },
+          end: { month: 6, day: 20 },
+        },
+      },
+      view: defaultTrendView,
+    }
+
+    expect(state.selection.recurringDateRange).toEqual({
+      type: 'recurring-month-day',
+      start: { month: 3, day: 15 },
+      end: { month: 6, day: 20 },
+    })
+  })
+
   it('allows an optional comparison using the same selection shape', () => {
     const comparisonState: AnalysisState = {
       selection: {
@@ -143,7 +163,6 @@ describe('analysis state contract', () => {
         yMetric: 'averageSpeedMph',
       },
       grouping: 'year',
-      aggregation: 'raw',
     }
 
     expect(comparisonState.comparison).toMatchObject({

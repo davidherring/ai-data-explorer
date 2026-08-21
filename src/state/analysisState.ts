@@ -5,6 +5,17 @@ export type DateRange = {
   end?: string
 }
 
+export type MonthDay = {
+  month: number
+  day: number
+}
+
+export type RecurringDateRange = {
+  type: 'recurring-month-day'
+  start: MonthDay
+  end: MonthDay
+}
+
 export type NumericRange = {
   min?: number
   max?: number
@@ -14,6 +25,7 @@ export type DayMode = 'all' | 'weekday' | 'weekend'
 
 export type ActivitySelection = {
   dateRange?: DateRange
+  recurringDateRange?: RecurringDateRange
   years?: number[]
   dayMode?: DayMode
   daysOfWeek?: DayOfWeek[]
@@ -33,8 +45,6 @@ export type MetricKey =
 export type ViewType = 'trend' | 'relationship' | 'seasonal' | 'cumulative'
 
 export type GroupingKey = 'year' | 'month' | 'dayOfWeek' | 'dayMode'
-
-export type AggregationMode = 'raw' | 'weekly' | 'biweekly'
 
 export type TrendViewConfiguration = {
   type: 'trend'
@@ -74,7 +84,6 @@ export type AnalysisState = {
   comparison?: ActivitySelection
   view: ViewConfiguration
   grouping?: GroupingKey
-  aggregation?: AggregationMode
 }
 
 export const supportedViewTypes = [
@@ -112,5 +121,4 @@ export const defaultAnalysisState: AnalysisState = {
     dayMode: 'all',
   },
   view: { ...defaultTrendView },
-  aggregation: 'raw',
 }

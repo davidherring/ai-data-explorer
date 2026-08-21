@@ -93,6 +93,68 @@ describe('ActivitySelectionControls', () => {
     expect(readSelection().dateRange).toBeUndefined()
   })
 
+  it('sets and clears a valid recurring seasonal window', () => {
+    renderControls()
+
+    fireEvent.change(screen.getByLabelText('Season start'), {
+      target: { value: '03-15' },
+    })
+    expect(readSelection().recurringDateRange).toBeUndefined()
+
+    fireEvent.change(screen.getByLabelText('Season end'), {
+      target: { value: '06-20' },
+    })
+
+    expect(readSelection().recurringDateRange).toEqual({
+      type: 'recurring-month-day',
+      start: { month: 3, day: 15 },
+      end: { month: 6, day: 20 },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear seasonal window' }))
+
+    expect(readSelection().recurringDateRange).toBeUndefined()
+  })
+
+  it('does not commit incomplete or structurally invalid seasonal window input', () => {
+    renderControls()
+
+    fireEvent.change(screen.getByLabelText('Season start'), {
+      target: { value: '06-20' },
+    })
+    fireEvent.change(screen.getByLabelText('Season end'), {
+      target: { value: '03-15' },
+    })
+
+    expect(readSelection().recurringDateRange).toBeUndefined()
+
+    fireEvent.change(screen.getByLabelText('Season start'), {
+      target: { value: '02-30' },
+    })
+    fireEvent.change(screen.getByLabelText('Season end'), {
+      target: { value: '03-15' },
+    })
+
+    expect(readSelection().recurringDateRange).toBeUndefined()
+  })
+
+  it('allows Feb 29 as seasonal window input', () => {
+    renderControls()
+
+    fireEvent.change(screen.getByLabelText('Season start'), {
+      target: { value: '02-29' },
+    })
+    fireEvent.change(screen.getByLabelText('Season end'), {
+      target: { value: '02-29' },
+    })
+
+    expect(readSelection().recurringDateRange).toEqual({
+      type: 'recurring-month-day',
+      start: { month: 2, day: 29 },
+      end: { month: 2, day: 29 },
+    })
+  })
+
   it('updates day mode', () => {
     renderControls()
 
@@ -189,6 +251,11 @@ describe('ActivitySelectionControls', () => {
   it('resets to the default primary selection', () => {
     renderControls({
       years: [2025],
+      recurringDateRange: {
+        type: 'recurring-month-day',
+        start: { month: 3, day: 15 },
+        end: { month: 6, day: 20 },
+      },
       dayMode: 'weekend',
       sportType: 'VirtualRide',
     })

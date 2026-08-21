@@ -2,7 +2,9 @@ import type { Activity } from '../data/activity.ts'
 import type {
   ActivitySelection,
   DateRange,
+  MonthDay,
   NumericRange,
+  RecurringDateRange,
 } from '../state/analysisState.ts'
 
 export function filterActivities(
@@ -16,6 +18,7 @@ function matchesSelection(activity: Activity, selection: ActivitySelection): boo
   return (
     matchesYears(activity, selection.years) &&
     matchesDateRange(activity, selection.dateRange) &&
+    matchesRecurringDateRange(activity, selection.recurringDateRange) &&
     matchesDayMode(activity, selection.dayMode) &&
     matchesDaysOfWeek(activity, selection.daysOfWeek) &&
     matchesNumericRange(activity.distanceMiles, selection.distanceMiles) &&
@@ -42,6 +45,26 @@ function matchesDateRange(activity: Activity, dateRange: DateRange | undefined):
   }
 
   return true
+}
+
+function matchesRecurringDateRange(
+  activity: Activity,
+  recurringDateRange: RecurringDateRange | undefined,
+): boolean {
+  if (recurringDateRange === undefined) {
+    return true
+  }
+
+  if (!isValidRecurringDateRange(recurringDateRange)) {
+    return false
+  }
+
+  const activityMonthDay = getActivityMonthDay(activity)
+
+  return (
+    compareMonthDay(activityMonthDay, recurringDateRange.start) >= 0 &&
+    compareMonthDay(activityMonthDay, recurringDateRange.end) <= 0
+  )
 }
 
 function matchesDayMode(
@@ -95,4 +118,49 @@ function matchesNumericRange(
 
 function matchesSportType(activity: Activity, sportType: string | undefined): boolean {
   return sportType === undefined || sportType === '' || activity.sportType === sportType
+}
+
+function isValidRecurringDateRange(range: RecurringDateRange): boolean {
+  return (
+    range.type === 'recurring-month-day' &&
+    isValidMonthDay(range.start) &&
+    isValidMonthDay(range.end) &&
+    compareMonthDay(range.start, range.end) <= 0
+  )
+}
+
+function isValidMonthDay(monthDay: MonthDay): boolean {
+  return (
+    Number.isInteger(monthDay.month) &&
+    Number.isInteger(monthDay.day) &&
+    monthDay.month >= 1 &&
+    monthDay.month <= 12 &&
+    monthDay.day >= 1 &&
+    monthDay.day <= getDaysInMonth(monthDay.month)
+  )
+}
+
+function getActivityMonthDay(activity: Activity): MonthDay {
+  return {
+    month: activity.month,
+    day: Number(activity.localDate.slice(8, 10)),
+  }
+}
+
+function getDaysInMonth(month: number): number {
+  switch (month) {
+    case 2:
+      return 29
+    case 4:
+    case 6:
+    case 9:
+    case 11:
+      return 30
+    default:
+      return 31
+  }
+}
+
+function compareMonthDay(left: MonthDay, right: MonthDay): number {
+  return left.month - right.month || left.day - right.day
 }

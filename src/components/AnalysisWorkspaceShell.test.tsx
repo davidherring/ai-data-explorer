@@ -31,7 +31,6 @@ describe('AnalysisWorkspaceShell', () => {
         yMetric: 'distanceMiles',
       },
       grouping: 'year',
-      aggregation: 'raw',
     }
     const onAnalysisStateChange = vi.fn()
 
@@ -59,7 +58,6 @@ describe('AnalysisWorkspaceShell', () => {
         yMetric: 'averageSpeedMph',
       },
       grouping: 'year',
-      aggregation: 'raw',
     }
     const onAnalysisStateChange = vi.fn()
 
@@ -86,7 +84,6 @@ describe('AnalysisWorkspaceShell', () => {
         type: 'trend',
         yMetric: 'distanceMiles',
       },
-      aggregation: 'raw',
     })
 
     expect(screen.getByLabelText('Distance over calendar time')).toBeInTheDocument()
@@ -109,7 +106,6 @@ describe('AnalysisWorkspaceShell', () => {
         yMetric: 'elevationGainFeet',
       },
       grouping: 'month',
-      aggregation: 'weekly',
     }
     const onAnalysisStateChange = vi.fn()
 
@@ -137,7 +133,6 @@ describe('AnalysisWorkspaceShell', () => {
         yMetric: 'distanceMiles',
       },
       grouping: 'month',
-      aggregation: 'weekly',
     }
     const onAnalysisStateChange = vi.fn()
 
@@ -166,7 +161,6 @@ describe('AnalysisWorkspaceShell', () => {
         yMetric: 'elevationGainFeet',
       },
       grouping: 'month',
-      aggregation: 'weekly',
     }
     const onAnalysisStateChange = vi.fn()
 
@@ -195,7 +189,6 @@ describe('AnalysisWorkspaceShell', () => {
         yMetric: 'averageSpeedMph',
       },
       grouping: 'month',
-      aggregation: 'weekly',
     }
     const onAnalysisStateChange = vi.fn()
 
@@ -243,7 +236,6 @@ describe('AnalysisWorkspaceShell', () => {
         aggregation: 'biweekly-median',
       },
       grouping: 'month',
-      aggregation: 'weekly',
     }
     const onAnalysisStateChange = vi.fn()
 
@@ -278,7 +270,6 @@ describe('AnalysisWorkspaceShell', () => {
         accumulation: 'continuous',
       },
       grouping: 'month',
-      aggregation: 'weekly',
     }
     const onAnalysisStateChange = vi.fn()
 
@@ -307,7 +298,6 @@ describe('AnalysisWorkspaceShell', () => {
         xMetric: 'movingTimeMinutes',
         yMetric: 'distanceMiles',
       },
-      aggregation: 'raw',
     })
 
     expect(screen.getByLabelText('Moving time vs Distance')).toBeInTheDocument()
@@ -322,7 +312,6 @@ describe('AnalysisWorkspaceShell', () => {
         dayMode: 'all',
       },
       view: defaultSeasonalView,
-      aggregation: 'raw',
     })
 
     expect(screen.getByLabelText('Average speed by season')).toBeInTheDocument()
@@ -339,7 +328,6 @@ describe('AnalysisWorkspaceShell', () => {
         dayMode: 'all',
       },
       view: defaultCumulativeView,
-      aggregation: 'raw',
     })
 
     expect(screen.getByLabelText('Cumulative Distance')).toBeInTheDocument()
@@ -360,7 +348,6 @@ describe('AnalysisWorkspaceShell', () => {
         yMetric: 'distanceMiles',
         aggregation: 'biweekly-median',
       },
-      aggregation: 'raw',
     })
 
     expect(screen.getByLabelText('Distance by season')).toBeInTheDocument()
@@ -377,7 +364,6 @@ describe('AnalysisWorkspaceShell', () => {
         yMetric: 'elevationGainFeet',
         accumulation: 'continuous',
       },
-      aggregation: 'raw',
     })
 
     expect(screen.getByLabelText('Cumulative Elevation gain')).toBeInTheDocument()
@@ -391,7 +377,6 @@ describe('AnalysisWorkspaceShell', () => {
           dayMode: 'all',
         },
         view: defaultSeasonalView,
-        aggregation: 'raw',
       },
       vi.fn(),
       [],
@@ -409,7 +394,6 @@ describe('AnalysisWorkspaceShell', () => {
           dayMode: 'all',
         },
         view: defaultCumulativeView,
-        aggregation: 'raw',
       },
       vi.fn(),
       [],
