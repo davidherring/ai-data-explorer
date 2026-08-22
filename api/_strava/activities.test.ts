@@ -117,7 +117,6 @@ describe('Strava supported activity client', () => {
         start_date_local: '2026-01-01T08:00:00Z',
         distance: 16093.4,
         moving_time: 3600,
-        elapsed_time: 3900,
         total_elevation_gain: 300,
         average_speed: 4.47,
         trainer: false,

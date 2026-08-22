@@ -38,7 +38,7 @@ describe('demo activity dataset', () => {
     expect(new Set(activities.map((activity) => activity.distanceMiles)).size).toBeGreaterThan(1)
     expect(new Set(activities.map((activity) => activity.elevationGainFeet)).size).toBeGreaterThan(1)
     expect(new Set(activities.map((activity) => activity.averageSpeedMph)).size).toBeGreaterThan(1)
-    expect(activities.some((activity) => activity.temperatureF !== undefined)).toBe(true)
+    expect(new Set(activities.map((activity) => activity.movingTimeMinutes)).size).toBeGreaterThan(1)
   })
 
   it('does not include private identifiers, route geometry, or raw Strava payloads', () => {

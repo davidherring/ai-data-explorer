@@ -14,7 +14,7 @@ describe('MetricViewControls', () => {
     cleanup()
   })
 
-  it('renders one trend metric selector with role-derived options', () => {
+  it('renders one trend metric selector with view-derived options', () => {
     render(
       <MetricViewControls
         activities={[createActivity()]}
@@ -31,7 +31,6 @@ describe('MetricViewControls', () => {
       'Distance',
       'Elevation',
       'Moving time',
-      'Elapsed time',
     ])
   })
 
@@ -54,7 +53,7 @@ describe('MetricViewControls', () => {
     )
   })
 
-  it('renders a seasonal metric selector with trend-compatible options', () => {
+  it('renders a seasonal metric selector with all active metric options', () => {
     render(
       <MetricViewControls
         activities={[createActivity()]}
@@ -70,11 +69,10 @@ describe('MetricViewControls', () => {
       'Distance',
       'Elevation',
       'Moving time',
-      'Elapsed time',
     ])
   })
 
-  it('renders a cumulative metric selector with trend-compatible options', () => {
+  it('renders a cumulative metric selector with additive metric options', () => {
     render(
       <MetricViewControls
         activities={[createActivity()]}
@@ -86,11 +84,9 @@ describe('MetricViewControls', () => {
     expect(screen.getByText('Metric')).toBeInTheDocument()
     expect(screen.getByLabelText('Cumulative metric')).toHaveValue('distanceMiles')
     expect(getOptionLabels('Cumulative metric')).toEqual([
-      'Speed',
       'Distance',
       'Elevation',
       'Moving time',
-      'Elapsed time',
     ])
   })
 
@@ -219,76 +215,16 @@ describe('MetricViewControls', () => {
     })
   })
 
-  it('omits temperature when no source activities have finite temperature', () => {
+  it('does not offer average speed for cumulative views', () => {
     render(
       <MetricViewControls
-        activities={[
-          createActivity({ temperatureF: undefined }),
-          createActivity({ temperatureF: Number.NaN }),
-          createActivity({ temperatureF: Number.POSITIVE_INFINITY }),
-        ]}
-        view={trendView}
+        activities={[createActivity()]}
+        view={cumulativeView}
         onViewChange={() => {}}
       />,
     )
 
-    expect(getOptionLabels('Trend metric')).not.toContain('Temp')
-  })
-
-  it('includes temperature when at least one source activity has finite temperature', () => {
-    render(
-      <MetricViewControls
-        activities={[
-          createActivity({ temperatureF: undefined }),
-          createActivity({ temperatureF: 72 }),
-        ]}
-        view={trendView}
-        onViewChange={() => {}}
-      />,
-    )
-
-    expect(getOptionLabels('Trend metric')).toContain('Temp')
-  })
-
-  it('renders a temporary selected option for unavailable current temperature', () => {
-    const onViewChange = vi.fn()
-    render(
-      <MetricViewControls
-        activities={[createActivity({ temperatureF: undefined })]}
-        view={{
-          type: 'trend',
-          yMetric: 'temperatureF',
-        }}
-        onViewChange={onViewChange}
-      />,
-    )
-
-    expect(screen.getByLabelText('Trend metric')).toHaveValue('temperatureF')
-    expect(getOptionLabels('Trend metric')).toContain('Temp unavailable')
-    expect(onViewChange).not.toHaveBeenCalled()
-  })
-
-  it('replaces unavailable current temperature when another valid option is selected', () => {
-    const onViewChange = vi.fn()
-    render(
-      <MetricViewControls
-        activities={[createActivity({ temperatureF: undefined })]}
-        view={{
-          type: 'trend',
-          yMetric: 'temperatureF',
-        }}
-        onViewChange={onViewChange}
-      />,
-    )
-
-    fireEvent.change(screen.getByLabelText('Trend metric'), {
-      target: { value: 'distanceMiles' },
-    })
-
-    expect(onViewChange).toHaveBeenCalledWith({
-      type: 'trend',
-      yMetric: 'distanceMiles',
-    })
+    expect(getOptionLabels('Cumulative metric')).not.toContain('Speed')
   })
 })
 
@@ -331,8 +267,6 @@ function createActivity(
       | 'distanceMiles'
       | 'elevationGainFeet'
       | 'movingTimeMinutes'
-      | 'elapsedTimeMinutes'
-      | 'temperatureF'
     >
   > = {},
 ): Activity {
@@ -347,10 +281,8 @@ function createActivity(
     isWeekend: false,
     distanceMiles: overrides.distanceMiles ?? 20,
     movingTimeMinutes: overrides.movingTimeMinutes ?? 60,
-    elapsedTimeMinutes: overrides.elapsedTimeMinutes ?? 65,
     averageSpeedMph: overrides.averageSpeedMph ?? 15,
     elevationGainFeet: overrides.elevationGainFeet ?? 500,
-    temperatureF: overrides.temperatureF,
     sportType: 'Ride',
     trainer: false,
     commute: false,

@@ -39,8 +39,8 @@ export type MetricKey =
   | 'distanceMiles'
   | 'elevationGainFeet'
   | 'movingTimeMinutes'
-  | 'elapsedTimeMinutes'
-  | 'temperatureF'
+
+export type CumulativeMetricKey = Exclude<MetricKey, 'averageSpeedMph'>
 
 export type ViewType = 'trend' | 'relationship' | 'seasonal' | 'cumulative'
 
@@ -69,7 +69,7 @@ export type CumulativeAccumulationMode = 'continuous'
 
 export type CumulativeViewConfiguration = {
   type: 'cumulative'
-  yMetric: MetricKey
+  yMetric: CumulativeMetricKey
   accumulation: CumulativeAccumulationMode
 }
 

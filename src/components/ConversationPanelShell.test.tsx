@@ -300,10 +300,8 @@ function createActivity(
       | 'isWeekend'
       | 'distanceMiles'
       | 'movingTimeMinutes'
-      | 'elapsedTimeMinutes'
       | 'averageSpeedMph'
       | 'elevationGainFeet'
-      | 'temperatureF'
       | 'sportType'
       | 'trainer'
       | 'commute'
@@ -324,10 +322,8 @@ function createActivity(
     isWeekend: overrides.isWeekend ?? false,
     distanceMiles: overrides.distanceMiles ?? 31.4,
     movingTimeMinutes: overrides.movingTimeMinutes ?? 125,
-    elapsedTimeMinutes: overrides.elapsedTimeMinutes ?? 141,
     averageSpeedMph: overrides.averageSpeedMph ?? 15.4,
     elevationGainFeet: overrides.elevationGainFeet ?? 1250,
-    temperatureF: overrides.temperatureF,
     sportType: overrides.sportType ?? 'Ride',
     trainer: overrides.trainer ?? false,
     commute: overrides.commute ?? false,

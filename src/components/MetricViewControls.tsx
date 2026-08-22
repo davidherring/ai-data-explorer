@@ -1,10 +1,11 @@
 import {
   getMetricDefinition,
-  getMetricDefinitionsForRole,
+  getMetricDefinitionsForView,
   type MetricDefinition,
 } from '../analysis/activityMetrics.ts'
 import type { Activity } from '../data/activity.ts'
 import type {
+  CumulativeMetricKey,
   CumulativeViewConfiguration,
   MetricKey,
   RelationshipViewConfiguration,
@@ -51,7 +52,7 @@ export function MetricViewControls({
           label="X"
           ariaLabel="Relationship X metric"
           metric={view.xMetric}
-          options={getMetricDefinitionsForRole('relationshipX', activities)}
+          options={getMetricDefinitionsForView('relationship', activities)}
           onMetricChange={(xMetric) => {
             onViewChange({
               ...view,
@@ -63,7 +64,7 @@ export function MetricViewControls({
           label="Y"
           ariaLabel="Relationship Y metric"
           metric={view.yMetric}
-          options={getMetricDefinitionsForRole('relationshipY', activities)}
+          options={getMetricDefinitionsForView('relationship', activities)}
           onMetricChange={(yMetric) => {
             onViewChange({
               ...view,
@@ -85,8 +86,16 @@ export function MetricViewControls({
         label="Metric"
         ariaLabel={singleMetricAriaLabels[view.type]}
         metric={view.yMetric}
-        options={getMetricDefinitionsForRole('trendY', activities)}
+        options={getMetricDefinitionsForView(view.type, activities)}
         onMetricChange={(yMetric) => {
+          if (view.type === 'cumulative') {
+            onViewChange({
+              ...view,
+              yMetric: yMetric as CumulativeMetricKey,
+            })
+            return
+          }
+
           onViewChange({
             ...view,
             yMetric,
@@ -125,7 +134,7 @@ function MetricSelect({
           onMetricChange(event.currentTarget.value as MetricKey)
         }}
       >
-        {!hasSelectedOption && selectedDefinition.optional && (
+        {!hasSelectedOption && (
           <option value={metric}>{selectedDefinition.shortLabel} unavailable</option>
         )}
         {options.map((option) => (

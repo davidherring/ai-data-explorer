@@ -38,7 +38,6 @@ export function normalizeStravaActivity(activity: StravaSummaryActivity): Activi
     isWeekend: dayOfWeek === 'saturday' || dayOfWeek === 'sunday',
     distanceMiles: activity.distance * METERS_TO_MILES,
     movingTimeMinutes: activity.moving_time * SECONDS_TO_MINUTES,
-    elapsedTimeMinutes: activity.elapsed_time * SECONDS_TO_MINUTES,
     averageSpeedMph: activity.average_speed * METERS_PER_SECOND_TO_MILES_PER_HOUR,
     elevationGainFeet: activity.total_elevation_gain * METERS_TO_FEET,
     sportType: activity.sport_type,

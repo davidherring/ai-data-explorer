@@ -48,10 +48,10 @@ The application should preserve enough abstraction that additional activity type
 
 ## 4. Normalized Ride
 
-A first-pass ride model may look like:
+A first-pass normalized activity model may look like:
 
 ```ts
-type Ride = {
+type Activity = {
   id: string;
 
   startTime: string;
@@ -65,12 +65,9 @@ type Ride = {
 
   distanceMiles: number;
   movingTimeMinutes: number;
-  elapsedTimeMinutes: number;
 
   averageSpeedMph: number;
   elevationGainFeet: number;
-
-  temperatureF?: number;
 
   sportType: string;
 
@@ -155,11 +152,11 @@ Elevation is especially important because broad speed comparisons may be mislead
 
 ## 10. Weather
 
-Temperature should be included if available with acceptable implementation cost.
+Weather and temperature are future enrichment data, not active normalized activity
+fields in the Sprint 10 model.
 
 Potential fields:
 
-temperatureF?: number;
 windSpeedMph?: number;
 weatherSource?: string;
 
@@ -197,7 +194,6 @@ Example:
 type MetricAvailability = {
   averageSpeed: boolean;
   elevationGain: boolean;
-  temperature: boolean;
   heartRate: boolean;
   power: boolean;
   cadence: boolean;

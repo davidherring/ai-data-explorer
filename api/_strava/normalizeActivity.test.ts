@@ -11,7 +11,6 @@ describe('Strava activity normalization', () => {
       createActivity({
         distance: 16093.4,
         moving_time: 3661,
-        elapsed_time: 3901,
         total_elevation_gain: 304.8,
         average_speed: 4.4704,
       }),
@@ -19,12 +18,11 @@ describe('Strava activity normalization', () => {
 
     expect(activity.distanceMiles).toBeCloseTo(9.9999978314)
     expect(activity.movingTimeMinutes).toBeCloseTo(61.0166666667)
-    expect(activity.elapsedTimeMinutes).toBeCloseTo(65.0166666667)
     expect(activity.elevationGainFeet).toBeCloseTo(1000.000032)
     expect(activity.averageSpeedMph).toBeCloseTo(10.000027776)
   })
 
-  it('maps identity, sport, flags, and omits live temperature', () => {
+  it('maps identity, sport, and flags', () => {
     const activity = normalizeStravaActivity(
       createActivity({
         id: 123456789,
@@ -42,7 +40,6 @@ describe('Strava activity normalization', () => {
       commute: true,
       manual: true,
     })
-    expect(activity.temperatureF).toBeUndefined()
   })
 
   it('preserves supported walk and hike sport types', () => {
@@ -142,7 +139,6 @@ function createActivity(
     start_date_local: '2026-01-01T08:00:00Z',
     distance: 16093.4,
     moving_time: 3600,
-    elapsed_time: 3900,
     total_elevation_gain: 300,
     average_speed: 4.47,
     trainer: false,

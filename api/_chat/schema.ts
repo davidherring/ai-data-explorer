@@ -11,9 +11,13 @@ export const metricKeyValues = [
   'distanceMiles',
   'elevationGainFeet',
   'movingTimeMinutes',
-  'elapsedTimeMinutes',
-  'temperatureF',
 ] as const satisfies readonly MetricKey[]
+
+const cumulativeMetricKeySchema = z.enum([
+  'distanceMiles',
+  'elevationGainFeet',
+  'movingTimeMinutes',
+])
 
 const dayOfWeekSchema = z.enum([
   'monday',
@@ -102,7 +106,7 @@ const seasonalViewSchema = z
 const cumulativeViewSchema = z
   .object({
     type: z.literal('cumulative'),
-    yMetric: metricKeySchema,
+    yMetric: cumulativeMetricKeySchema,
     accumulation: z.literal('continuous'),
   })
   .strict()
@@ -133,10 +137,8 @@ const activitySchema = z
     isWeekend: z.boolean(),
     distanceMiles: z.number(),
     movingTimeMinutes: z.number(),
-    elapsedTimeMinutes: z.number(),
     averageSpeedMph: z.number(),
     elevationGainFeet: z.number(),
-    temperatureF: z.number().optional(),
     sportType: z.string(),
     trainer: z.boolean(),
     commute: z.boolean(),

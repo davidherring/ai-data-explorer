@@ -2,14 +2,22 @@ import { describe, expect, it } from 'vitest'
 import type { DayOfWeek, Activity } from '../data/activity.ts'
 import type { MetricKey } from '../state/analysisState.ts'
 import {
+  getDefaultMetricForView,
   getMetricDefinition,
-  getMetricDefinitionsForRole,
+  getMetricDefinitionsForView,
   getMetricDisplay,
   getActivityMetric,
   hasFiniteMetricValue,
+  isMetricValidForView,
   type MetricDefinition,
-  type MetricRole,
 } from './activityMetrics.ts'
+
+const activeMetricKeys = [
+  'averageSpeedMph',
+  'distanceMiles',
+  'elevationGainFeet',
+  'movingTimeMinutes',
+] as const satisfies readonly MetricKey[]
 
 describe('getActivityMetric', () => {
   it('returns values for every current metric key', () => {
@@ -18,20 +26,12 @@ describe('getActivityMetric', () => {
       distanceMiles: 32.1,
       elevationGainFeet: 1840,
       movingTimeMinutes: 125,
-      elapsedTimeMinutes: 141,
-      temperatureF: 72,
     })
 
     expect(getActivityMetric(activity, 'averageSpeedMph')).toBe(15.4)
     expect(getActivityMetric(activity, 'distanceMiles')).toBe(32.1)
     expect(getActivityMetric(activity, 'elevationGainFeet')).toBe(1840)
     expect(getActivityMetric(activity, 'movingTimeMinutes')).toBe(125)
-    expect(getActivityMetric(activity, 'elapsedTimeMinutes')).toBe(141)
-    expect(getActivityMetric(activity, 'temperatureF')).toBe(72)
-  })
-
-  it('returns undefined for missing temperature', () => {
-    expect(getActivityMetric(createActivity({ temperatureF: undefined }), 'temperatureF')).toBeUndefined()
   })
 
   it('does not normalize NaN or non-finite values', () => {
@@ -54,8 +54,6 @@ describe('getMetricDisplay', () => {
       ['distanceMiles', { label: 'Distance', unit: 'mi' }],
       ['elevationGainFeet', { label: 'Elevation gain', unit: 'ft' }],
       ['movingTimeMinutes', { label: 'Moving time', unit: 'min' }],
-      ['elapsedTimeMinutes', { label: 'Elapsed time', unit: 'min' }],
-      ['temperatureF', { label: 'Temperature', unit: '°F' }],
     ])
 
     for (const [metricKey, display] of expectedDisplays) {
@@ -77,7 +75,6 @@ describe('getMetricDefinition', () => {
           label: 'Average speed',
           shortLabel: 'Speed',
           unit: 'mph',
-          role: allRoles,
         },
       ],
       [
@@ -87,7 +84,6 @@ describe('getMetricDefinition', () => {
           label: 'Distance',
           shortLabel: 'Distance',
           unit: 'mi',
-          role: allRoles,
         },
       ],
       [
@@ -97,7 +93,6 @@ describe('getMetricDefinition', () => {
           label: 'Elevation gain',
           shortLabel: 'Elevation',
           unit: 'ft',
-          role: allRoles,
         },
       ],
       [
@@ -107,28 +102,6 @@ describe('getMetricDefinition', () => {
           label: 'Moving time',
           shortLabel: 'Moving time',
           unit: 'min',
-          role: allRoles,
-        },
-      ],
-      [
-        'elapsedTimeMinutes',
-        {
-          key: 'elapsedTimeMinutes',
-          label: 'Elapsed time',
-          shortLabel: 'Elapsed time',
-          unit: 'min',
-          role: allRoles,
-        },
-      ],
-      [
-        'temperatureF',
-        {
-          key: 'temperatureF',
-          label: 'Temperature',
-          shortLabel: 'Temp',
-          unit: '°F',
-          role: allRoles,
-          optional: true,
         },
       ],
     ])
@@ -146,23 +119,20 @@ describe('getMetricDefinition', () => {
     expect(getMetricDefinition('distanceMiles').format(31.44)).toBe('31.4')
     expect(getMetricDefinition('elevationGainFeet').format(1250)).toBe('1,250')
     expect(getMetricDefinition('movingTimeMinutes').format(125.4)).toBe('125')
-    expect(getMetricDefinition('elapsedTimeMinutes').format(141.4)).toBe('141')
-    expect(getMetricDefinition('temperatureF').format(72.4)).toBe('72')
   })
 })
 
 describe('hasFiniteMetricValue', () => {
   it('returns false when no activities contain a finite value for the metric', () => {
-    expect(hasFiniteMetricValue([], 'temperatureF')).toBe(false)
+    expect(hasFiniteMetricValue([], 'averageSpeedMph')).toBe(false)
     expect(
       hasFiniteMetricValue(
         [
-          createActivity({ temperatureF: undefined }),
-          createActivity({ temperatureF: Number.NaN }),
-          createActivity({ temperatureF: Number.POSITIVE_INFINITY }),
-          createActivity({ temperatureF: Number.NEGATIVE_INFINITY }),
+          createActivity({ averageSpeedMph: Number.NaN }),
+          createActivity({ averageSpeedMph: Number.POSITIVE_INFINITY }),
+          createActivity({ averageSpeedMph: Number.NEGATIVE_INFINITY }),
         ],
-        'temperatureF',
+        'averageSpeedMph',
       ),
     ).toBe(false)
   })
@@ -171,71 +141,42 @@ describe('hasFiniteMetricValue', () => {
     expect(
       hasFiniteMetricValue(
         [
-          createActivity({ temperatureF: undefined }),
-          createActivity({ temperatureF: 72 }),
+          createActivity({ averageSpeedMph: Number.NaN }),
+          createActivity({ averageSpeedMph: 15 }),
         ],
-        'temperatureF',
+        'averageSpeedMph',
       ),
     ).toBe(true)
-    expect(
-      hasFiniteMetricValue([createActivity({ averageSpeedMph: 15 })], 'averageSpeedMph'),
-    ).toBe(true)
   })
 })
 
-describe('getMetricDefinitionsForRole', () => {
-  it('includes required metrics for every current role', () => {
-    const requiredMetricKeys = [
-      'averageSpeedMph',
-      'distanceMiles',
-      'elevationGainFeet',
-      'movingTimeMinutes',
-      'elapsedTimeMinutes',
-    ] as const satisfies readonly MetricKey[]
-
-    for (const role of metricRoles) {
+describe('view metric validity', () => {
+  it('returns all active metrics for trend, relationship, and seasonal views', () => {
+    for (const viewType of ['trend', 'relationship', 'seasonal'] as const) {
       expect(
-        getMetricDefinitionsForRole(role, [createActivity()]).map(
+        getMetricDefinitionsForView(viewType, [createActivity()]).map(
           (definition) => definition.key,
         ),
-      ).toEqual(requiredMetricKeys)
+      ).toEqual(activeMetricKeys)
+      expect(getDefaultMetricForView(viewType)).toBe('averageSpeedMph')
     }
   })
 
-  it('omits temperature when no supplied activities have finite temperature', () => {
+  it('returns only additive metrics for cumulative views', () => {
     expect(
-      getMetricDefinitionsForRole('trendY', [
-        createActivity({ temperatureF: undefined }),
-        createActivity({ temperatureF: Number.NaN }),
-        createActivity({ temperatureF: Number.POSITIVE_INFINITY }),
-        createActivity({ temperatureF: Number.NEGATIVE_INFINITY }),
-      ]).map((definition) => definition.key),
-    ).not.toContain('temperatureF')
+      getMetricDefinitionsForView('cumulative', [createActivity()]).map(
+        (definition) => definition.key,
+      ),
+    ).toEqual(['distanceMiles', 'elevationGainFeet', 'movingTimeMinutes'])
+    expect(getDefaultMetricForView('cumulative')).toBe('distanceMiles')
   })
 
-  it('includes temperature when at least one supplied activity has finite temperature', () => {
-    for (const role of metricRoles) {
-      expect(
-        getMetricDefinitionsForRole(role, [
-          createActivity({ temperatureF: undefined }),
-          createActivity({ temperatureF: 72 }),
-        ]).map((definition) => definition.key),
-      ).toContain('temperatureF')
-    }
+  it('checks whether a metric is valid for a view', () => {
+    expect(isMetricValidForView('trend', 'averageSpeedMph')).toBe(true)
+    expect(isMetricValidForView('cumulative', 'averageSpeedMph')).toBe(false)
+    expect(isMetricValidForView('cumulative', 'movingTimeMinutes')).toBe(true)
   })
 })
-
-const allRoles = {
-  trendY: true,
-  relationshipX: true,
-  relationshipY: true,
-} as const satisfies Record<MetricRole, boolean>
-
-const metricRoles = [
-  'trendY',
-  'relationshipX',
-  'relationshipY',
-] as const satisfies readonly MetricRole[]
 
 function createActivity(
   overrides: Partial<
@@ -245,8 +186,6 @@ function createActivity(
       | 'distanceMiles'
       | 'elevationGainFeet'
       | 'movingTimeMinutes'
-      | 'elapsedTimeMinutes'
-      | 'temperatureF'
     >
   > = {},
 ): Activity {
@@ -261,10 +200,8 @@ function createActivity(
     isWeekend: false,
     distanceMiles: overrides.distanceMiles ?? 20,
     movingTimeMinutes: overrides.movingTimeMinutes ?? 60,
-    elapsedTimeMinutes: overrides.elapsedTimeMinutes ?? 65,
     averageSpeedMph: overrides.averageSpeedMph ?? 15,
     elevationGainFeet: overrides.elevationGainFeet ?? 500,
-    temperatureF: overrides.temperatureF,
     sportType: 'Ride',
     trainer: false,
     commute: false,

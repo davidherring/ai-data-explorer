@@ -206,6 +206,63 @@ describe('handleChat', () => {
     expect(JSON.parse(response.body)).toEqual({ error: 'invalid_chat_request' })
   })
 
+  it('rejects retired metric keys in analysis state', async () => {
+    for (const metric of ['elapsedTimeMinutes', 'temperatureF']) {
+      const body = createValidChatBody({
+        currentAnalysisState: {
+          ...defaultAnalysisState,
+          view: {
+            type: 'trend',
+            yMetric: metric,
+          },
+        },
+      })
+      const response = createMockResponse()
+
+      await handleChat(
+        createMockRequest('POST', JSON.stringify(body)),
+        response,
+        createMockDependencies(),
+      )
+
+      expect(response.statusCode).toBe(400)
+      expect(JSON.parse(response.body)).toEqual({ error: 'invalid_chat_request' })
+    }
+  })
+
+  it('rejects average speed as a cumulative view metric', async () => {
+    const body = createValidChatBody({
+      currentAnalysisState: {
+        ...defaultAnalysisState,
+        view: {
+          type: 'cumulative',
+          yMetric: 'averageSpeedMph',
+          accumulation: 'continuous',
+        },
+      },
+    })
+    const response = createMockResponse()
+
+    await handleChat(
+      createMockRequest('POST', JSON.stringify(body)),
+      response,
+      createMockDependencies(),
+    )
+
+    expect(response.statusCode).toBe(400)
+    expect(JSON.parse(response.body)).toEqual({ error: 'invalid_chat_request' })
+  })
+
+  it('rejects retired metric keys in tool schemas', () => {
+    for (const metric of ['elapsedTimeMinutes', 'temperatureF']) {
+      expect(() => relationshipToolInputSchema.parse({
+        xMetric: metric,
+        yMetric: 'averageSpeedMph',
+      })).toThrow()
+      expect(() => calculateTrendToolInputSchema.parse({ metric })).toThrow()
+    }
+  })
+
   it('logs compact validation issues without raw request content', async () => {
     const privateRideId = 'private-activity-id'
     const privateMessageText = 'private question text'
@@ -915,10 +972,8 @@ function createActivity(
       | 'isWeekend'
       | 'distanceMiles'
       | 'movingTimeMinutes'
-      | 'elapsedTimeMinutes'
       | 'averageSpeedMph'
       | 'elevationGainFeet'
-      | 'temperatureF'
       | 'sportType'
       | 'trainer'
       | 'commute'
@@ -939,10 +994,8 @@ function createActivity(
     isWeekend: overrides.isWeekend ?? false,
     distanceMiles: overrides.distanceMiles ?? 31.4,
     movingTimeMinutes: overrides.movingTimeMinutes ?? 125,
-    elapsedTimeMinutes: overrides.elapsedTimeMinutes ?? 141,
     averageSpeedMph: overrides.averageSpeedMph ?? 15.4,
     elevationGainFeet: overrides.elevationGainFeet ?? 1250,
-    temperatureF: overrides.temperatureF,
     sportType: overrides.sportType ?? 'Ride',
     trainer: overrides.trainer ?? false,
     commute: overrides.commute ?? false,

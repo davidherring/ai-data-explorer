@@ -42,53 +42,52 @@ describe('calculateMetricTrend', () => {
     expect(result.pearsonR).toBeUndefined()
   })
 
-  it('excludes undefined and non-finite metric values and counts them as missing', () => {
+  it('excludes non-finite metric values and counts them as missing', () => {
     const result = calculateMetricTrend(
       [
-        createActivity({ id: 'valid-a', localDate: '2025-01-01', temperatureF: 60 }),
-        createActivity({ id: 'missing', localDate: '2025-01-02', temperatureF: undefined }),
-        createActivity({ id: 'nan', localDate: '2025-01-03', temperatureF: Number.NaN }),
+        createActivity({ id: 'valid-a', localDate: '2025-01-01', averageSpeedMph: 60 }),
+        createActivity({ id: 'nan', localDate: '2025-01-03', averageSpeedMph: Number.NaN }),
         createActivity({
           id: 'infinite',
           localDate: '2025-01-04',
-          temperatureF: Number.POSITIVE_INFINITY,
+          averageSpeedMph: Number.POSITIVE_INFINITY,
         }),
         createActivity({
           id: 'negative-infinite',
           localDate: '2025-01-05',
-          temperatureF: Number.NEGATIVE_INFINITY,
+          averageSpeedMph: Number.NEGATIVE_INFINITY,
         }),
-        createActivity({ id: 'valid-b', localDate: '2025-01-06', temperatureF: 70 }),
-        createActivity({ id: 'valid-c', localDate: '2025-01-11', temperatureF: 80 }),
+        createActivity({ id: 'valid-b', localDate: '2025-01-06', averageSpeedMph: 70 }),
+        createActivity({ id: 'valid-c', localDate: '2025-01-11', averageSpeedMph: 80 }),
       ],
-      'temperatureF',
+      'averageSpeedMph',
     )
 
     expect(result).toMatchObject({
-      metric: 'temperatureF',
-      label: 'Temperature',
-      unit: '°F',
-      sampleCount: 7,
+      metric: 'averageSpeedMph',
+      label: 'Average speed',
+      unit: 'mph',
+      sampleCount: 6,
       validPointCount: 3,
-      missingCount: 4,
+      missingCount: 3,
       metricMin: 60,
       metricMax: 80,
       status: 'ready',
     })
     expect(result.warnings).toContainEqual({
       code: 'metric-has-missing-values',
-      metric: 'temperatureF',
-      missingCount: 4,
+      metric: 'averageSpeedMph',
+      missingCount: 3,
     })
   })
 
   it('returns metric-has-no-finite-values when the selected metric is entirely missing', () => {
     const result = calculateMetricTrend(
       [
-        createActivity({ id: 'missing', temperatureF: undefined }),
-        createActivity({ id: 'nan', temperatureF: Number.NaN }),
+        createActivity({ id: 'nan', averageSpeedMph: Number.NaN }),
+        createActivity({ id: 'infinite', averageSpeedMph: Number.POSITIVE_INFINITY }),
       ],
-      'temperatureF',
+      'averageSpeedMph',
     )
 
     expect(result).toMatchObject({
@@ -99,10 +98,10 @@ describe('calculateMetricTrend', () => {
     })
     expect(result.warnings).toEqual([
       { code: 'insufficient-valid-points', validPointCount: 0 },
-      { code: 'metric-has-no-finite-values', metric: 'temperatureF' },
+      { code: 'metric-has-no-finite-values', metric: 'averageSpeedMph' },
       {
         code: 'metric-has-missing-values',
-        metric: 'temperatureF',
+        metric: 'averageSpeedMph',
         missingCount: 2,
       },
     ])
@@ -315,8 +314,6 @@ function createActivity(
       | 'distanceMiles'
       | 'elevationGainFeet'
       | 'movingTimeMinutes'
-      | 'elapsedTimeMinutes'
-      | 'temperatureF'
     >
   > = {},
 ): Activity {
@@ -333,10 +330,8 @@ function createActivity(
     isWeekend: false,
     distanceMiles: overrides.distanceMiles ?? 20,
     movingTimeMinutes: overrides.movingTimeMinutes ?? 60,
-    elapsedTimeMinutes: overrides.elapsedTimeMinutes ?? 65,
     averageSpeedMph: overrides.averageSpeedMph ?? 15,
     elevationGainFeet: overrides.elevationGainFeet ?? 500,
-    temperatureF: overrides.temperatureF,
     sportType: 'Ride',
     trainer: false,
     commute: false,

@@ -9,34 +9,32 @@ describe('buildCumulativeMetricPoints', () => {
 
   it('returns no points when no activities have finite active metric values', () => {
     const activities = [
-      createActivity({ id: 'missing-temp', temperatureF: undefined }),
-      createActivity({ id: 'nan-temp', temperatureF: Number.NaN }),
-      createActivity({ id: 'infinite-temp', temperatureF: Number.POSITIVE_INFINITY }),
-      createActivity({ id: 'negative-infinite-temp', temperatureF: Number.NEGATIVE_INFINITY }),
+      createActivity({ id: 'nan-speed', averageSpeedMph: Number.NaN }),
+      createActivity({ id: 'infinite-speed', averageSpeedMph: Number.POSITIVE_INFINITY }),
+      createActivity({ id: 'negative-infinite-speed', averageSpeedMph: Number.NEGATIVE_INFINITY }),
     ]
 
-    expect(buildCumulativeMetricPoints(activities, 'temperatureF')).toEqual([])
+    expect(buildCumulativeMetricPoints(activities, 'averageSpeedMph')).toEqual([])
   })
 
   it('excludes undefined and non-finite active metric values', () => {
     const points = buildCumulativeMetricPoints(
       [
-        createActivity({ id: 'valid-a', startTime: '2025-01-01T08:00:00Z', temperatureF: 60 }),
-        createActivity({ id: 'missing', startTime: '2025-01-02T08:00:00Z', temperatureF: undefined }),
-        createActivity({ id: 'nan', startTime: '2025-01-03T08:00:00Z', temperatureF: Number.NaN }),
+        createActivity({ id: 'valid-a', startTime: '2025-01-01T08:00:00Z', averageSpeedMph: 60 }),
+        createActivity({ id: 'nan', startTime: '2025-01-03T08:00:00Z', averageSpeedMph: Number.NaN }),
         createActivity({
           id: 'infinite',
           startTime: '2025-01-04T08:00:00Z',
-          temperatureF: Number.POSITIVE_INFINITY,
+          averageSpeedMph: Number.POSITIVE_INFINITY,
         }),
         createActivity({
           id: 'negative-infinite',
           startTime: '2025-01-05T08:00:00Z',
-          temperatureF: Number.NEGATIVE_INFINITY,
+          averageSpeedMph: Number.NEGATIVE_INFINITY,
         }),
-        createActivity({ id: 'valid-b', startTime: '2025-01-06T08:00:00Z', temperatureF: 70 }),
+        createActivity({ id: 'valid-b', startTime: '2025-01-06T08:00:00Z', averageSpeedMph: 70 }),
       ],
-      'temperatureF',
+      'averageSpeedMph',
     )
 
     expect(points.map((point) => point.activityId)).toEqual(['valid-a', 'valid-b'])
@@ -245,8 +243,6 @@ function createActivity(
       | 'distanceMiles'
       | 'elevationGainFeet'
       | 'movingTimeMinutes'
-      | 'elapsedTimeMinutes'
-      | 'temperatureF'
     >
   > = {},
 ): Activity {
@@ -263,10 +259,8 @@ function createActivity(
     isWeekend: false,
     distanceMiles: overrides.distanceMiles ?? 20,
     movingTimeMinutes: overrides.movingTimeMinutes ?? 60,
-    elapsedTimeMinutes: overrides.elapsedTimeMinutes ?? 65,
     averageSpeedMph: overrides.averageSpeedMph ?? 15,
     elevationGainFeet: overrides.elevationGainFeet ?? 500,
-    temperatureF: overrides.temperatureF,
     sportType: 'Ride',
     trainer: false,
     commute: false,

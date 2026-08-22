@@ -9,34 +9,32 @@ describe('buildSeasonalMetricBuckets', () => {
 
   it('returns no buckets when no activities have finite active metric values', () => {
     const activities = [
-      createActivity({ id: 'missing-temp', temperatureF: undefined }),
-      createActivity({ id: 'nan-temp', temperatureF: Number.NaN }),
-      createActivity({ id: 'infinite-temp', temperatureF: Number.POSITIVE_INFINITY }),
-      createActivity({ id: 'negative-infinite-temp', temperatureF: Number.NEGATIVE_INFINITY }),
+      createActivity({ id: 'nan-speed', averageSpeedMph: Number.NaN }),
+      createActivity({ id: 'infinite-speed', averageSpeedMph: Number.POSITIVE_INFINITY }),
+      createActivity({ id: 'negative-infinite-speed', averageSpeedMph: Number.NEGATIVE_INFINITY }),
     ]
 
-    expect(buildSeasonalMetricBuckets(activities, 'temperatureF')).toEqual([])
+    expect(buildSeasonalMetricBuckets(activities, 'averageSpeedMph')).toEqual([])
   })
 
   it('excludes undefined and non-finite active metric values', () => {
     const buckets = buildSeasonalMetricBuckets(
       [
-        createActivity({ id: 'valid-a', weekOfYear: 11, temperatureF: 60 }),
-        createActivity({ id: 'missing', weekOfYear: 11, temperatureF: undefined }),
-        createActivity({ id: 'nan', weekOfYear: 11, temperatureF: Number.NaN }),
+        createActivity({ id: 'valid-a', weekOfYear: 11, averageSpeedMph: 60 }),
+        createActivity({ id: 'nan', weekOfYear: 11, averageSpeedMph: Number.NaN }),
         createActivity({
           id: 'infinite',
           weekOfYear: 11,
-          temperatureF: Number.POSITIVE_INFINITY,
+          averageSpeedMph: Number.POSITIVE_INFINITY,
         }),
         createActivity({
           id: 'negative-infinite',
           weekOfYear: 11,
-          temperatureF: Number.NEGATIVE_INFINITY,
+          averageSpeedMph: Number.NEGATIVE_INFINITY,
         }),
-        createActivity({ id: 'valid-b', weekOfYear: 12, temperatureF: 70 }),
+        createActivity({ id: 'valid-b', weekOfYear: 12, averageSpeedMph: 70 }),
       ],
-      'temperatureF',
+      'averageSpeedMph',
     )
 
     expect(buckets).toEqual([
@@ -273,8 +271,6 @@ function createActivity(
       | 'distanceMiles'
       | 'elevationGainFeet'
       | 'movingTimeMinutes'
-      | 'elapsedTimeMinutes'
-      | 'temperatureF'
     >
   > = {},
 ): Activity {
@@ -292,10 +288,8 @@ function createActivity(
     isWeekend: false,
     distanceMiles: overrides.distanceMiles ?? 20,
     movingTimeMinutes: overrides.movingTimeMinutes ?? 60,
-    elapsedTimeMinutes: overrides.elapsedTimeMinutes ?? 65,
     averageSpeedMph: overrides.averageSpeedMph ?? 15,
     elevationGainFeet: overrides.elevationGainFeet ?? 500,
-    temperatureF: overrides.temperatureF,
     sportType: 'Ride',
     trainer: false,
     commute: false,

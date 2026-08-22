@@ -21,12 +21,9 @@ export type Activity = {
 
   distanceMiles: number
   movingTimeMinutes: number
-  elapsedTimeMinutes: number
 
   averageSpeedMph: number
   elevationGainFeet: number
-
-  temperatureF?: number
 
   sportType: string
 

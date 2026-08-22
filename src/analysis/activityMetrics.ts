@@ -1,15 +1,17 @@
 import type { Activity } from '../data/activity.js'
-import type { MetricKey } from '../state/analysisState.js'
+import type {
+  CumulativeMetricKey,
+  MetricKey,
+  ViewType,
+} from '../state/analysisState.js'
 
-export type MetricRole = 'trendY' | 'relationshipX' | 'relationshipY'
+export type MetricViewType = ViewType
 
 export type MetricDefinition = {
   key: MetricKey
   label: string
   shortLabel: string
   unit: string
-  role: Record<MetricRole, boolean>
-  optional?: boolean
   format: (value: number) => string
 }
 
@@ -26,11 +28,25 @@ const wholeNumberFormatter = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 0,
 })
 
-const allCurrentViewRoles = {
-  trendY: true,
-  relationshipX: true,
-  relationshipY: true,
-} as const satisfies Record<MetricRole, boolean>
+const allActiveMetricKeys = [
+  'averageSpeedMph',
+  'distanceMiles',
+  'elevationGainFeet',
+  'movingTimeMinutes',
+] as const satisfies readonly MetricKey[]
+
+const cumulativeMetricKeys = [
+  'distanceMiles',
+  'elevationGainFeet',
+  'movingTimeMinutes',
+] as const satisfies readonly CumulativeMetricKey[]
+
+export const metricKeysByView = {
+  trend: allActiveMetricKeys,
+  relationship: allActiveMetricKeys,
+  seasonal: allActiveMetricKeys,
+  cumulative: cumulativeMetricKeys,
+} as const satisfies Record<MetricViewType, readonly MetricKey[]>
 
 export const metricDefinitions: Record<MetricKey, MetricDefinition> = {
   averageSpeedMph: {
@@ -38,7 +54,6 @@ export const metricDefinitions: Record<MetricKey, MetricDefinition> = {
     label: 'Average speed',
     shortLabel: 'Speed',
     unit: 'mph',
-    role: allCurrentViewRoles,
     format: formatDecimal,
   },
   distanceMiles: {
@@ -46,7 +61,6 @@ export const metricDefinitions: Record<MetricKey, MetricDefinition> = {
     label: 'Distance',
     shortLabel: 'Distance',
     unit: 'mi',
-    role: allCurrentViewRoles,
     format: formatDecimal,
   },
   elevationGainFeet: {
@@ -54,7 +68,6 @@ export const metricDefinitions: Record<MetricKey, MetricDefinition> = {
     label: 'Elevation gain',
     shortLabel: 'Elevation',
     unit: 'ft',
-    role: allCurrentViewRoles,
     format: formatWholeNumber,
   },
   movingTimeMinutes: {
@@ -62,24 +75,6 @@ export const metricDefinitions: Record<MetricKey, MetricDefinition> = {
     label: 'Moving time',
     shortLabel: 'Moving time',
     unit: 'min',
-    role: allCurrentViewRoles,
-    format: formatWholeNumber,
-  },
-  elapsedTimeMinutes: {
-    key: 'elapsedTimeMinutes',
-    label: 'Elapsed time',
-    shortLabel: 'Elapsed time',
-    unit: 'min',
-    role: allCurrentViewRoles,
-    format: formatWholeNumber,
-  },
-  temperatureF: {
-    key: 'temperatureF',
-    label: 'Temperature',
-    shortLabel: 'Temp',
-    unit: '°F',
-    role: allCurrentViewRoles,
-    optional: true,
     format: formatWholeNumber,
   },
 }
@@ -97,10 +92,6 @@ export function getActivityMetric(
       return activity.elevationGainFeet
     case 'movingTimeMinutes':
       return activity.movingTimeMinutes
-    case 'elapsedTimeMinutes':
-      return activity.elapsedTimeMinutes
-    case 'temperatureF':
-      return activity.temperatureF
   }
 }
 
@@ -125,15 +116,22 @@ export function hasFiniteMetricValue(
   })
 }
 
-export function getMetricDefinitionsForRole(
-  role: MetricRole,
-  activities: readonly Activity[],
+export function getMetricDefinitionsForView(
+  viewType: MetricViewType,
+  _activities: readonly Activity[],
 ): MetricDefinition[] {
-  return Object.values(metricDefinitions).filter(
-    (definition) =>
-      definition.role[role] &&
-      (!definition.optional || hasFiniteMetricValue(activities, definition.key)),
-  )
+  return metricKeysByView[viewType].map((metricKey) => metricDefinitions[metricKey])
+}
+
+export function isMetricValidForView(
+  viewType: MetricViewType,
+  metricKey: MetricKey,
+): boolean {
+  return (metricKeysByView[viewType] as readonly MetricKey[]).includes(metricKey)
+}
+
+export function getDefaultMetricForView(viewType: MetricViewType): MetricKey {
+  return metricKeysByView[viewType][0]
 }
 
 function formatDecimal(value: number): string {

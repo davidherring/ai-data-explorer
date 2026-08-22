@@ -55,10 +55,7 @@ describe('buildDatasetProfile', () => {
   })
 
   it('reports metric availability for every current metric key', () => {
-    const profile = buildDatasetProfile([
-      createActivity({ id: 'a', temperatureF: undefined }),
-      createActivity({ id: 'b', temperatureF: 72 }),
-    ])
+    const profile = buildDatasetProfile([createActivity({ id: 'a' }), createActivity({ id: 'b' })])
 
     expect(profile.metrics).toEqual([
       expect.objectContaining({
@@ -97,41 +94,7 @@ describe('buildDatasetProfile', () => {
         missingCount: 0,
         available: true,
       }),
-      expect.objectContaining({
-        metric: 'elapsedTimeMinutes',
-        label: 'Elapsed time',
-        unit: 'min',
-        optional: false,
-        finiteCount: 2,
-        missingCount: 0,
-        available: true,
-      }),
-      expect.objectContaining({
-        metric: 'temperatureF',
-        label: 'Temperature',
-        unit: '°F',
-        optional: true,
-        finiteCount: 1,
-        missingCount: 1,
-        available: true,
-      }),
     ])
-  })
-
-  it('marks optional temperature unavailable when no source activities have finite values', () => {
-    const profile = buildDatasetProfile([
-      createActivity({ id: 'missing', temperatureF: undefined }),
-      createActivity({ id: 'nan', temperatureF: Number.NaN }),
-      createActivity({ id: 'infinite', temperatureF: Number.POSITIVE_INFINITY }),
-      createActivity({ id: 'negative-infinite', temperatureF: Number.NEGATIVE_INFINITY }),
-    ])
-
-    expect(getProfileMetric(profile, 'temperatureF')).toMatchObject({
-      optional: true,
-      finiteCount: 0,
-      missingCount: 4,
-      available: false,
-    })
   })
 
   it('does not mutate or reorder source activities', () => {
@@ -176,8 +139,6 @@ describe('summarizeSelection', () => {
         distanceMiles: 10.125,
         elevationGainFeet: 100,
         movingTimeMinutes: 30,
-        elapsedTimeMinutes: 35,
-        temperatureF: 60,
       }),
       createActivity({
         id: 'b',
@@ -186,8 +147,6 @@ describe('summarizeSelection', () => {
         distanceMiles: 20.375,
         elevationGainFeet: 200,
         movingTimeMinutes: 60,
-        elapsedTimeMinutes: 75,
-        temperatureF: 70,
       }),
       createActivity({
         id: 'c',
@@ -196,8 +155,6 @@ describe('summarizeSelection', () => {
         distanceMiles: 30.5,
         elevationGainFeet: 300,
         movingTimeMinutes: 90,
-        elapsedTimeMinutes: 105,
-        temperatureF: 80,
       }),
     ])
 
@@ -234,16 +191,6 @@ describe('summarizeSelection', () => {
     expect(getSummaryMetric(summary, 'movingTimeMinutes')).toMatchObject({
       total: 180,
     })
-    expect(getSummaryMetric(summary, 'elapsedTimeMinutes')).toMatchObject({
-      total: 215,
-    })
-    expect(getSummaryMetric(summary, 'temperatureF')).toMatchObject({
-      mean: 70,
-      median: 70,
-      min: 60,
-      max: 80,
-    })
-    expect(getSummaryMetric(summary, 'temperatureF').total).toBeUndefined()
     expect(summary.warnings).toEqual([])
   })
 
@@ -260,16 +207,15 @@ describe('summarizeSelection', () => {
 
   it('treats undefined, NaN, Infinity, and -Infinity as missing metric values', () => {
     const summary = summarizeSelection([
-      createActivity({ id: 'valid', temperatureF: 60 }),
-      createActivity({ id: 'missing', temperatureF: undefined }),
-      createActivity({ id: 'nan', temperatureF: Number.NaN }),
-      createActivity({ id: 'infinite', temperatureF: Number.POSITIVE_INFINITY }),
-      createActivity({ id: 'negative-infinite', temperatureF: Number.NEGATIVE_INFINITY }),
+      createActivity({ id: 'valid', averageSpeedMph: 60 }),
+      createActivity({ id: 'nan', averageSpeedMph: Number.NaN }),
+      createActivity({ id: 'infinite', averageSpeedMph: Number.POSITIVE_INFINITY }),
+      createActivity({ id: 'negative-infinite', averageSpeedMph: Number.NEGATIVE_INFINITY }),
     ])
 
-    expect(getSummaryMetric(summary, 'temperatureF')).toMatchObject({
+    expect(getSummaryMetric(summary, 'averageSpeedMph')).toMatchObject({
       finiteCount: 1,
-      missingCount: 4,
+      missingCount: 3,
       mean: 60,
       median: 60,
       min: 60,
@@ -277,8 +223,8 @@ describe('summarizeSelection', () => {
     })
     expect(summary.warnings).toContainEqual({
       code: 'metric-has-missing-values',
-      metric: 'temperatureF',
-      missingCount: 4,
+      metric: 'averageSpeedMph',
+      missingCount: 3,
     })
   })
 
@@ -302,35 +248,34 @@ describe('summarizeSelection', () => {
 
   it('warns when a non-empty selection has no finite values for a metric', () => {
     const summary = summarizeSelection([
-      createActivity({ id: 'missing', temperatureF: undefined }),
-      createActivity({ id: 'nan', temperatureF: Number.NaN }),
-      createActivity({ id: 'infinite', temperatureF: Number.POSITIVE_INFINITY }),
+      createActivity({ id: 'nan', averageSpeedMph: Number.NaN }),
+      createActivity({ id: 'infinite', averageSpeedMph: Number.POSITIVE_INFINITY }),
+      createActivity({ id: 'negative-infinite', averageSpeedMph: Number.NEGATIVE_INFINITY }),
     ])
 
-    expect(getSummaryMetric(summary, 'temperatureF')).toMatchObject({
+    expect(getSummaryMetric(summary, 'averageSpeedMph')).toMatchObject({
       finiteCount: 0,
       missingCount: 3,
     })
-    expect(getSummaryMetric(summary, 'temperatureF').mean).toBeUndefined()
+    expect(getSummaryMetric(summary, 'averageSpeedMph').mean).toBeUndefined()
     expect(summary.warnings).toContainEqual({
       code: 'metric-has-no-finite-values',
-      metric: 'temperatureF',
+      metric: 'averageSpeedMph',
     })
     expect(summary.warnings).toContainEqual({
       code: 'metric-has-missing-values',
-      metric: 'temperatureF',
+      metric: 'averageSpeedMph',
       missingCount: 3,
     })
   })
 
-  it('does not total average speed or temperature', () => {
+  it('does not total average speed', () => {
     const summary = summarizeSelection([
-      createActivity({ id: 'a', averageSpeedMph: 10, temperatureF: 60 }),
-      createActivity({ id: 'b', averageSpeedMph: 20, temperatureF: 70 }),
+      createActivity({ id: 'a', averageSpeedMph: 10 }),
+      createActivity({ id: 'b', averageSpeedMph: 20 }),
     ])
 
     expect(getSummaryMetric(summary, 'averageSpeedMph').total).toBeUndefined()
-    expect(getSummaryMetric(summary, 'temperatureF').total).toBeUndefined()
   })
 
   it('does not mutate or reorder selected activities', () => {
@@ -353,20 +298,7 @@ const expectedMetricKeys = [
   'distanceMiles',
   'elevationGainFeet',
   'movingTimeMinutes',
-  'elapsedTimeMinutes',
-  'temperatureF',
 ] as const satisfies readonly MetricKey[]
-
-function getProfileMetric(
-  profile: ReturnType<typeof buildDatasetProfile>,
-  metric: MetricKey,
-) {
-  const result = profile.metrics.find((summary) => summary.metric === metric)
-
-  expect(result).toBeDefined()
-
-  return result
-}
 
 function getSummaryMetric(
   summary: ReturnType<typeof summarizeSelection>,
@@ -393,10 +325,8 @@ function createActivity(
       | 'isWeekend'
       | 'distanceMiles'
       | 'movingTimeMinutes'
-      | 'elapsedTimeMinutes'
       | 'averageSpeedMph'
       | 'elevationGainFeet'
-      | 'temperatureF'
       | 'sportType'
       | 'trainer'
       | 'commute'
@@ -417,10 +347,8 @@ function createActivity(
     isWeekend: overrides.isWeekend ?? false,
     distanceMiles: overrides.distanceMiles ?? 31.4,
     movingTimeMinutes: overrides.movingTimeMinutes ?? 125,
-    elapsedTimeMinutes: overrides.elapsedTimeMinutes ?? 141,
     averageSpeedMph: overrides.averageSpeedMph ?? 15.4,
     elevationGainFeet: overrides.elevationGainFeet ?? 1250,
-    temperatureF: overrides.temperatureF,
     sportType: overrides.sportType ?? 'Ride',
     trainer: overrides.trainer ?? false,
     commute: overrides.commute ?? false,

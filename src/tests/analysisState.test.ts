@@ -119,6 +119,17 @@ describe('analysis state contract', () => {
     })
   })
 
+  it('prevents average speed as a cumulative view metric at the type level', () => {
+    const cumulativeView: CumulativeViewConfiguration = {
+      type: 'cumulative',
+      // @ts-expect-error Cumulative only supports additive metrics.
+      yMetric: 'averageSpeedMph',
+      accumulation: 'continuous',
+    }
+
+    expect(cumulativeView.yMetric).toBe('averageSpeedMph')
+  })
+
   it('represents a recurring month-day selection explicitly', () => {
     const state: AnalysisState = {
       selection: {

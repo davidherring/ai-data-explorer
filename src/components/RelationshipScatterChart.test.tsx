@@ -78,21 +78,21 @@ describe('RelationshipScatterChart', () => {
         createActivity({
           id: 'invalid-a',
           localDate: '2025-01-01',
-          temperatureF: undefined,
+          averageSpeedMph: Number.NaN,
         }),
         createActivity({
           id: 'invalid-b',
           localDate: '2025-01-02',
-          temperatureF: Number.NaN,
+          averageSpeedMph: Number.POSITIVE_INFINITY,
         }),
       ],
-      'temperatureF',
-      'temperatureF',
+      'averageSpeedMph',
+      'averageSpeedMph',
     )
 
     expect(
       screen.getByText(
-        'No activities have valid temperature values for the current selection.',
+        'No activities have valid average speed values for the current selection.',
       ),
     ).toBeInTheDocument()
     expect(document.querySelector('svg')).not.toBeInTheDocument()
@@ -408,8 +408,6 @@ function createActivity(
       | 'distanceMiles'
       | 'elevationGainFeet'
       | 'movingTimeMinutes'
-      | 'elapsedTimeMinutes'
-      | 'temperatureF'
       | 'sportType'
     >
   > = {},
@@ -427,10 +425,8 @@ function createActivity(
     isWeekend: false,
     distanceMiles: overrides.distanceMiles ?? 20,
     movingTimeMinutes: overrides.movingTimeMinutes ?? 60,
-    elapsedTimeMinutes: overrides.elapsedTimeMinutes ?? 65,
     averageSpeedMph: overrides.averageSpeedMph ?? 15,
     elevationGainFeet: overrides.elevationGainFeet ?? 500,
-    temperatureF: overrides.temperatureF,
     sportType: overrides.sportType ?? 'Ride',
     trainer: false,
     commute: false,

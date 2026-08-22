@@ -54,7 +54,6 @@ const additiveMetricKeys = new Set<MetricKey>([
   'distanceMiles',
   'elevationGainFeet',
   'movingTimeMinutes',
-  'elapsedTimeMinutes',
 ])
 
 export function buildDatasetProfile(activities: readonly Activity[]): DatasetProfile {
@@ -97,7 +96,7 @@ function buildDatasetMetricAvailability(
     metric,
     label: definition.label,
     unit: definition.unit,
-    optional: definition.optional === true,
+    optional: false,
     finiteCount,
     missingCount,
     available: finiteCount > 0,

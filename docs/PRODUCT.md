@@ -320,9 +320,10 @@ The model should rely on tool outputs for important numerical claims.
 
 ## 8. Weather Data
 
-Weather may add useful context to ride analysis.
+Weather may add useful context to activity analysis.
 
-The MVP should support temperature if it is available through the activity data or can be added without substantial architectural complexity.
+Sprint 10 does not carry temperature as an active metric. Weather should be
+treated as future enrichment rather than an always-missing field.
 
 Potential future enrichment may include:
 

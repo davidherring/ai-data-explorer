@@ -89,7 +89,6 @@ function createActivity(overrides: Partial<Activity> = {}): Activity {
     isWeekend: false,
     distanceMiles: 10,
     movingTimeMinutes: 60,
-    elapsedTimeMinutes: 65,
     averageSpeedMph: 10,
     elevationGainFeet: 1000,
     sportType: 'Ride',

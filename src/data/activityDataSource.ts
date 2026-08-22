@@ -131,20 +131,12 @@ function parseActivity(value: unknown): Activity {
     typeof candidate.isWeekend !== 'boolean' ||
     typeof candidate.distanceMiles !== 'number' ||
     typeof candidate.movingTimeMinutes !== 'number' ||
-    typeof candidate.elapsedTimeMinutes !== 'number' ||
     typeof candidate.averageSpeedMph !== 'number' ||
     typeof candidate.elevationGainFeet !== 'number' ||
     typeof candidate.sportType !== 'string' ||
     typeof candidate.trainer !== 'boolean' ||
     typeof candidate.commute !== 'boolean' ||
     typeof candidate.manual !== 'boolean'
-  ) {
-    throw new ActivityDataSourceError('invalidResponse', 'Invalid Strava activity.')
-  }
-
-  if (
-    candidate.temperatureF !== undefined &&
-    typeof candidate.temperatureF !== 'number'
   ) {
     throw new ActivityDataSourceError('invalidResponse', 'Invalid Strava activity.')
   }
@@ -160,10 +152,8 @@ function parseActivity(value: unknown): Activity {
     isWeekend: candidate.isWeekend,
     distanceMiles: candidate.distanceMiles,
     movingTimeMinutes: candidate.movingTimeMinutes,
-    elapsedTimeMinutes: candidate.elapsedTimeMinutes,
     averageSpeedMph: candidate.averageSpeedMph,
     elevationGainFeet: candidate.elevationGainFeet,
-    temperatureF: candidate.temperatureF,
     sportType: candidate.sportType,
     trainer: candidate.trainer,
     commute: candidate.commute,

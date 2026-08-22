@@ -131,8 +131,6 @@ describe('buildGroupedComparison', () => {
           distanceMiles: 10.125,
           elevationGainFeet: 100,
           movingTimeMinutes: 30,
-          elapsedTimeMinutes: 40,
-          temperatureF: 60,
         }),
         createActivity({
           id: '2019-b',
@@ -141,8 +139,6 @@ describe('buildGroupedComparison', () => {
           distanceMiles: 20.375,
           elevationGainFeet: 300,
           movingTimeMinutes: 60,
-          elapsedTimeMinutes: 80,
-          temperatureF: Number.NaN,
         }),
         createActivity({
           id: '2019-c',
@@ -151,8 +147,6 @@ describe('buildGroupedComparison', () => {
           distanceMiles: 30.5,
           elevationGainFeet: 500,
           movingTimeMinutes: 90,
-          elapsedTimeMinutes: 120,
-          temperatureF: undefined,
         }),
       ],
       { groupBy: 'year' },
@@ -177,19 +171,6 @@ describe('buildGroupedComparison', () => {
     })
     expect(getMetric(group, 'elevationGainFeet')).toMatchObject({ total: 900 })
     expect(getMetric(group, 'movingTimeMinutes')).toMatchObject({ total: 180 })
-    expect(getMetric(group, 'elapsedTimeMinutes')).toMatchObject({ total: 240 })
-    expect(getMetric(group, 'temperatureF')).toMatchObject({
-      finiteCount: 1,
-      missingCount: 2,
-      mean: 60,
-      median: 60,
-    })
-    expect(getMetric(group, 'temperatureF').total).toBeUndefined()
-    expect(group.warnings).toContainEqual({
-      code: 'metric-has-missing-values',
-      metric: 'temperatureF',
-      missingCount: 2,
-    })
   })
 
   it('keeps sparse group warnings from the reused selection summary', () => {
@@ -207,20 +188,20 @@ describe('buildGroupedComparison', () => {
   it('reports no finite metric values for a non-empty group', () => {
     const comparison = buildGroupedComparison(
       [
-        createActivity({ id: 'a', temperatureF: undefined }),
-        createActivity({ id: 'b', temperatureF: Number.POSITIVE_INFINITY }),
-        createActivity({ id: 'c', temperatureF: Number.NEGATIVE_INFINITY }),
+        createActivity({ id: 'a', averageSpeedMph: Number.NaN }),
+        createActivity({ id: 'b', averageSpeedMph: Number.POSITIVE_INFINITY }),
+        createActivity({ id: 'c', averageSpeedMph: Number.NEGATIVE_INFINITY }),
       ],
       { groupBy: 'year' },
     )
 
-    expect(getMetric(comparison.groups[0], 'temperatureF')).toMatchObject({
+    expect(getMetric(comparison.groups[0], 'averageSpeedMph')).toMatchObject({
       finiteCount: 0,
       missingCount: 3,
     })
     expect(comparison.groups[0].warnings).toContainEqual({
       code: 'metric-has-no-finite-values',
-      metric: 'temperatureF',
+      metric: 'averageSpeedMph',
     })
   })
 
@@ -372,10 +353,8 @@ function createActivity(
       | 'isWeekend'
       | 'distanceMiles'
       | 'movingTimeMinutes'
-      | 'elapsedTimeMinutes'
       | 'averageSpeedMph'
       | 'elevationGainFeet'
-      | 'temperatureF'
       | 'sportType'
       | 'trainer'
       | 'commute'
@@ -396,10 +375,8 @@ function createActivity(
     isWeekend: overrides.isWeekend ?? false,
     distanceMiles: overrides.distanceMiles ?? 20,
     movingTimeMinutes: overrides.movingTimeMinutes ?? 60,
-    elapsedTimeMinutes: overrides.elapsedTimeMinutes ?? 65,
     averageSpeedMph: overrides.averageSpeedMph ?? 15,
     elevationGainFeet: overrides.elevationGainFeet ?? 500,
-    temperatureF: overrides.temperatureF,
     sportType: overrides.sportType ?? 'Ride',
     trainer: overrides.trainer ?? false,
     commute: overrides.commute ?? false,

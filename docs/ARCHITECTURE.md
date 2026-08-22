@@ -468,9 +468,10 @@ Normalization
       ↓
 Optional weather enrichment
       ↓
-Normalized Ride
+Normalized Activity
 
-Temperature may be included when available.
+Temperature/weather enrichment may be added later, separate from the active
+normalized activity model.
 
 If external historical weather enrichment is later added, it should remain separate from core Strava retrieval logic.
 

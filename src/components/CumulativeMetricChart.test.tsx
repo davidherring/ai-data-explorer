@@ -21,11 +21,11 @@ describe('CumulativeMetricChart', () => {
   })
 
   it('renders a metric-specific empty state when selected activities have no valid points', () => {
-    renderChart([createActivity()], 'temperatureF', [])
+    renderChart([createActivity()], 'averageSpeedMph', [])
 
     expect(
       screen.getByText(
-        'No activities have valid temperature values for the current selection.',
+        'No activities have valid average speed values for the current selection.',
       ),
     ).toBeInTheDocument()
     expect(document.querySelector('svg')).not.toBeInTheDocument()
@@ -208,8 +208,6 @@ function createActivity(
       | 'distanceMiles'
       | 'elevationGainFeet'
       | 'movingTimeMinutes'
-      | 'elapsedTimeMinutes'
-      | 'temperatureF'
       | 'sportType'
     >
   > = {},
@@ -227,10 +225,8 @@ function createActivity(
     isWeekend: false,
     distanceMiles: overrides.distanceMiles ?? 31.44,
     movingTimeMinutes: overrides.movingTimeMinutes ?? 60,
-    elapsedTimeMinutes: overrides.elapsedTimeMinutes ?? 65,
     averageSpeedMph: overrides.averageSpeedMph ?? 15.24,
     elevationGainFeet: overrides.elevationGainFeet ?? 1250,
-    temperatureF: overrides.temperatureF,
     sportType: overrides.sportType ?? 'Ride',
     trainer: false,
     commute: false,

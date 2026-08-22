@@ -308,8 +308,8 @@ Describe the relationship between two numerical variables.
 Examples:
 
 elevation vs. speed;
-temperature vs. speed;
-distance vs. speed.
+distance vs. speed;
+moving time vs. speed.
 
 Potential output:
 
@@ -515,7 +515,9 @@ Such suggestions should be framed as exploratory experiments rather than trainin
 
 ## 19. Weather Context
 
-If temperature or other weather variables are available, the assistant may use them as analytical dimensions.
+Temperature and other weather variables are not active Sprint 10 metrics. If
+future weather enrichment adds them, the assistant may use them as contextual
+analytical dimensions.
 
 Example:
 

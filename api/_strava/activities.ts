@@ -31,7 +31,6 @@ export type StravaSummaryActivity = {
   start_date_local: string
   distance: number
   moving_time: number
-  elapsed_time: number
   total_elevation_gain: number
   average_speed: number
   trainer: boolean
@@ -209,7 +208,6 @@ function parseStravaSummaryActivity(value: unknown): StravaSummaryActivity {
     typeof candidate.start_date_local !== 'string' ||
     typeof candidate.distance !== 'number' ||
     typeof candidate.moving_time !== 'number' ||
-    typeof candidate.elapsed_time !== 'number' ||
     typeof candidate.total_elevation_gain !== 'number' ||
     typeof candidate.average_speed !== 'number' ||
     typeof candidate.trainer !== 'boolean' ||
@@ -226,7 +224,6 @@ function parseStravaSummaryActivity(value: unknown): StravaSummaryActivity {
     start_date_local: candidate.start_date_local,
     distance: candidate.distance,
     moving_time: candidate.moving_time,
-    elapsed_time: candidate.elapsed_time,
     total_elevation_gain: candidate.total_elevation_gain,
     average_speed: candidate.average_speed,
     trainer: candidate.trainer,

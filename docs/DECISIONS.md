@@ -572,11 +572,12 @@ The assistant may suggest experiments, but should avoid authoritative training p
 
 ---
 
-## D025 — Treat temperature as potentially useful context
+## D025 — Treat temperature as future enrichment context
 
 ### Decision
 
-Temperature should be supported if available without disproportionate implementation cost.
+Temperature should not remain an always-missing active metric. It may be added
+later through explicit weather enrichment if the product value justifies the work.
 
 ### Rationale
 
@@ -584,13 +585,8 @@ Starting temperature may help explain or motivate exploration of performance dif
 
 ### Consequence
 
-Temperature may participate in:
-
-- filtering;
-- relationships;
-- AI reasoning.
-
-It should be treated as contextual rather than causal evidence.
+If added later, temperature should be treated as contextual rather than causal
+evidence.
 
 ---
 

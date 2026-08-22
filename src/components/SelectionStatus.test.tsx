@@ -100,7 +100,6 @@ function createActivity(overrides: {
     isWeekend: false,
     distanceMiles: overrides.distanceMiles,
     movingTimeMinutes: 60,
-    elapsedTimeMinutes: 65,
     averageSpeedMph: overrides.averageSpeedMph,
     elevationGainFeet: overrides.elevationGainFeet,
     sportType: 'Ride',

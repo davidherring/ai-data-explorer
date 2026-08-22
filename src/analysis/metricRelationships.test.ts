@@ -106,15 +106,15 @@ describe('relationshipBetweenMetrics', () => {
     expect(result.pearsonR).toBeUndefined()
   })
 
-  it('excludes missing optional metric values', () => {
+  it('excludes non-finite metric values', () => {
     const result = relationshipBetweenMetrics(
       [
-        createActivity({ id: 'a', temperatureF: 60, averageSpeedMph: 12 }),
-        createActivity({ id: 'b', temperatureF: undefined, averageSpeedMph: 99 }),
-        createActivity({ id: 'c', temperatureF: 70, averageSpeedMph: 14 }),
-        createActivity({ id: 'd', temperatureF: 80, averageSpeedMph: 16 }),
+        createActivity({ id: 'a', distanceMiles: 60, averageSpeedMph: 12 }),
+        createActivity({ id: 'b', distanceMiles: Number.NaN, averageSpeedMph: 99 }),
+        createActivity({ id: 'c', distanceMiles: 70, averageSpeedMph: 14 }),
+        createActivity({ id: 'd', distanceMiles: 80, averageSpeedMph: 16 }),
       ],
-      'temperatureF',
+      'distanceMiles',
       'averageSpeedMph',
     )
 
@@ -294,12 +294,8 @@ describe('getMetricRelationshipPoints', () => {
   it('excludes undefined and non-finite pairs', () => {
     const activities = [
       createActivity({ id: 'valid-a', elevationGainFeet: 100, averageSpeedMph: 12 }),
-      createActivity({
-        id: 'missing-temperature',
-        temperatureF: undefined,
-        averageSpeedMph: 13,
-      }),
-      createActivity({ id: 'nan-x', elevationGainFeet: Number.NaN, averageSpeedMph: 14 }),
+      createActivity({ id: 'nan-x', elevationGainFeet: Number.NaN, averageSpeedMph: 13 }),
+      createActivity({ id: 'nan-y', elevationGainFeet: 150, averageSpeedMph: Number.NaN }),
       createActivity({
         id: 'infinite-x',
         elevationGainFeet: Number.POSITIVE_INFINITY,
@@ -317,21 +313,7 @@ describe('getMetricRelationshipPoints', () => {
       getMetricRelationshipPoints(activities, 'elevationGainFeet', 'averageSpeedMph').map(
         (point) => point.activity.id,
       ),
-    ).toEqual(['valid-a', 'missing-temperature', 'valid-b'])
-    expect(
-      getMetricRelationshipPoints(
-        [
-          createActivity({ id: 'temp-valid', temperatureF: 60, averageSpeedMph: 12 }),
-          createActivity({
-            id: 'temp-missing',
-            temperatureF: undefined,
-            averageSpeedMph: 13,
-          }),
-        ],
-        'temperatureF',
-        'averageSpeedMph',
-      ).map((point) => point.activity.id),
-    ).toEqual(['temp-valid'])
+    ).toEqual(['valid-a', 'valid-b'])
   })
 
   it('preserves source order for valid points', () => {
@@ -386,8 +368,6 @@ function createActivity(
       | 'distanceMiles'
       | 'elevationGainFeet'
       | 'movingTimeMinutes'
-      | 'elapsedTimeMinutes'
-      | 'temperatureF'
     >
   > = {},
 ): Activity {
@@ -402,10 +382,8 @@ function createActivity(
     isWeekend: false,
     distanceMiles: overrides.distanceMiles ?? 20,
     movingTimeMinutes: overrides.movingTimeMinutes ?? 60,
-    elapsedTimeMinutes: overrides.elapsedTimeMinutes ?? 65,
     averageSpeedMph: overrides.averageSpeedMph ?? 15,
     elevationGainFeet: overrides.elevationGainFeet ?? 500,
-    temperatureF: overrides.temperatureF,
     sportType: 'Ride',
     trainer: false,
     commute: false,

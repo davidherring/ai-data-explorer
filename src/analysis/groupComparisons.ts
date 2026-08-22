@@ -83,7 +83,6 @@ const additiveMetricKeys = new Set<MetricKey>([
   'distanceMiles',
   'elevationGainFeet',
   'movingTimeMinutes',
-  'elapsedTimeMinutes',
 ])
 
 const dayOfWeekSortOrder: readonly DayOfWeek[] = [
