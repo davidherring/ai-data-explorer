@@ -40,6 +40,54 @@ describe('MetricTrendChart', () => {
     expect(document.body.textContent).toContain('Sport type: Ride')
   })
 
+  it('shows a year legend when valid plotted points span multiple years', async () => {
+    renderChart([rideA, rideB], 'averageSpeedMph')
+
+    await waitFor(() => {
+      expect(getLegendSwatchLabels()).toEqual(['2025', '2026'])
+    })
+  })
+
+  it('does not show a year legend for single-year plotted points', async () => {
+    renderChart(
+      [
+        rideA,
+        createActivity({
+          id: 'activity-c',
+          localDate: '2025-08-20',
+          averageSpeedMph: 16,
+        }),
+      ],
+      'averageSpeedMph',
+    )
+
+    await waitFor(() => {
+      expect(document.querySelector('svg')).toBeInTheDocument()
+    })
+
+    expect(getLegendSwatchLabels()).toEqual([])
+  })
+
+  it('does not show a year legend when only one selected year has valid plotted points', async () => {
+    renderChart(
+      [
+        rideA,
+        createActivity({
+          id: 'invalid-2026',
+          localDate: '2026-08-20',
+          averageSpeedMph: Number.NaN,
+        }),
+      ],
+      'averageSpeedMph',
+    )
+
+    await waitFor(() => {
+      expect(document.querySelector('svg')).toBeInTheDocument()
+    })
+
+    expect(getLegendSwatchLabels()).toEqual([])
+  })
+
   it('renders a distance trend with metric title, accessibility, and tooltip', async () => {
     renderChart([rideA], 'distanceMiles')
 
@@ -214,6 +262,12 @@ function renderChart(
 
 function countTextOccurrences(text: string, searchText: string): number {
   return text.split(searchText).length - 1
+}
+
+function getLegendSwatchLabels(): string[] {
+  return Array.from(document.querySelectorAll('span[class*="swatch"]')).map(
+    (element) => element.textContent ?? '',
+  )
 }
 
 const rideA = createActivity({

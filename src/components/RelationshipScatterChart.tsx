@@ -13,6 +13,10 @@ import { RelationshipStatus } from './RelationshipStatus.tsx'
 import { SelectionStatus } from './SelectionStatus.tsx'
 import type { Activity } from '../data/activity.ts'
 import type { MetricKey } from '../state/analysisState.ts'
+import {
+  formatActivityYear,
+  shouldEncodeActivityYear,
+} from './activityYearEncoding.ts'
 
 type RelationshipScatterChartProps = {
   activities: Activity[]
@@ -43,6 +47,7 @@ export function RelationshipScatterChart({
   const chartLabel = `${xDefinition.label} vs ${yDefinition.label}`
   const hasNoSelectedActivities = activities.length === 0
   const hasNoValidPairs = activities.length > 0 && points.length === 0
+  const encodeYear = shouldEncodeActivityYear(points)
 
   useEffect(() => {
     const container = containerRef.current
@@ -111,12 +116,23 @@ export function RelationshipScatterChart({
         grid: true,
         nice: true,
       },
+      ...(encodeYear
+        ? {
+            color: {
+              type: 'ordinal' as const,
+              legend: true,
+            },
+          }
+        : {}),
       marks: [
         Plot.dot(points, {
           x: 'x',
           y: 'y',
           r: 4,
-          fill: '#315f8a',
+          fill: encodeYear
+            ? (point: MetricRelationshipPoint) =>
+                formatActivityYear(point.activity.year)
+            : '#315f8a',
           fillOpacity: 0.82,
           stroke: '#ffffff',
           strokeWidth: 1.4,
@@ -139,7 +155,7 @@ export function RelationshipScatterChart({
     return () => {
       plot.remove()
     }
-  }, [chartWidth, points, xDefinition, xMetric, yDefinition, yMetric])
+  }, [chartWidth, encodeYear, points, xDefinition, xMetric, yDefinition, yMetric])
 
   return (
     <figure className="trend-chart relationship-chart" aria-label={chartLabel}>

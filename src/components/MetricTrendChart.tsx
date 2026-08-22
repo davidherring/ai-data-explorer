@@ -9,6 +9,10 @@ import {
 import { SelectionStatus } from './SelectionStatus.tsx'
 import type { Activity } from '../data/activity.ts'
 import type { MetricKey } from '../state/analysisState.ts'
+import {
+  formatActivityYear,
+  shouldEncodeActivityYear,
+} from './activityYearEncoding.ts'
 
 type MetricTrendChartProps = {
   activities: Activity[]
@@ -60,6 +64,7 @@ export function MetricTrendChart({
   )
   const hasNoSelectedActivities = activities.length === 0
   const hasNoValidMetricValues = activities.length > 0 && points.length === 0
+  const encodeYear = shouldEncodeActivityYear(points)
 
   useEffect(() => {
     const container = containerRef.current
@@ -127,12 +132,22 @@ export function MetricTrendChart({
         grid: true,
         nice: true,
       },
+      ...(encodeYear
+        ? {
+            color: {
+              type: 'ordinal' as const,
+              legend: true,
+            },
+          }
+        : {}),
       marks: [
         Plot.dot(points, {
           x: 'date',
           y: 'value',
           r: 4,
-          fill: '#2f6f56',
+          fill: encodeYear
+            ? (point: TrendPoint) => formatActivityYear(point.activity.year)
+            : '#2f6f56',
           fillOpacity: 0.8,
           stroke: '#ffffff',
           strokeWidth: 1.4,
@@ -152,7 +167,7 @@ export function MetricTrendChart({
     return () => {
       plot.remove()
     }
-  }, [chartWidth, metricDefinition, points, yMetric])
+  }, [chartWidth, encodeYear, metricDefinition, points, yMetric])
 
   return (
     <figure className="trend-chart" aria-label={chartLabel}>

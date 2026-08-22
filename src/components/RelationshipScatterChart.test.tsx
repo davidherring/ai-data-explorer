@@ -32,6 +32,41 @@ describe('RelationshipScatterChart', () => {
     expect(document.body.textContent).toContain('Sport type: Ride')
   })
 
+  it('shows a year legend when valid plotted points span multiple years', async () => {
+    renderChart([rideA, rideD, rideE])
+
+    await waitFor(() => {
+      expect(getLegendSwatchLabels()).toEqual(['2025', '2026'])
+    })
+  })
+
+  it('does not show a year legend for single-year plotted points', async () => {
+    renderChart([rideA, rideB, rideC])
+
+    await waitFor(() => {
+      expect(document.querySelector('.relationship-chart-container svg')).toBeInTheDocument()
+    })
+
+    expect(getLegendSwatchLabels()).toEqual([])
+  })
+
+  it('does not show a year legend when only one selected year has valid plotted points', async () => {
+    renderChart([
+      rideA,
+      createActivity({
+        id: 'invalid-2026',
+        localDate: '2026-08-20',
+        elevationGainFeet: Number.NaN,
+      }),
+    ])
+
+    await waitFor(() => {
+      expect(document.querySelector('.relationship-chart-container svg')).toBeInTheDocument()
+    })
+
+    expect(getLegendSwatchLabels()).toEqual([])
+  })
+
   it('renders an empty chart state for empty selected activities', () => {
     renderChart([])
 
@@ -336,6 +371,12 @@ function getPointTitleText(searchText: string): string {
   }
 
   return title.textContent ?? ''
+}
+
+function getLegendSwatchLabels(): string[] {
+  return Array.from(document.querySelectorAll('span[class*="swatch"]')).map(
+    (element) => element.textContent ?? '',
+  )
 }
 
 const rideA = createActivity({
