@@ -95,7 +95,10 @@ export async function streamChatResponse(
     model: dependencies.createModel(),
     system,
     messages,
-    tools: createAnalysisTools(chatRequest.selectedActivities),
+    tools: createAnalysisTools(
+      chatRequest.selectedActivities,
+      chatRequest.currentAnalysisState,
+    ),
     stopWhen: stepCountIs(3),
   })
 

@@ -11,8 +11,15 @@ import type { SelectionSummary } from '../../src/analysis/aiContext.js'
 import type { GroupedComparison } from '../../src/analysis/groupComparisons.js'
 import type { MetricTrendAnalysis } from '../../src/analysis/metricTrends.js'
 import type { DayOfWeek, Activity } from '../../src/data/activity.js'
-import { defaultAnalysisState } from '../../src/state/analysisState.js'
+import {
+  defaultAnalysisState,
+  type AnalysisState,
+} from '../../src/state/analysisState.js'
 import { safeParseAnalysisState } from '../../src/state/analysisStateValidation.js'
+import {
+  getAnalysisStateFingerprint,
+  type ViewSuggestion,
+} from '../../src/state/viewSuggestions.js'
 import chatHandler from '../chat.js'
 import {
   handleChat,
@@ -442,6 +449,31 @@ describe('handleChat', () => {
     expect(system).toContain('practical significance')
   })
 
+  it('allows optional user-controlled View Suggestions in the system prompt', async () => {
+    const streamTextMock = vi.fn(() => ({
+      pipeUIMessageStreamToResponse: vi.fn(),
+    }))
+    const response = createMockResponse()
+
+    await handleChat(
+      createMockRequest('POST', JSON.stringify(createValidChatBody())),
+      response,
+      createMockDependencies({ streamText: streamTextMock }),
+    )
+
+    const streamTextCalls = streamTextMock.mock.calls as unknown as Array<
+      [{ system: string }]
+    >
+    const system = streamTextCalls[0][0].system
+
+    expect(system).not.toContain('Do not propose View Suggestions in this sprint.')
+    expect(system).toContain('proposeViewSuggestion')
+    expect(system).toContain('Suggestions are user-controlled')
+    expect(system).toContain('do not mutate state automatically')
+    expect(system).toContain('Do not repeatedly propose unnecessary state changes')
+    expect(system).toContain('Numerical claims still require deterministic tools')
+  })
+
   it('strips stale assistant tool output from model-visible history while preserving text and current context', async () => {
     const selectedActivities = [
       createActivity({
@@ -492,6 +524,36 @@ describe('handleChat', () => {
                 warnings: [],
               },
             },
+            {
+              type: 'tool-proposeViewSuggestion',
+              toolCallId: 'tool-b',
+              state: 'output-available',
+              input: {
+                label: 'Earlier suggestion',
+                patch: {
+                  selection: {
+                    years: [2017, 2025],
+                  },
+                },
+              },
+              output: {
+                id: 'suggestion-stale',
+                label: 'Earlier suggestion',
+                proposedState: {
+                  ...defaultAnalysisState,
+                  selection: { years: [2017, 2025] },
+                },
+                changes: [
+                  {
+                    field: 'selection.years',
+                    action: 'set',
+                    label: 'Years',
+                    value: '2017, 2025',
+                  },
+                ],
+                sourceStateFingerprint: 'state-fnv1a:stale',
+              },
+            },
           ],
         },
         {
@@ -536,6 +598,9 @@ describe('handleChat', () => {
     expect(modelMessagesJson).not.toContain('2017-01-01')
     expect(modelMessagesJson).not.toContain('2025-12-31')
     expect(modelMessagesJson).not.toContain('tool-calculateTrend')
+    expect(modelMessagesJson).not.toContain('tool-proposeViewSuggestion')
+    expect(modelMessagesJson).not.toContain('suggestion-stale')
+    expect(modelMessagesJson).not.toContain('2017, 2025')
     expect(system).toContain('"years":[2025]')
     expect(system).toContain('"selectedActivityCount":3')
     expect(system).not.toContain('current-2025-a')
@@ -573,6 +638,7 @@ describe('handleChat', () => {
           relationshipBetweenMetrics: expect.any(Object),
           compareGroups: expect.any(Object),
           calculateTrend: expect.any(Object),
+          proposeViewSuggestion: expect.any(Object),
         }),
       }),
     )
@@ -582,7 +648,7 @@ describe('handleChat', () => {
 
 describe('analysis chat tools', () => {
   it('executes summarizeSelection deterministically over submitted activities', async () => {
-    const tools = createAnalysisTools([
+    const tools = createTools([
       createActivity({ id: 'a', distanceMiles: 10 }),
       createActivity({ id: 'b', distanceMiles: 20 }),
       createActivity({ id: 'c', distanceMiles: 30 }),
@@ -603,7 +669,7 @@ describe('analysis chat tools', () => {
   })
 
   it('executes relationshipBetweenMetrics deterministically with metric metadata', async () => {
-    const tools = createAnalysisTools([
+    const tools = createTools([
       createActivity({ id: 'a', elevationGainFeet: 100, averageSpeedMph: 12 }),
       createActivity({ id: 'b', elevationGainFeet: 200, averageSpeedMph: 14 }),
       createActivity({ id: 'c', elevationGainFeet: 300, averageSpeedMph: 16 }),
@@ -639,7 +705,7 @@ describe('analysis chat tools', () => {
   })
 
   it('executes compareGroups deterministically over submitted activities', async () => {
-    const tools = createAnalysisTools([
+    const tools = createTools([
       createActivity({
         id: '2019-a',
         localDate: '2019-01-01',
@@ -712,7 +778,7 @@ describe('analysis chat tools', () => {
   })
 
   it('returns missing requested group status from compareGroups', async () => {
-    const tools = createAnalysisTools([
+    const tools = createTools([
       createActivity({ id: '2026-a', localDate: '2026-01-01' }),
     ])
     const output = await executeTool<GroupedComparison>(tools.compareGroups, {
@@ -801,7 +867,7 @@ describe('analysis chat tools', () => {
   })
 
   it('executes calculateTrend deterministically over submitted activities', async () => {
-    const tools = createAnalysisTools([
+    const tools = createTools([
       createActivity({
         id: 'private-a',
         localDate: '2026-01-01',
@@ -867,6 +933,98 @@ describe('analysis chat tools', () => {
       }).success,
     ).toBe(false)
   })
+
+  it('executes proposeViewSuggestion against submitted currentAnalysisState', async () => {
+    const currentAnalysisState: AnalysisState = {
+      ...defaultAnalysisState,
+      selection: {
+        years: [2025],
+        dayMode: 'weekend',
+      },
+    }
+    const tools = createTools(
+      [
+        createActivity({ id: 'private-a', localDate: '2025-01-01' }),
+        createActivity({ id: 'private-b', localDate: '2025-01-02' }),
+      ],
+      currentAnalysisState,
+    )
+    const output = await executeTool<ViewSuggestion>(tools.proposeViewSuggestion, {
+      label: 'Compare speed and elevation',
+      rationale: 'Elevation may explain the speed pattern.',
+      patch: {
+        view: {
+          type: 'relationship',
+          xMetric: 'elevationGainFeet',
+          yMetric: 'averageSpeedMph',
+        },
+        selection: {
+          years: [2025, 2026],
+        },
+      },
+    })
+
+    expect(output).toMatchObject({
+      label: 'Compare speed and elevation',
+      rationale: 'Elevation may explain the speed pattern.',
+      proposedState: {
+        selection: {
+          years: [2025, 2026],
+          dayMode: 'weekend',
+        },
+        view: {
+          type: 'relationship',
+          xMetric: 'elevationGainFeet',
+          yMetric: 'averageSpeedMph',
+        },
+      },
+      changes: expect.arrayContaining([
+        expect.objectContaining({
+          field: 'view.type',
+          action: 'set',
+          value: 'Relationship',
+        }),
+        expect.objectContaining({
+          field: 'selection.years',
+          action: 'set',
+          value: '2025, 2026',
+        }),
+      ]),
+      sourceStateFingerprint: getAnalysisStateFingerprint(currentAnalysisState),
+    })
+    expect(JSON.stringify(output)).not.toContain('private-a')
+    expect(JSON.stringify(output)).not.toContain('private-b')
+    expect(JSON.stringify(output)).not.toContain('selectedActivities')
+    expect(JSON.stringify(output)).not.toContain('"activity"')
+  })
+
+  it('enforces invalid and no-op proposeViewSuggestion behavior', async () => {
+    const tools = createTools([], defaultAnalysisState)
+
+    await expect(
+      executeTool(tools.proposeViewSuggestion, {
+        label: 'Invalid cumulative speed',
+        patch: {
+          view: {
+            type: 'cumulative',
+            yMetric: 'averageSpeedMph',
+          },
+        },
+      }),
+    ).rejects.toThrow()
+
+    await expect(
+      executeTool(tools.proposeViewSuggestion, {
+        label: 'Already selected',
+        patch: {
+          view: {
+            type: 'trend',
+            yMetric: 'averageSpeedMph',
+          },
+        },
+      }),
+    ).rejects.toThrow()
+  })
 })
 
 describe('chat model config', () => {
@@ -900,6 +1058,13 @@ async function executeTool<T>(
   expect(executableTool.execute).toEqual(expect.any(Function))
 
   return executableTool.execute?.(input, {}) as T
+}
+
+function createTools(
+  selectedActivities: readonly Activity[],
+  currentAnalysisState = defaultAnalysisState,
+) {
+  return createAnalysisTools(selectedActivities, currentAnalysisState)
 }
 
 type RelationshipToolOutput = {
