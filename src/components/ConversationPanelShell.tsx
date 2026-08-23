@@ -333,10 +333,14 @@ function ViewSuggestionToolPart({
     )
   }
 
+  if (status === 'applied') {
+    return (
+      <p className="conversation-suggestion-status">Suggestion applied</p>
+    )
+  }
+
   const isStale =
     getAnalysisStateFingerprint(analysisState) !== suggestion.sourceStateFingerprint
-  const isApplied = status === 'applied'
-  const applyDisabled = isStale || isApplied
 
   return (
     <section className="conversation-suggestion-card" aria-label="View suggestion">
@@ -367,15 +371,11 @@ function ViewSuggestionToolPart({
           Current view or filters changed. Ask for a new suggestion.
         </p>
       )}
-      {isApplied && (
-        <p className="conversation-suggestion-status">Suggestion applied</p>
-      )}
-
       <div className="conversation-suggestion-actions">
         <button
           className="secondary-button"
           type="button"
-          disabled={applyDisabled}
+          disabled={isStale}
           onClick={() => {
             onApply(suggestion)
           }}

@@ -303,6 +303,11 @@ describe('ConversationPanelShell', () => {
         'Compare speed and elevation',
       ),
     ).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Dismiss' })).toBeEnabled()
+    expect(screen.queryByText(/Current view or filters changed/)).not.toBeInTheDocument()
+    expect(screen.queryByText('Suggestion applied')).not.toBeInTheDocument()
+    expect(screen.queryByText('Suggestion dismissed')).not.toBeInTheDocument()
     expect(screen.queryByText('Analyzed selection')).not.toBeInTheDocument()
   })
 
@@ -342,7 +347,9 @@ describe('ConversationPanelShell', () => {
 
     expect(onApplyViewSuggestion).toHaveBeenCalledWith(suggestion)
     expect(screen.getByText('Suggestion applied')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled()
+    expect(screen.queryByText(/Current view or filters changed/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Apply' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Dismiss' })).not.toBeInTheDocument()
   })
 
   it('sends applied suggestion context once when the next submit matches the applied state', () => {
@@ -450,6 +457,7 @@ describe('ConversationPanelShell', () => {
       screen.getByText('Current view or filters changed. Ask for a new suggestion.'),
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Dismiss' })).toBeEnabled()
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
     expect(onApplyViewSuggestion).not.toHaveBeenCalled()
   })
@@ -498,6 +506,8 @@ describe('ConversationPanelShell', () => {
     expect(onApplyViewSuggestion).not.toHaveBeenCalled()
     expect(screen.getByText('Suggestion dismissed')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Apply' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Dismiss' })).not.toBeInTheDocument()
+    expect(screen.queryByText(/Current view or filters changed/)).not.toBeInTheDocument()
   })
 
   it('clears local suggestion status for New Chat', () => {
