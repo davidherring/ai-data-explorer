@@ -7,6 +7,7 @@ import type { ActivityDataSourceId } from '../data/activityDataSource.ts'
 import type { Activity } from '../data/activity.ts'
 import type { AnalysisState } from '../state/analysisState.ts'
 import {
+  applyViewSuggestion,
   getAnalysisStateFingerprint,
   viewSuggestionSchema,
   type ViewSuggestion,
@@ -19,7 +20,10 @@ type ConversationPanelShellProps = {
   selectedActivityCount: number
   totalActivityCount: number
   dataSource: ActivityDataSourceId
-  onApplyViewSuggestion: (suggestion: ViewSuggestion) => void
+  onApplyViewSuggestion: (
+    suggestion: ViewSuggestion,
+    nextAnalysisState: AnalysisState,
+  ) => void
 }
 
 type SuggestionStatus = 'applied' | 'dismissed'
@@ -100,18 +104,13 @@ export function ConversationPanelShell({
   }
 
   function handleApplySuggestion(suggestion: ViewSuggestion) {
-    if (
-      getAnalysisStateFingerprint(analysisState) !==
-      suggestion.sourceStateFingerprint
-    ) {
-      return
-    }
+    const nextAnalysisState = applyViewSuggestion(analysisState, suggestion)
 
-    onApplyViewSuggestion(suggestion)
+    onApplyViewSuggestion(suggestion, nextAnalysisState)
     setRecentlyAppliedViewSuggestion({
       label: suggestion.label,
       changes: suggestion.changes,
-      appliedStateFingerprint: getAnalysisStateFingerprint(suggestion.proposedState),
+      appliedStateFingerprint: getAnalysisStateFingerprint(nextAnalysisState),
     })
     setSuggestionStatuses((current) => ({
       ...current,
@@ -307,7 +306,7 @@ type ViewSuggestionToolPartProps = {
 
 function ViewSuggestionToolPart({
   part,
-  analysisState,
+  analysisState: _analysisState,
   statusBySuggestionId,
   onApply,
   onDismiss,
@@ -330,9 +329,6 @@ function ViewSuggestionToolPart({
   const isApplied = status === 'applied'
   const isDismissed = status === 'dismissed'
   const isTerminal = isApplied || isDismissed
-  const isStale =
-    !isTerminal &&
-    getAnalysisStateFingerprint(analysisState) !== suggestion.sourceStateFingerprint
 
   return (
     <section className="conversation-suggestion-card" aria-label="View suggestion">
@@ -358,11 +354,6 @@ function ViewSuggestionToolPart({
         ))}
       </ul>
 
-      {isStale && (
-        <p className="conversation-suggestion-status">
-          Current view or filters changed. Ask for a new suggestion.
-        </p>
-      )}
       {isTerminal ? (
         <p className="conversation-suggestion-status">
           {isApplied ? 'Suggestion applied' : 'Suggestion dismissed'}
@@ -372,7 +363,6 @@ function ViewSuggestionToolPart({
           <button
             className="secondary-button"
             type="button"
-            disabled={isStale}
             onClick={() => {
               onApply(suggestion)
             }}

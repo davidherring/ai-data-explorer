@@ -39,9 +39,8 @@ export const viewSuggestionSchema = z
     id: z.string(),
     label: z.string(),
     rationale: z.string().optional(),
-    proposedState: analysisStateSchema,
+    patch: z.lazy(() => viewSuggestionPatchSchema),
     changes: z.array(viewSuggestionChangeSchema),
-    sourceStateFingerprint: z.string(),
   })
   .strict()
 
@@ -133,8 +132,7 @@ export function buildViewSuggestion(
 ): ViewSuggestion {
   const source = analysisStateSchema.parse(sourceState) as AnalysisState
   const suggestionInput = proposeViewSuggestionInputSchema.parse(input)
-  const sourceStateFingerprint = getAnalysisStateFingerprint(source)
-  const proposedState = applySuggestionPatch(source, suggestionInput.patch)
+  const proposedState = applyViewSuggestionPatch(source, suggestionInput.patch)
   const validatedProposedState = analysisStateSchema.parse(
     proposedState,
   ) as AnalysisState
@@ -147,15 +145,14 @@ export function buildViewSuggestion(
   return {
     id: `suggestion-${hashCanonicalValue({
       input: suggestionInput,
-      sourceStateFingerprint,
+      source,
     })}`,
     label: suggestionInput.label,
     ...(suggestionInput.rationale !== undefined
       ? { rationale: suggestionInput.rationale }
       : {}),
-    proposedState: validatedProposedState,
+    patch: suggestionInput.patch,
     changes,
-    sourceStateFingerprint,
   }
 }
 
@@ -163,23 +160,25 @@ export function getAnalysisStateFingerprint(state: AnalysisState): string {
   return `state-fnv1a:${hashCanonicalValue(analysisStateSchema.parse(state))}`
 }
 
-function applySuggestionPatch(
-  sourceState: AnalysisState,
+export function applyViewSuggestionPatch(
+  currentState: AnalysisState,
   patch: ProposeViewSuggestionInput['patch'],
 ): AnalysisState {
-  const nextState = cloneAnalysisState(sourceState)
+  const source = analysisStateSchema.parse(currentState) as AnalysisState
+  const suggestionPatch = viewSuggestionPatchSchema.parse(patch)
+  const nextState = cloneAnalysisState(source)
 
-  if (patch.view !== undefined) {
-    nextState.view = buildViewConfiguration(patch.view)
+  if (suggestionPatch.view !== undefined) {
+    nextState.view = buildViewConfiguration(suggestionPatch.view)
   }
 
-  if (patch.selection !== undefined) {
+  if (suggestionPatch.selection !== undefined) {
     nextState.selection = { ...nextState.selection }
 
-    for (const key of Object.keys(patch.selection) as Array<
-      keyof typeof patch.selection
+    for (const key of Object.keys(suggestionPatch.selection) as Array<
+      keyof typeof suggestionPatch.selection
     >) {
-      const value = patch.selection[key]
+      const value = suggestionPatch.selection[key]
 
       if (value === null) {
         delete nextState.selection[key]
@@ -189,7 +188,16 @@ function applySuggestionPatch(
     }
   }
 
-  return nextState
+  return analysisStateSchema.parse(nextState) as AnalysisState
+}
+
+export function applyViewSuggestion(
+  currentState: AnalysisState,
+  suggestion: ViewSuggestion,
+): AnalysisState {
+  const validatedSuggestion = viewSuggestionSchema.parse(suggestion)
+
+  return applyViewSuggestionPatch(currentState, validatedSuggestion.patch)
 }
 
 function buildViewConfiguration(

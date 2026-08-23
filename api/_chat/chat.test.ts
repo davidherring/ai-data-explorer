@@ -1054,16 +1054,14 @@ describe('analysis chat tools', () => {
     expect(output).toMatchObject({
       label: 'Compare speed and elevation',
       rationale: 'Elevation may explain the speed pattern.',
-      proposedState: {
-        selection: {
-          years: [2025, 2026],
-          daysOfWeek: ['saturday', 'sunday'],
-          recurringDateRange: defaultAnalysisState.selection.recurringDateRange,
-        },
+      patch: {
         view: {
           type: 'relationship',
           xMetric: 'elevationGainFeet',
           yMetric: 'averageSpeedMph',
+        },
+        selection: {
+          years: [2025, 2026],
         },
       },
       changes: expect.arrayContaining([
@@ -1078,8 +1076,9 @@ describe('analysis chat tools', () => {
           value: '2025, 2026',
         }),
       ]),
-      sourceStateFingerprint: getAnalysisStateFingerprint(currentAnalysisState),
     })
+    expect(output).not.toHaveProperty('proposedState')
+    expect(output).not.toHaveProperty('sourceStateFingerprint')
     expect(JSON.stringify(output)).not.toContain('private-a')
     expect(JSON.stringify(output)).not.toContain('private-b')
     expect(JSON.stringify(output)).not.toContain('selectedActivities')

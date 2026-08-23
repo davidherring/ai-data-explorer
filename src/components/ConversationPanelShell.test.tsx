@@ -8,6 +8,7 @@ import {
   type AnalysisState,
 } from '../state/analysisState.ts'
 import {
+  applyViewSuggestion,
   getAnalysisStateFingerprint,
   type ViewSuggestion,
 } from '../state/viewSuggestions.ts'
@@ -345,7 +346,10 @@ describe('ConversationPanelShell', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
 
-    expect(onApplyViewSuggestion).toHaveBeenCalledWith(suggestion)
+    expect(onApplyViewSuggestion).toHaveBeenCalledWith(
+      suggestion,
+      applyViewSuggestion(defaultAnalysisState, suggestion),
+    )
     expect(screen.getByRole('region', { name: 'View suggestion' })).toBeInTheDocument()
     expect(screen.getByText('Compare speed and elevation')).toBeInTheDocument()
     expect(screen.getByText('Elevation may explain the speed pattern.')).toBeInTheDocument()
@@ -361,6 +365,7 @@ describe('ConversationPanelShell', () => {
 
   it('keeps an applied suggestion card from becoming visually stale after state changes', () => {
     const suggestion = createSuggestion()
+    const appliedState = applyViewSuggestion(defaultAnalysisState, suggestion)
     chatState.messages = [
       {
         id: 'assistant-message',
@@ -371,7 +376,7 @@ describe('ConversationPanelShell', () => {
     const { rerender } = render(createPanel())
 
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
-    rerender(createPanel({ analysisState: suggestion.proposedState }))
+    rerender(createPanel({ analysisState: appliedState }))
 
     expect(screen.getByRole('region', { name: 'View suggestion' })).toBeInTheDocument()
     expect(screen.getByText('Compare speed and elevation')).toBeInTheDocument()
@@ -383,6 +388,7 @@ describe('ConversationPanelShell', () => {
 
   it('sends applied suggestion context once when the next submit matches the applied state', () => {
     const suggestion = createSuggestion()
+    const appliedState = applyViewSuggestion(defaultAnalysisState, suggestion)
     chatState.messages = [
       {
         id: 'assistant-message',
@@ -393,7 +399,7 @@ describe('ConversationPanelShell', () => {
     const { rerender } = render(createPanel())
 
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
-    rerender(createPanel({ analysisState: suggestion.proposedState }))
+    rerender(createPanel({ analysisState: appliedState }))
     fireEvent.change(screen.getByLabelText('Ask about the current view'), {
       target: { value: 'Ok, what do we see?' },
     })
@@ -406,9 +412,7 @@ describe('ConversationPanelShell', () => {
           recentlyAppliedViewSuggestion: {
             label: suggestion.label,
             changes: suggestion.changes,
-            appliedStateFingerprint: getAnalysisStateFingerprint(
-              suggestion.proposedState,
-            ),
+            appliedStateFingerprint: getAnalysisStateFingerprint(appliedState),
           },
         }),
       }),
@@ -426,6 +430,7 @@ describe('ConversationPanelShell', () => {
 
   it('omits and clears applied suggestion context when current state no longer matches', () => {
     const suggestion = createSuggestion()
+    const appliedState = applyViewSuggestion(defaultAnalysisState, suggestion)
     chatState.messages = [
       {
         id: 'assistant-message',
@@ -450,7 +455,7 @@ describe('ConversationPanelShell', () => {
       'recentlyAppliedViewSuggestion',
     )
 
-    rerender(createPanel({ analysisState: suggestion.proposedState }))
+    rerender(createPanel({ analysisState: appliedState }))
     fireEvent.change(screen.getByLabelText('Ask about the current view'), {
       target: { value: 'Try again' },
     })
@@ -461,9 +466,13 @@ describe('ConversationPanelShell', () => {
     )
   })
 
-  it('prevents applying a stale suggestion after analysis state changes', () => {
+  it('applies a suggestion patch to the current state after analysis state changes', () => {
     const onApplyViewSuggestion = vi.fn()
     const suggestion = createSuggestion()
+    const currentState: AnalysisState = {
+      ...defaultAnalysisState,
+      selection: { ...defaultAnalysisState.selection, years: [2026] },
+    }
     chatState.messages = [
       {
         id: 'assistant-message',
@@ -474,24 +483,22 @@ describe('ConversationPanelShell', () => {
 
     render(
       createPanel({
-        analysisState: {
-          ...defaultAnalysisState,
-          selection: { ...defaultAnalysisState.selection, years: [2026] },
-        },
+        analysisState: currentState,
         onApplyViewSuggestion,
       }),
     )
 
-    expect(
-      screen.getByText('Current view or filters changed. Ask for a new suggestion.'),
-    ).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled()
+    expect(screen.queryByText(/Current view or filters changed/)).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Dismiss' })).toBeEnabled()
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
-    expect(onApplyViewSuggestion).not.toHaveBeenCalled()
+    expect(onApplyViewSuggestion).toHaveBeenCalledWith(
+      suggestion,
+      applyViewSuggestion(currentState, suggestion),
+    )
   })
 
-  it('updates a visible suggestion to stale when analysis props change', () => {
+  it('keeps a pending suggestion actionable when analysis props change', () => {
     const suggestion = createSuggestion()
     chatState.messages = [
       {
@@ -514,8 +521,9 @@ describe('ConversationPanelShell', () => {
     )
 
     expect(
-      screen.getByText('Current view or filters changed. Ask for a new suggestion.'),
-    ).toBeInTheDocument()
+      screen.queryByText(/Current view or filters changed/),
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeEnabled()
   })
 
   it('dismisses a suggestion without applying it', () => {
@@ -656,6 +664,7 @@ describe('ConversationPanelShell', () => {
 
   it('clears pending applied suggestion context for New Chat', () => {
     const suggestion = createSuggestion()
+    const appliedState = applyViewSuggestion(defaultAnalysisState, suggestion)
     chatState.messages = [
       {
         id: 'assistant-message',
@@ -666,7 +675,7 @@ describe('ConversationPanelShell', () => {
     const { rerender } = render(createPanel())
 
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
-    rerender(createPanel({ analysisState: suggestion.proposedState }))
+    rerender(createPanel({ analysisState: appliedState }))
     fireEvent.click(screen.getByRole('button', { name: 'New Chat' }))
     fireEvent.change(screen.getByLabelText('Ask about the current view'), {
       target: { value: 'Fresh question' },
@@ -728,7 +737,10 @@ function createPanel(
     selectedActivityCount: number
     totalActivityCount: number
     dataSource: 'demo' | 'strava'
-    onApplyViewSuggestion: (suggestion: ViewSuggestion) => void
+    onApplyViewSuggestion: (
+      suggestion: ViewSuggestion,
+      nextAnalysisState: AnalysisState,
+    ) => void
   }> = {},
 ) {
   const selectedActivities = overrides.selectedActivities ?? [
@@ -757,10 +769,9 @@ function createSuggestion(
     id: overrides.id ?? 'suggestion-a',
     label: overrides.label ?? 'Compare speed and elevation',
     rationale: overrides.rationale ?? 'Elevation may explain the speed pattern.',
-    proposedState:
-      overrides.proposedState ??
+    patch:
+      overrides.patch ??
       {
-        ...defaultAnalysisState,
         view: {
           type: 'relationship',
           xMetric: 'elevationGainFeet',
@@ -783,9 +794,6 @@ function createSuggestion(
           value: 'Elevation gain',
         },
       ],
-    sourceStateFingerprint:
-      overrides.sourceStateFingerprint ??
-      getAnalysisStateFingerprint(defaultAnalysisState),
   }
 }
 

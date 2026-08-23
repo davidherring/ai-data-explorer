@@ -4,6 +4,8 @@ import {
   type AnalysisState,
 } from './analysisState.ts'
 import {
+  applyViewSuggestion,
+  applyViewSuggestionPatch,
   buildViewSuggestion,
   getAnalysisStateFingerprint,
   proposeViewSuggestionInputSchema,
@@ -11,7 +13,7 @@ import {
 } from './viewSuggestions.ts'
 
 describe('view suggestion contract', () => {
-  it('builds a validated proposed state from a view patch', () => {
+  it('builds a validated suggestion from a view patch', () => {
     const suggestion = buildViewSuggestion(defaultAnalysisState, {
       label: 'Inspect elevation relationship',
       rationale: 'Elevation may explain the speed pattern.',
@@ -27,8 +29,7 @@ describe('view suggestion contract', () => {
     expect(suggestion).toMatchObject({
       label: 'Inspect elevation relationship',
       rationale: 'Elevation may explain the speed pattern.',
-      proposedState: {
-        selection: defaultAnalysisState.selection,
+      patch: {
         view: {
           type: 'relationship',
           xMetric: 'elevationGainFeet',
@@ -49,9 +50,10 @@ describe('view suggestion contract', () => {
           value: 'Elevation gain',
         },
       ],
-      sourceStateFingerprint: getAnalysisStateFingerprint(defaultAnalysisState),
     })
     expect(suggestion.id).toMatch(/^suggestion-[0-9a-f]{8}$/)
+    expect(suggestion).not.toHaveProperty('proposedState')
+    expect(suggestion).not.toHaveProperty('sourceStateFingerprint')
   })
 
   it('preserves source state except explicitly patched fields', () => {
@@ -76,15 +78,46 @@ describe('view suggestion contract', () => {
       },
     })
 
-    expect(suggestion.proposedState.selection).toEqual({
+    expect(applyViewSuggestion(sourceState, suggestion).selection).toEqual({
       years: [2025, 2026],
       daysOfWeek: defaultAnalysisState.selection.daysOfWeek,
       recurringDateRange: defaultAnalysisState.selection.recurringDateRange,
       distanceMiles: { min: 10, max: 40 },
     })
-    expect(suggestion.proposedState.view).toEqual({
+    expect(applyViewSuggestion(sourceState, suggestion).view).toEqual({
       type: 'trend',
       yMetric: 'movingTimeMinutes',
+    })
+  })
+
+  it('applies a suggestion patch to the current state while preserving unrelated fields', () => {
+    const suggestion = buildViewSuggestion(defaultAnalysisState, {
+      label: 'Focus 2019',
+      patch: {
+        selection: {
+          years: [2019],
+        },
+      },
+    })
+    const currentState: AnalysisState = {
+      ...defaultAnalysisState,
+      selection: {
+        ...defaultAnalysisState.selection,
+        years: [2025],
+        sportType: 'Walk',
+      },
+      view: {
+        type: 'trend',
+        yMetric: 'distanceMiles',
+      },
+    }
+
+    expect(applyViewSuggestion(currentState, suggestion)).toEqual({
+      ...currentState,
+      selection: {
+        ...currentState.selection,
+        years: [2019],
+      },
     })
   })
 
@@ -105,7 +138,7 @@ describe('view suggestion contract', () => {
       },
     })
 
-    expect(suggestion.proposedState.selection).toEqual({
+    expect(applyViewSuggestion(sourceState, suggestion).selection).toEqual({
       ...defaultAnalysisState.selection,
       years: [],
     })
@@ -130,7 +163,7 @@ describe('view suggestion contract', () => {
       },
     })
 
-    expect(suggestion.proposedState.view).toEqual({
+    expect(applyViewSuggestion(defaultAnalysisState, suggestion).view).toEqual({
       type: 'seasonal',
       yMetric: 'distanceMiles',
       aggregation: 'biweekly-median',
@@ -148,7 +181,7 @@ describe('view suggestion contract', () => {
       },
     })
 
-    expect(suggestion.proposedState.view).toEqual({
+    expect(applyViewSuggestion(defaultAnalysisState, suggestion).view).toEqual({
       type: 'cumulative',
       yMetric: 'distanceMiles',
       accumulation: 'continuous',
@@ -183,6 +216,26 @@ describe('view suggestion contract', () => {
           },
         },
       }),
+    ).toThrow()
+  })
+
+  it('rejects invalid resulting state at apply time', () => {
+    expect(() =>
+      applyViewSuggestionPatch(
+        ({
+          ...defaultAnalysisState,
+          view: {
+            type: 'cumulative',
+            yMetric: 'averageSpeedMph',
+            accumulation: 'continuous',
+          },
+        } as never),
+        {
+          selection: {
+            years: [2025],
+          },
+        },
+      ),
     ).toThrow()
   })
 

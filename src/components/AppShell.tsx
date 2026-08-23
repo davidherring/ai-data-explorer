@@ -103,8 +103,11 @@ export function AppShell() {
           selectedActivityCount={selectedActivities.length}
           totalActivityCount={activityDataSource.activities.length}
           dataSource={activityDataSource.source}
-          onApplyViewSuggestion={(suggestion: ViewSuggestion) => {
-            setAnalysisState(suggestion.proposedState)
+          onApplyViewSuggestion={(
+            _suggestion: ViewSuggestion,
+            nextAnalysisState: AnalysisState,
+          ) => {
+            setAnalysisState(nextAnalysisState)
           }}
         />
       </section>
