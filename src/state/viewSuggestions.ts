@@ -24,21 +24,29 @@ type CanonicalValue =
   | CanonicalValue[]
   | { [key: string]: CanonicalValue }
 
-export type ViewSuggestionChange = {
-  field: string
-  action: 'set' | 'clear'
-  label: string
-  value?: string
-}
+export const viewSuggestionChangeSchema = z
+  .object({
+    field: z.string(),
+    action: z.enum(['set', 'clear']),
+    label: z.string(),
+    value: z.string().optional(),
+  })
+  .strict()
 
-export type ViewSuggestion = {
-  id: string
-  label: string
-  rationale?: string
-  proposedState: AnalysisState
-  changes: ViewSuggestionChange[]
-  sourceStateFingerprint: string
-}
+export type ViewSuggestionChange = z.infer<typeof viewSuggestionChangeSchema>
+
+export const viewSuggestionSchema = z
+  .object({
+    id: z.string(),
+    label: z.string(),
+    rationale: z.string().optional(),
+    proposedState: analysisStateSchema,
+    changes: z.array(viewSuggestionChangeSchema),
+    sourceStateFingerprint: z.string(),
+  })
+  .strict()
+
+export type ViewSuggestion = z.infer<typeof viewSuggestionSchema>
 
 const trendViewPatchSchema = z
   .object({

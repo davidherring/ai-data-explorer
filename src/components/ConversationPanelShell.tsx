@@ -5,6 +5,11 @@ import type { DatasetProfile } from '../analysis/aiContext.ts'
 import type { ActivityDataSourceId } from '../data/activityDataSource.ts'
 import type { Activity } from '../data/activity.ts'
 import type { AnalysisState } from '../state/analysisState.ts'
+import {
+  getAnalysisStateFingerprint,
+  viewSuggestionSchema,
+  type ViewSuggestion,
+} from '../state/viewSuggestions.ts'
 
 type ConversationPanelShellProps = {
   analysisState: AnalysisState
@@ -13,7 +18,10 @@ type ConversationPanelShellProps = {
   selectedActivityCount: number
   totalActivityCount: number
   dataSource: ActivityDataSourceId
+  onApplyViewSuggestion: (suggestion: ViewSuggestion) => void
 }
+
+type SuggestionStatus = 'applied' | 'dismissed'
 
 export function ConversationPanelShell({
   analysisState,
@@ -22,8 +30,12 @@ export function ConversationPanelShell({
   selectedActivityCount,
   totalActivityCount,
   dataSource,
+  onApplyViewSuggestion,
 }: ConversationPanelShellProps) {
   const [composerText, setComposerText] = useState('')
+  const [suggestionStatuses, setSuggestionStatuses] = useState<
+    Record<string, SuggestionStatus>
+  >({})
   const transport = useMemo(
     () => new DefaultChatTransport<UIMessage>({ api: '/api/chat' }),
     [],
@@ -63,7 +75,30 @@ export function ConversationPanelShell({
   function handleNewChat() {
     setMessages([])
     setComposerText('')
+    setSuggestionStatuses({})
     clearError()
+  }
+
+  function handleApplySuggestion(suggestion: ViewSuggestion) {
+    if (
+      getAnalysisStateFingerprint(analysisState) !==
+      suggestion.sourceStateFingerprint
+    ) {
+      return
+    }
+
+    onApplyViewSuggestion(suggestion)
+    setSuggestionStatuses((current) => ({
+      ...current,
+      [suggestion.id]: 'applied',
+    }))
+  }
+
+  function handleDismissSuggestion(suggestion: ViewSuggestion) {
+    setSuggestionStatuses((current) => ({
+      ...current,
+      [suggestion.id]: 'dismissed',
+    }))
   }
 
   return (
@@ -89,7 +124,14 @@ export function ConversationPanelShell({
           </p>
         )}
         {messages.map((message) => (
-          <ConversationMessage key={message.id} message={message} />
+          <ConversationMessage
+            key={message.id}
+            message={message}
+            analysisState={analysisState}
+            suggestionStatuses={suggestionStatuses}
+            onApplySuggestion={handleApplySuggestion}
+            onDismissSuggestion={handleDismissSuggestion}
+          />
         ))}
       </div>
 
@@ -124,8 +166,22 @@ export function ConversationPanelShell({
   )
 }
 
-function ConversationMessage({ message }: { message: UIMessage }) {
-  const hasToolActivity = message.parts.some((part) => isToolUIPart(part))
+function ConversationMessage({
+  message,
+  analysisState,
+  suggestionStatuses,
+  onApplySuggestion,
+  onDismissSuggestion,
+}: {
+  message: UIMessage
+  analysisState: AnalysisState
+  suggestionStatuses: Record<string, SuggestionStatus>
+  onApplySuggestion: (suggestion: ViewSuggestion) => void
+  onDismissSuggestion: (suggestion: ViewSuggestion) => void
+}) {
+  const hasAnalyticalToolActivity = message.parts.some(
+    (part) => isToolUIPart(part) && part.type !== 'tool-proposeViewSuggestion',
+  )
   const roleLabel = message.role === 'user' ? 'You' : 'Assistant'
 
   return (
@@ -134,15 +190,127 @@ function ConversationMessage({ message }: { message: UIMessage }) {
       <div className="conversation-message-content">
         {message.parts.map((part, index) => {
           if (part.type !== 'text') {
+            if (part.type === 'tool-proposeViewSuggestion') {
+              return (
+                <ViewSuggestionToolPart
+                  key={`${message.id}-${index}`}
+                  part={part}
+                  analysisState={analysisState}
+                  statusBySuggestionId={suggestionStatuses}
+                  onApply={onApplySuggestion}
+                  onDismiss={onDismissSuggestion}
+                />
+              )
+            }
+
             return null
           }
 
           return <p key={`${message.id}-${index}`}>{part.text}</p>
         })}
-        {message.role === 'assistant' && hasToolActivity && (
+        {message.role === 'assistant' && hasAnalyticalToolActivity && (
           <p className="conversation-tool-status">Analyzed selection</p>
         )}
       </div>
     </article>
+  )
+}
+
+type ViewSuggestionToolPartProps = {
+  part: UIMessage['parts'][number]
+  analysisState: AnalysisState
+  statusBySuggestionId: Record<string, SuggestionStatus>
+  onApply: (suggestion: ViewSuggestion) => void
+  onDismiss: (suggestion: ViewSuggestion) => void
+}
+
+function ViewSuggestionToolPart({
+  part,
+  analysisState,
+  statusBySuggestionId,
+  onApply,
+  onDismiss,
+}: ViewSuggestionToolPartProps) {
+  if (!('state' in part) || part.state !== 'output-available') {
+    return null
+  }
+
+  const parsedSuggestion = viewSuggestionSchema.safeParse(part.output)
+
+  if (!parsedSuggestion.success) {
+    return (
+      <p className="conversation-suggestion-status">Suggestion unavailable</p>
+    )
+  }
+
+  const suggestion = parsedSuggestion.data
+  const status = statusBySuggestionId[suggestion.id]
+
+  if (status === 'dismissed') {
+    return (
+      <p className="conversation-suggestion-status">Suggestion dismissed</p>
+    )
+  }
+
+  const isStale =
+    getAnalysisStateFingerprint(analysisState) !== suggestion.sourceStateFingerprint
+  const isApplied = status === 'applied'
+  const applyDisabled = isStale || isApplied
+
+  return (
+    <section className="conversation-suggestion-card" aria-label="View suggestion">
+      <div>
+        <p className="conversation-suggestion-title">{suggestion.label}</p>
+        {suggestion.rationale !== undefined && (
+          <p className="conversation-suggestion-rationale">
+            {suggestion.rationale}
+          </p>
+        )}
+      </div>
+
+      <ul className="conversation-suggestion-changes">
+        {suggestion.changes.map((change) => (
+          <li key={`${suggestion.id}-${change.field}`}>
+            <span>{change.label}</span>
+            <span>
+              {change.action === 'clear'
+                ? 'Clear'
+                : change.value ?? 'Set'}
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      {isStale && (
+        <p className="conversation-suggestion-status">
+          Current view or filters changed. Ask for a new suggestion.
+        </p>
+      )}
+      {isApplied && (
+        <p className="conversation-suggestion-status">Suggestion applied</p>
+      )}
+
+      <div className="conversation-suggestion-actions">
+        <button
+          className="secondary-button"
+          type="button"
+          disabled={applyDisabled}
+          onClick={() => {
+            onApply(suggestion)
+          }}
+        >
+          Apply
+        </button>
+        <button
+          className="secondary-button"
+          type="button"
+          onClick={() => {
+            onDismiss(suggestion)
+          }}
+        >
+          Dismiss
+        </button>
+      </div>
+    </section>
   )
 }

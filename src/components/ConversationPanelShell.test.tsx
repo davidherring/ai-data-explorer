@@ -7,6 +7,10 @@ import {
   defaultAnalysisState,
   type AnalysisState,
 } from '../state/analysisState.ts'
+import {
+  getAnalysisStateFingerprint,
+  type ViewSuggestion,
+} from '../state/viewSuggestions.ts'
 import { ConversationPanelShell } from './ConversationPanelShell.tsx'
 
 const chatState = vi.hoisted(() => ({
@@ -45,6 +49,7 @@ describe('ConversationPanelShell', () => {
         selectedActivityCount={selectedActivities.length}
         totalActivityCount={12}
         dataSource="demo"
+        onApplyViewSuggestion={() => {}}
       />,
     )
 
@@ -88,6 +93,7 @@ describe('ConversationPanelShell', () => {
         selectedActivityCount={initialActivities.length}
         totalActivityCount={12}
         dataSource="demo"
+        onApplyViewSuggestion={() => {}}
       />,
     )
 
@@ -104,6 +110,7 @@ describe('ConversationPanelShell', () => {
         selectedActivityCount={nextActivities.length}
         totalActivityCount={20}
         dataSource="strava"
+        onApplyViewSuggestion={() => {}}
       />,
     )
     fireEvent.change(screen.getByLabelText('Ask about the current view'), {
@@ -133,6 +140,7 @@ describe('ConversationPanelShell', () => {
         selectedActivityCount={activities.length}
         totalActivityCount={12}
         dataSource="demo"
+        onApplyViewSuggestion={() => {}}
       />,
     )
 
@@ -147,6 +155,7 @@ describe('ConversationPanelShell', () => {
         selectedActivityCount={0}
         totalActivityCount={12}
         dataSource="demo"
+        onApplyViewSuggestion={() => {}}
       />,
     )
 
@@ -188,6 +197,220 @@ describe('ConversationPanelShell', () => {
     expect(screen.getByText('I checked the selected activities.')).toBeInTheDocument()
     expect(screen.getByText('Analyzed selection')).toBeInTheDocument()
     expect(screen.queryByText('activityCount')).not.toBeInTheDocument()
+  })
+
+  it('renders a validated View Suggestion card without generic tool status', () => {
+    chatState.messages = [
+      {
+        id: 'assistant-message',
+        role: 'assistant',
+        parts: [
+          { type: 'text', text: 'This view may help.' },
+          createSuggestionToolPart(createSuggestion()),
+        ],
+      } as UIMessage,
+    ]
+
+    render(createPanel())
+
+    expect(screen.getByText('This view may help.')).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'View suggestion' })).toBeInTheDocument()
+    expect(screen.getByText('Compare speed and elevation')).toBeInTheDocument()
+    expect(screen.getByText('Elevation may explain the speed pattern.')).toBeInTheDocument()
+    expect(screen.getByText('View')).toBeInTheDocument()
+    expect(screen.getByText('Relationship')).toBeInTheDocument()
+    expect(screen.getByText('X metric')).toBeInTheDocument()
+    expect(screen.getByText('Elevation gain')).toBeInTheDocument()
+    expect(screen.queryByText('Analyzed selection')).not.toBeInTheDocument()
+  })
+
+  it('applies a suggestion only through the parent callback', () => {
+    const onApplyViewSuggestion = vi.fn()
+    const suggestion = createSuggestion()
+    chatState.messages = [
+      {
+        id: 'assistant-message',
+        role: 'assistant',
+        parts: [createSuggestionToolPart(suggestion)],
+      } as UIMessage,
+    ]
+
+    render(createPanel({ onApplyViewSuggestion }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
+
+    expect(onApplyViewSuggestion).toHaveBeenCalledWith(suggestion)
+    expect(screen.getByText('Suggestion applied')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled()
+  })
+
+  it('prevents applying a stale suggestion after analysis state changes', () => {
+    const onApplyViewSuggestion = vi.fn()
+    const suggestion = createSuggestion()
+    chatState.messages = [
+      {
+        id: 'assistant-message',
+        role: 'assistant',
+        parts: [createSuggestionToolPart(suggestion)],
+      } as UIMessage,
+    ]
+
+    render(
+      createPanel({
+        analysisState: {
+          ...defaultAnalysisState,
+          selection: { years: [2026] },
+        },
+        onApplyViewSuggestion,
+      }),
+    )
+
+    expect(
+      screen.getByText('Current view or filters changed. Ask for a new suggestion.'),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
+    expect(onApplyViewSuggestion).not.toHaveBeenCalled()
+  })
+
+  it('updates a visible suggestion to stale when analysis props change', () => {
+    const suggestion = createSuggestion()
+    chatState.messages = [
+      {
+        id: 'assistant-message',
+        role: 'assistant',
+        parts: [createSuggestionToolPart(suggestion)],
+      } as UIMessage,
+    ]
+    const { rerender } = render(createPanel())
+
+    expect(screen.queryByText(/Current view or filters changed/)).not.toBeInTheDocument()
+
+    rerender(
+      createPanel({
+        analysisState: {
+          ...defaultAnalysisState,
+          selection: { years: [2026] },
+        },
+      }),
+    )
+
+    expect(
+      screen.getByText('Current view or filters changed. Ask for a new suggestion.'),
+    ).toBeInTheDocument()
+  })
+
+  it('dismisses a suggestion without applying it', () => {
+    const onApplyViewSuggestion = vi.fn()
+    chatState.messages = [
+      {
+        id: 'assistant-message',
+        role: 'assistant',
+        parts: [createSuggestionToolPart(createSuggestion())],
+      } as UIMessage,
+    ]
+
+    render(createPanel({ onApplyViewSuggestion }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }))
+
+    expect(onApplyViewSuggestion).not.toHaveBeenCalled()
+    expect(screen.getByText('Suggestion dismissed')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Apply' })).not.toBeInTheDocument()
+  })
+
+  it('clears local suggestion status for New Chat', () => {
+    chatState.messages = [
+      {
+        id: 'assistant-message',
+        role: 'assistant',
+        parts: [createSuggestionToolPart(createSuggestion())],
+      } as UIMessage,
+    ]
+
+    render(createPanel())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }))
+    expect(screen.getByText('Suggestion dismissed')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'New Chat' }))
+
+    expect(chatState.setMessages).toHaveBeenCalledWith([])
+    expect(screen.queryByText('Suggestion dismissed')).not.toBeInTheDocument()
+  })
+
+  it('does not expose malformed suggestion output or allow Apply', () => {
+    chatState.messages = [
+      {
+        id: 'assistant-message',
+        role: 'assistant',
+        parts: [
+          {
+            type: 'tool-proposeViewSuggestion',
+            toolCallId: 'tool-a',
+            state: 'output-available',
+            input: {},
+            output: {
+              rawSecret: 'do-not-render',
+            },
+          },
+        ],
+      } as UIMessage,
+    ]
+
+    render(createPanel())
+
+    expect(screen.getByText('Suggestion unavailable')).toBeInTheDocument()
+    expect(screen.queryByText('do-not-render')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Apply' })).not.toBeInTheDocument()
+  })
+
+  it('keeps historical suggestion cards visible after later messages', () => {
+    chatState.messages = [
+      {
+        id: 'assistant-a',
+        role: 'assistant',
+        parts: [createSuggestionToolPart(createSuggestion())],
+      } as UIMessage,
+      createMessage('user-message', 'user', 'What about weekends?'),
+      createMessage('assistant-b', 'assistant', 'Weekends are more sparse.'),
+    ]
+
+    render(createPanel())
+
+    expect(screen.getByText('Compare speed and elevation')).toBeInTheDocument()
+    expect(screen.getByText('What about weekends?')).toBeInTheDocument()
+    expect(screen.getByText('Weekends are more sparse.')).toBeInTheDocument()
+  })
+
+  it('ignores streaming suggestion tool parts until output is available', () => {
+    chatState.messages = [
+      {
+        id: 'assistant-message',
+        role: 'assistant',
+        parts: [
+          {
+            type: 'tool-proposeViewSuggestion',
+            toolCallId: 'tool-a',
+            state: 'input-available',
+            input: {
+              label: 'Pending suggestion',
+              patch: {
+                view: {
+                  type: 'trend',
+                  yMetric: 'distanceMiles',
+                },
+              },
+            },
+          },
+        ],
+      } as UIMessage,
+    ]
+
+    render(createPanel())
+
+    expect(screen.queryByRole('region', { name: 'View suggestion' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Suggestion unavailable')).not.toBeInTheDocument()
   })
 
   it('clears transcript state and composer text for New Chat', () => {
@@ -254,6 +477,7 @@ function createPanel(
     selectedActivityCount: number
     totalActivityCount: number
     dataSource: 'demo' | 'strava'
+    onApplyViewSuggestion: (suggestion: ViewSuggestion) => void
   }> = {},
 ) {
   const selectedActivities = overrides.selectedActivities ?? [
@@ -270,8 +494,67 @@ function createPanel(
       selectedActivityCount={overrides.selectedActivityCount ?? selectedActivities.length}
       totalActivityCount={overrides.totalActivityCount ?? selectedActivities.length}
       dataSource={overrides.dataSource ?? 'demo'}
+      onApplyViewSuggestion={overrides.onApplyViewSuggestion ?? vi.fn()}
     />
   )
+}
+
+function createSuggestion(
+  overrides: Partial<ViewSuggestion> = {},
+): ViewSuggestion {
+  return {
+    id: overrides.id ?? 'suggestion-a',
+    label: overrides.label ?? 'Compare speed and elevation',
+    rationale: overrides.rationale ?? 'Elevation may explain the speed pattern.',
+    proposedState:
+      overrides.proposedState ??
+      {
+        ...defaultAnalysisState,
+        view: {
+          type: 'relationship',
+          xMetric: 'elevationGainFeet',
+          yMetric: 'averageSpeedMph',
+        },
+      },
+    changes:
+      overrides.changes ??
+      [
+        {
+          field: 'view.type',
+          action: 'set',
+          label: 'View',
+          value: 'Relationship',
+        },
+        {
+          field: 'view.xMetric',
+          action: 'set',
+          label: 'X metric',
+          value: 'Elevation gain',
+        },
+      ],
+    sourceStateFingerprint:
+      overrides.sourceStateFingerprint ??
+      getAnalysisStateFingerprint(defaultAnalysisState),
+  }
+}
+
+function createSuggestionToolPart(suggestion: ViewSuggestion) {
+  return {
+    type: 'tool-proposeViewSuggestion',
+    toolCallId: `tool-${suggestion.id}`,
+    state: 'output-available',
+    input: {
+      label: suggestion.label,
+      patch: {
+        view: {
+          type: 'relationship',
+          xMetric: 'elevationGainFeet',
+          yMetric: 'averageSpeedMph',
+        },
+      },
+    },
+    output: suggestion,
+  }
 }
 
 function createMessage(

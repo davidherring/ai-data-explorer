@@ -10,6 +10,7 @@ import {
   defaultAnalysisState,
   type AnalysisState,
 } from '../state/analysisState.ts'
+import type { ViewSuggestion } from '../state/viewSuggestions.ts'
 
 export function AppShell() {
   const activityDataSource = useActivityDataSource()
@@ -51,6 +52,9 @@ export function AppShell() {
           selectedActivityCount={selectedActivities.length}
           totalActivityCount={activityDataSource.activities.length}
           dataSource={activityDataSource.source}
+          onApplyViewSuggestion={(suggestion: ViewSuggestion) => {
+            setAnalysisState(suggestion.proposedState)
+          }}
         />
       </section>
 

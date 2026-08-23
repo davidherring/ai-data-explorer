@@ -567,6 +567,61 @@ select {
   font-weight: 700;
 }
 
+.conversation-suggestion-card {
+  display: grid;
+  gap: 10px;
+  border: 1px solid #cfd8d4;
+  border-radius: 8px;
+  padding: 10px;
+  background: #ffffff;
+}
+
+.conversation-suggestion-title {
+  margin: 0;
+  font-weight: 800;
+}
+
+.conversation-suggestion-rationale {
+  margin: 4px 0 0;
+  color: #53605c;
+  font-size: 0.9rem;
+}
+
+.conversation-suggestion-changes {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.conversation-suggestion-changes li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px solid #eef1ed;
+  padding-top: 6px;
+  font-size: 0.88rem;
+}
+
+.conversation-suggestion-changes li span:first-child {
+  color: #53605c;
+  font-weight: 700;
+}
+
+.conversation-suggestion-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.conversation-suggestion-status {
+  margin: 0;
+  color: #53605c;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
 .conversation-error {
   color: #9b2c2c;
 }
