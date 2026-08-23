@@ -219,3 +219,18 @@ Verification / exit criteria:
 ## Remaining Ambiguity
 
 No remaining approval issue is known.
+
+## Closeout Notes
+
+- `years`, `daysOfWeek`, and `recurringDateRange` are now required explicit `ActivitySelection` fields. `years: []` and `daysOfWeek: []` select zero activities; all seven days means all days.
+- Manual selection `dayMode` was removed, while grouped-comparison `dayMode` remains for weekday/weekend `compareGroups`.
+- The recurring Seasonal range is always explicit, defaults/resets to `01-01` through `12-31`, and composes with optional absolute date ranges using AND semantics.
+- View Suggestion schemas, fingerprints, and patches were aligned with required selection fields; `null` is no longer accepted for required fields, while optional filters still support clear/null semantics.
+- Source-aware year reconciliation lives in `AppShell`: first ready load and source changes select all available years; same-source refresh preserves narrowed selections, removes unavailable years, and auto-adds new years only when the prior selection represented all prior years.
+- Manual controls now separate primary Years and Activity type from collapsed `More Filters`; years/days have Select all and Clear all, absolute dates have explicit endpoint clears, and Seasonal uses Reset.
+- Chart cards now separate heading, View controls, Metric controls, selection summary, and visualization. Relationship controls reflow safely, phone-width chart controls stay contained, and Plot/chart analytical behavior was preserved.
+- Desktop conversation messages scroll inside the panel and the composer remains reachable after the final viewport-aware polish; mobile conversation remains normal document flow.
+- Manual smoke checks passed for demo/Strava loading, activity filtering, year/day controls, More Filters, date clearing, Seasonal reset, chart controls, mobile overflow, AI grounding, View Suggestions, and stale-suggestion protection.
+- Final verification passed: `npm run typecheck`, `npm run lint`, `npm test` (33 files, 404 tests), and `npm run build`; the existing Vite chunk-size warning remains unchanged.
+- Deferred work: chat payload/data-transport scaling, hover/tooltips, broader visualization and conversation polish, multiple-pending View Suggestion lifecycle decisions, richer query/comparison capability, and persistence/history features.
+- Architectural lesson: manual UI, filtering, validation, AI grounding, and View Suggestions now share explicit typed selection semantics instead of inferring default/all/empty behavior from UI conventions.
