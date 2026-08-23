@@ -427,6 +427,10 @@ The assistant may optionally propose a dashboard state change.
 
 A suggestion should be used when a visual or selection change would materially help answer the current question.
 
+The model supplies a constrained patch, not a complete dashboard state.
+The server validates the patch, applies it to the submitted `AnalysisState`,
+constructs a complete `proposedState`, and returns only a validated suggestion.
+
 Conceptually:
 
 ```ts
@@ -435,22 +439,35 @@ type AnalysisSuggestion = {
   label: string;
   proposedState: AnalysisState;
   rationale?: string;
+  sourceStateFingerprint: string;
 };
 ```
 
-The visible interface may simply render:
+Sprint 11 supports patches for view metrics and these selection fields:
+`years`, `dayMode`, `daysOfWeek`, `dateRange`, `recurringDateRange`,
+`distanceMiles`, `elevationGainFeet`, and `sportType`.
 
-View Suggestion
+It does not support `comparison`, `grouping`, or arbitrary query expressions.
+
+The visible interface renders:
+
+View Suggestion with Apply and Dismiss controls.
 
 The current dashboard should remain unchanged until the user accepts.
+Suggestions are optional and do not replace deterministic tools for numerical
+claims.
 
 ## 15. Suggestion Acceptance
 
 When the user selects View Suggestion:
 
 the proposed state is applied;
-the dashboard updates;
-the acceptance is recorded in the active conversation.
+the dashboard updates.
+
+Apply is allowed only when the suggestion's source-state fingerprint still
+matches the current `AnalysisState`. If the user has changed the view or filters
+since the suggestion was generated, the suggestion is treated as stale and must
+not be merged or applied.
 
 Conceptually:
 
@@ -462,7 +479,8 @@ type SuggestionAcceptedEvent = {
 };
 ```
 
-This event may remain invisible or minimally visible in the chat UI.
+This event is a future conversation-continuity concept. Sprint 11 does not add a
+synthetic transcript event for Apply or Dismiss.
 
 Its main purpose is conversational continuity and debugging.
 

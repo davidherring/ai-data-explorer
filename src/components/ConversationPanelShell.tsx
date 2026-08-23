@@ -1,6 +1,7 @@
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport, isToolUIPart, type UIMessage } from 'ai'
 import { useMemo, useState, type FormEvent } from 'react'
+import Markdown, { type Components } from 'react-markdown'
 import type { DatasetProfile } from '../analysis/aiContext.ts'
 import type { ActivityDataSourceId } from '../data/activityDataSource.ts'
 import type { Activity } from '../data/activity.ts'
@@ -206,6 +207,14 @@ function ConversationMessage({
             return null
           }
 
+          if (message.role === 'assistant') {
+            return (
+              <AssistantMarkdown key={`${message.id}-${index}`}>
+                {part.text}
+              </AssistantMarkdown>
+            )
+          }
+
           return <p key={`${message.id}-${index}`}>{part.text}</p>
         })}
         {message.role === 'assistant' && hasAnalyticalToolActivity && (
@@ -214,6 +223,56 @@ function ConversationMessage({
       </div>
     </article>
   )
+}
+
+const assistantMarkdownComponents: Components = {
+  a({ href, children }) {
+    if (!isSafeMarkdownLink(href)) {
+      return <span>{children}</span>
+    }
+
+    const opensExternally =
+      href.startsWith('http://') || href.startsWith('https://')
+
+    return (
+      <a
+        href={href}
+        rel={opensExternally ? 'noreferrer' : undefined}
+        target={opensExternally ? '_blank' : undefined}
+      >
+        {children}
+      </a>
+    )
+  },
+}
+
+function AssistantMarkdown({ children }: { children: string }) {
+  return (
+    <div className="conversation-markdown">
+      <Markdown
+        allowedElements={['p', 'strong', 'em', 'ol', 'ul', 'li', 'code', 'a']}
+        components={assistantMarkdownComponents}
+        unwrapDisallowed
+        urlTransform={(url) => url}
+      >
+        {children}
+      </Markdown>
+    </div>
+  )
+}
+
+function isSafeMarkdownLink(href: string | undefined): href is string {
+  if (href === undefined) {
+    return false
+  }
+
+  try {
+    const parsedUrl = new URL(href)
+
+    return ['http:', 'https:', 'mailto:'].includes(parsedUrl.protocol)
+  } catch {
+    return false
+  }
 }
 
 type ViewSuggestionToolPartProps = {

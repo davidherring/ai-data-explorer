@@ -387,25 +387,28 @@ This separation allows the application to preserve useful state while controllin
 
 ## 15. View Suggestion Architecture
 
-A View Suggestion should contain a typed proposed state.
+A View Suggestion contains a validated typed proposed state plus the fingerprint
+of the exact source `AnalysisState`.
 
-Example:
+The model does not author a complete `AnalysisState` and must not directly mutate
+application state. It calls `proposeViewSuggestion` with a constrained patch. The
+server applies that patch to the submitted current state, restores fixed view
+configuration fields, validates the resulting state, and returns only valid
+structured suggestion data.
 
-type AnalysisSuggestion = {
-  id: string;
-  label: string;
-  proposedState: AnalysisState;
-};
+Supported first-version patches cover view metric changes and selected activity
+filters: years, day mode, days of week, absolute date range, recurring date
+range, distance, elevation gain, and sport type. `comparison`, `grouping`, and
+arbitrary query language are not supported.
 
-The model should not directly mutate application state.
-
-The frontend receives the suggestion and renders a user-controlled action.
-
-On acceptance:
+The frontend receives the suggestion and renders Apply/Dismiss controls. Apply
+compares the source-state fingerprint with the current `AnalysisState` before
+calling:
 
 setAnalysisState(suggestion.proposedState);
 
-The action is then recorded in the conversation history.
+Stale suggestions are not merged or reconciled. Sprint 11 does not add synthetic
+Apply/Dismiss transcript events.
 
 
 ## 16. Visualization Layer

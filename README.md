@@ -38,3 +38,5 @@ The chat transcript is browser-memory only. New Chat clears the visible transcri
 Deterministic tools perform analytical calculations server-side over the submitted selected activities. The model interprets structured tool results; raw activity arrays are available to tools but are not pasted into the model prompt text.
 
 Grouped comparison tools can compare years, months, weekdays/weekends, or days of week only within the activities included in the submitted selection; they do not reach outside the current selection. Their outputs are deterministic observations and associations for the assistant to interpret, not causal proof.
+
+The assistant may propose a typed View Suggestion when changing a view or filter would materially help. Suggestions are validated server-side, shown as user-controlled Apply/Dismiss cards, and never mutate `AnalysisState` automatically. Apply is guarded by a source-state fingerprint, so stale suggestions cannot apply after the user changes the current view or filters. Sprint 11 suggestions support only constrained view and selection fields; `comparison`, `grouping`, and arbitrary query language are not supported.

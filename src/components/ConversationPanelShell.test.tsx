@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import type { UIMessage } from 'ai'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { buildDatasetProfile, type DatasetProfile } from '../analysis/aiContext.ts'
@@ -174,6 +174,81 @@ describe('ConversationPanelShell', () => {
     expect(screen.getByText('The selected activities are sparse.')).toBeInTheDocument()
   })
 
+  it('renders assistant markdown for emphasis and lists', () => {
+    chatState.messages = [
+      createMessage(
+        'assistant-message',
+        'assistant',
+        '**Important** _seasonal_ pattern:\n\n- First item\n- Second item\n\n1. Ordered item\n2. Next ordered item\n\nUse `averageSpeedMph`.',
+      ),
+    ]
+
+    const { container } = render(createPanel())
+
+    expect(container.querySelector('strong')).toHaveTextContent('Important')
+    expect(container.querySelector('em')).toHaveTextContent('seasonal')
+    expect(screen.getByText('First item')).toBeInTheDocument()
+    expect(screen.getByText('Second item')).toBeInTheDocument()
+    expect(screen.getByText('Ordered item')).toBeInTheDocument()
+    expect(screen.getByText('Next ordered item')).toBeInTheDocument()
+    expect(container.querySelector('code')).toHaveTextContent('averageSpeedMph')
+    expect(screen.queryByText(/\*\*Important\*\*/)).not.toBeInTheDocument()
+  })
+
+  it('renders assistant safe links and blocks unsafe links', () => {
+    chatState.messages = [
+      createMessage(
+        'assistant-message',
+        'assistant',
+        '[Docs](https://example.com/docs) [Email](mailto:test@example.com) [Unsafe](javascript:alert(1))',
+      ),
+    ]
+
+    render(createPanel())
+
+    expect(screen.getByRole('link', { name: 'Docs' })).toHaveAttribute(
+      'href',
+      'https://example.com/docs',
+    )
+    expect(screen.getByRole('link', { name: 'Docs' })).toHaveAttribute(
+      'rel',
+      'noreferrer',
+    )
+    expect(screen.getByRole('link', { name: 'Email' })).toHaveAttribute(
+      'href',
+      'mailto:test@example.com',
+    )
+    expect(screen.queryByRole('link', { name: 'Unsafe' })).not.toBeInTheDocument()
+    expect(screen.getByText('Unsafe')).toBeInTheDocument()
+  })
+
+  it('does not render raw assistant HTML as trusted HTML', () => {
+    chatState.messages = [
+      createMessage(
+        'assistant-message',
+        'assistant',
+        'Do not trust <button>Injected action</button> markup.',
+      ),
+    ]
+
+    render(createPanel())
+
+    expect(
+      screen.queryByRole('button', { name: 'Injected action' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('keeps user markdown as plain text', () => {
+    chatState.messages = [
+      createMessage('user-message', 'user', '**Do not format my input**'),
+    ]
+
+    const { container } = render(createPanel())
+
+    expect(screen.getByText('**Do not format my input**')).toBeInTheDocument()
+    expect(container.querySelector('strong')).not.toBeInTheDocument()
+  })
+
   it('renders one minimal tool status for assistant tool activity', () => {
     chatState.messages = [
       {
@@ -206,7 +281,9 @@ describe('ConversationPanelShell', () => {
         role: 'assistant',
         parts: [
           { type: 'text', text: 'This view may help.' },
-          createSuggestionToolPart(createSuggestion()),
+          createSuggestionToolPart(
+            createSuggestion({ label: '**Compare speed and elevation**' }),
+          ),
         ],
       } as UIMessage,
     ]
@@ -215,12 +292,17 @@ describe('ConversationPanelShell', () => {
 
     expect(screen.getByText('This view may help.')).toBeInTheDocument()
     expect(screen.getByRole('region', { name: 'View suggestion' })).toBeInTheDocument()
-    expect(screen.getByText('Compare speed and elevation')).toBeInTheDocument()
+    expect(screen.getByText('**Compare speed and elevation**')).toBeInTheDocument()
     expect(screen.getByText('Elevation may explain the speed pattern.')).toBeInTheDocument()
     expect(screen.getByText('View')).toBeInTheDocument()
     expect(screen.getByText('Relationship')).toBeInTheDocument()
     expect(screen.getByText('X metric')).toBeInTheDocument()
     expect(screen.getByText('Elevation gain')).toBeInTheDocument()
+    expect(
+      within(screen.getByRole('region', { name: 'View suggestion' })).queryByText(
+        'Compare speed and elevation',
+      ),
+    ).not.toBeInTheDocument()
     expect(screen.queryByText('Analyzed selection')).not.toBeInTheDocument()
   })
 

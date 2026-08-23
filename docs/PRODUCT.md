@@ -137,6 +137,9 @@ When a different view or selection would help, the assistant may provide a short
 
 The user decides whether to apply it.
 
+Suggestions are typed, validated, and user-controlled. They must not change
+dashboard state automatically.
+
 Not every AI response should include a suggestion.
 
 The interaction is an ongoing dialogue, not a sequence of forced actions.
@@ -253,7 +256,8 @@ Example:
 
 Applying the suggestion updates the dashboard only after the user accepts it.
 
-The accepted action should be recorded as part of the conversation history.
+Sprint 11 does not create a synthetic transcript event when a suggestion is
+applied or dismissed.
 
 ---
 

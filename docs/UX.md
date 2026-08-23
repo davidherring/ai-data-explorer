@@ -296,14 +296,18 @@ Assistant:
 "Your 2026 Wednesday activities contain substantially more elevation than earlier years. A speed-versus-elevation view would help test whether activity difficulty explains the difference."
 
 [View Suggestion]
+Apply
+Dismiss
 
 The button should not interrupt the user's reading or automatically change the workspace.
 
 If the user chooses the suggestion:
 
 the proposed analysis state is applied;
-the visualization updates;
-the accepted action is recorded in the conversation context.
+the visualization updates.
+
+If the user changes the view or filters after the suggestion was generated,
+Apply should become unavailable and the UI should ask for a new suggestion.
 
 The user may ignore the suggestion and continue the conversation instead.
 
@@ -314,15 +318,24 @@ A suggestion should contain enough structured information to reproduce the propo
 Conceptually:
 
 type AnalysisSuggestion = {
+  id: string;
   label: string;
+  rationale?: string;
   proposedState: AnalysisState;
+  sourceStateFingerprint: string;
 };
 
-The visible UI may only show:
+The visible UI should show:
 
 View Suggestion
+Apply
+Dismiss
 
 The underlying structured state preserves exactly what will change.
+
+The first version supports constrained view metric changes and selected activity
+filters. It does not support comparison mode, grouping, or arbitrary query
+language.
 
 ## 14. Conversation transcript
 
@@ -340,11 +353,9 @@ Assistant response
 Tool results
 Optional analysis suggestion
 
-
-Optional UI event:
-suggestion accepted
-
-Dashboard changes made between messages do not need to be stored as transcript events.
+Dashboard changes made between messages do not need to be stored as transcript
+events. Sprint 11 Apply/Dismiss actions update local UI state but do not create
+synthetic transcript messages.
 
 ## 15. Conversation lifecycle
 
