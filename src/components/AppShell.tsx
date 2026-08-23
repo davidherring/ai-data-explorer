@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnalysisWorkspaceShell } from './AnalysisWorkspaceShell.tsx'
 import { ConversationPanelShell } from './ConversationPanelShell.tsx'
 import { ActivityDataSourceControl } from './ActivityDataSourceControl.tsx'
@@ -6,16 +6,67 @@ import { StravaConnectionControl } from './StravaConnectionControl.tsx'
 import { buildDatasetProfile } from '../analysis/aiContext.ts'
 import { filterActivities } from '../analysis/filterActivities.ts'
 import { useActivityDataSource } from '../hooks/useActivityDataSource.ts'
+import type { ActivityDataSourceId } from '../data/activityDataSource.ts'
 import {
   defaultAnalysisState,
   type AnalysisState,
 } from '../state/analysisState.ts'
+import {
+  areNumberArraysEqual,
+  reconcileSelectedYears,
+  sortYearsAscending,
+} from '../state/yearSelection.ts'
 import type { ViewSuggestion } from '../state/viewSuggestions.ts'
+
+type ReadySourceSnapshot = {
+  source: ActivityDataSourceId
+  availableYears: number[]
+}
 
 export function AppShell() {
   const activityDataSource = useActivityDataSource()
   const [analysisState, setAnalysisState] =
     useState<AnalysisState>(defaultAnalysisState)
+  const previousReadySource = useRef<ReadySourceSnapshot | undefined>(undefined)
+  const availableYears = useMemo(
+    () => getAvailableYears(activityDataSource.activities),
+    [activityDataSource.activities],
+  )
+
+  useEffect(() => {
+    if (activityDataSource.status !== 'ready') {
+      return
+    }
+
+    const previous = previousReadySource.current
+
+    setAnalysisState((current) => {
+      const years = reconcileSelectedYears({
+        availableYears,
+        previousAvailableYears: previous?.availableYears,
+        previousSource: previous?.source,
+        selectedYears: current.selection.years,
+        source: activityDataSource.source,
+      })
+
+      if (areNumberArraysEqual(years, current.selection.years)) {
+        return current
+      }
+
+      return {
+        ...current,
+        selection: {
+          ...current.selection,
+          years,
+        },
+      }
+    })
+
+    previousReadySource.current = {
+      source: activityDataSource.source,
+      availableYears,
+    }
+  }, [activityDataSource.source, activityDataSource.status, availableYears])
 
   const selectedActivities = useMemo(
     () => filterActivities(activityDataSource.activities, analysisState.selection),
@@ -74,4 +125,8 @@ export function AppShell() {
       </section>
     </main>
   )
+}
+
+function getAvailableYears(activities: readonly { year: number }[]): number[] {
+  return sortYearsAscending(Array.from(new Set(activities.map((activity) => activity.year))))
 }

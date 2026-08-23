@@ -32,7 +32,16 @@ export function ActivitySelectionControls({
   onSelectionChange,
 }: ActivitySelectionControlsProps) {
   const availableYears = getAvailableYears(activities)
+  const selectedAllYears = areNumberArraysEqual(
+    selection.years,
+    getYearsForState(availableYears),
+  )
   const availableSportTypes = getAvailableSportTypes(activities)
+  const activeMoreFilterCount = countActiveMoreFilters(selection)
+  const moreFiltersLabel =
+    activeMoreFilterCount > 0
+      ? `More Filters (${activeMoreFilterCount})`
+      : 'More Filters'
   const [recurringStartInput, setRecurringStartInput] = useState(
     formatMonthDay(selection.recurringDateRange?.start),
   )
@@ -47,234 +56,316 @@ export function ActivitySelectionControls({
 
   return (
     <form className="selection-controls" aria-label="Activity selection controls">
-      <fieldset className="control-group control-group-years control-group-compact">
-        <legend>Years</legend>
-        <div className="checkbox-row">
-          {availableYears.map((year) => (
-            <label className="checkbox-pill" key={year}>
-              <input
-                type="checkbox"
-                checked={selection.years?.includes(year) ?? false}
-                onChange={() => {
-                  onSelectionChange(updateYears(selection, year))
-                }}
-              />
-              <span>{year}</span>
-            </label>
-          ))}
-        </div>
-        <p className="control-help">Select at least one year to include activities.</p>
-      </fieldset>
-
-      <fieldset className="control-group control-group-date">
-        <legend>Date range</legend>
-        <div className="bounds-row">
-          <label>
-            <span>Start</span>
-            <input
-              type="date"
-              value={selection.dateRange?.start ?? ''}
-              onChange={(event) => {
-                onSelectionChange(
-                  updateDateRange(selection, 'start', event.currentTarget.value),
-                )
+      <div className="selection-controls-primary">
+        <fieldset className="control-group control-group-years control-group-compact">
+          <legend>Years</legend>
+          <div className="control-actions-row" aria-label="Year selection actions">
+            <button
+              className="secondary-button compact-button"
+              disabled={selectedAllYears}
+              type="button"
+              onClick={() => {
+                onSelectionChange(selectAllYears(selection, availableYears))
               }}
-            />
-          </label>
-          <label>
-            <span>End</span>
-            <input
-              type="date"
-              value={selection.dateRange?.end ?? ''}
-              onChange={(event) => {
-                onSelectionChange(
-                  updateDateRange(selection, 'end', event.currentTarget.value),
-                )
+            >
+              Select all
+            </button>
+            <button
+              className="secondary-button compact-button"
+              disabled={selection.years.length === 0}
+              type="button"
+              onClick={() => {
+                onSelectionChange({
+                  ...selection,
+                  years: [],
+                })
               }}
-            />
-          </label>
-        </div>
-      </fieldset>
-
-      <fieldset className="control-group control-group-seasonal-window">
-        <legend>Seasonal window</legend>
-        <div className="bounds-row">
-          <label>
-            <span>Season start</span>
-            <input
-              inputMode="numeric"
-              placeholder="MM-DD"
-              value={recurringStartInput}
-              onChange={(event) => {
-                const value = event.currentTarget.value
-                setRecurringStartInput(value)
-                commitRecurringDateRange(selection, value, recurringEndInput, onSelectionChange)
-              }}
-            />
-          </label>
-          <label>
-            <span>Season end</span>
-            <input
-              inputMode="numeric"
-              placeholder="MM-DD"
-              value={recurringEndInput}
-              onChange={(event) => {
-                const value = event.currentTarget.value
-                setRecurringEndInput(value)
-                commitRecurringDateRange(selection, recurringStartInput, value, onSelectionChange)
-              }}
-            />
-          </label>
-        </div>
-        <button
-          className="secondary-button"
-          type="button"
-          onClick={() => {
-            setRecurringStartInput(formatMonthDay(defaultRecurringDateRange.start))
-            setRecurringEndInput(formatMonthDay(defaultRecurringDateRange.end))
-            onSelectionChange({
-              ...selection,
-              recurringDateRange: cloneRecurringDateRange(defaultRecurringDateRange),
-            })
-          }}
-        >
-          Reset seasonal window
-        </button>
-      </fieldset>
-
-      <fieldset className="control-group control-group-days control-group-compact">
-        <legend>Day filters</legend>
-        <div className="day-checkboxes" aria-label="Specific days of week">
-          <span>Specific days</span>
+            >
+              Clear all
+            </button>
+          </div>
           <div className="checkbox-row">
-            {daysOfWeek.map((day) => (
-              <label className="checkbox-pill" key={day}>
+            {availableYears.map((year) => (
+              <label className="checkbox-pill" key={year}>
                 <input
                   type="checkbox"
-                  checked={selection.daysOfWeek.includes(day)}
+                  checked={selection.years.includes(year)}
                   onChange={() => {
-                    onSelectionChange(updateDaysOfWeek(selection, day))
+                    onSelectionChange(updateYears(selection, year))
                   }}
                 />
-                <span>{formatDayOfWeek(day)}</span>
+                <span>{year}</span>
               </label>
             ))}
           </div>
-        </div>
-      </fieldset>
+          <p className="control-help">Select at least one year to include activities.</p>
+        </fieldset>
 
-      <fieldset className="control-group control-group-distance">
-        <legend>Distance</legend>
-        <div className="bounds-row">
+        <fieldset className="control-group control-group-activity-type">
+          <legend>Activity type</legend>
           <label>
-            <span>Min mi</span>
-            <input
-              inputMode="decimal"
-              type="number"
-              value={selection.distanceMiles?.min ?? ''}
+            <span>Type</span>
+            <select
+              value={selection.sportType ?? ''}
               onChange={(event) => {
-                onSelectionChange(
-                  updateNumericRange(
-                    selection,
-                    'distanceMiles',
-                    'min',
-                    event.currentTarget.value,
-                  ),
-                )
+                onSelectionChange(updateSportType(selection, event.currentTarget.value))
               }}
-            />
+            >
+              <option value="">All types</option>
+              {availableSportTypes.map((sportType) => (
+                <option key={sportType} value={sportType}>
+                  {sportType}
+                </option>
+              ))}
+            </select>
           </label>
-          <label>
-            <span>Max mi</span>
-            <input
-              inputMode="decimal"
-              type="number"
-              value={selection.distanceMiles?.max ?? ''}
-              onChange={(event) => {
-                onSelectionChange(
-                  updateNumericRange(
-                    selection,
-                    'distanceMiles',
-                    'max',
-                    event.currentTarget.value,
-                  ),
-                )
-              }}
-            />
-          </label>
-        </div>
-      </fieldset>
-
-      <fieldset className="control-group control-group-elevation">
-        <legend>Elevation</legend>
-        <div className="bounds-row">
-          <label>
-            <span>Min ft</span>
-            <input
-              inputMode="decimal"
-              type="number"
-              value={selection.elevationGainFeet?.min ?? ''}
-              onChange={(event) => {
-                onSelectionChange(
-                  updateNumericRange(
-                    selection,
-                    'elevationGainFeet',
-                    'min',
-                    event.currentTarget.value,
-                  ),
-                )
-              }}
-            />
-          </label>
-          <label>
-            <span>Max ft</span>
-            <input
-              inputMode="decimal"
-              type="number"
-              value={selection.elevationGainFeet?.max ?? ''}
-              onChange={(event) => {
-                onSelectionChange(
-                  updateNumericRange(
-                    selection,
-                    'elevationGainFeet',
-                    'max',
-                    event.currentTarget.value,
-                  ),
-                )
-              }}
-            />
-          </label>
-        </div>
-      </fieldset>
-
-      <fieldset className="control-group control-group-actions">
-        <legend>Sport type</legend>
-        <label>
-          <span>Type</span>
-          <select
-            value={selection.sportType ?? ''}
-            onChange={(event) => {
-              onSelectionChange(updateSportType(selection, event.currentTarget.value))
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={() => {
+              setRecurringStartInput(formatMonthDay(defaultRecurringDateRange.start))
+              setRecurringEndInput(formatMonthDay(defaultRecurringDateRange.end))
+              onSelectionChange(buildResetSelection(availableYears))
             }}
           >
-            <option value="">All types</option>
-            {availableSportTypes.map((sportType) => (
-              <option key={sportType} value={sportType}>
-                {sportType}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button
-          className="secondary-button"
-          type="button"
-          onClick={() => {
-            onSelectionChange(defaultAnalysisState.selection)
-          }}
-        >
-          Reset filters
-        </button>
-      </fieldset>
+            Reset filters
+          </button>
+        </fieldset>
+      </div>
+
+      <details className="selection-controls-more">
+        <summary>{moreFiltersLabel}</summary>
+        <div className="selection-controls-more-grid">
+          <fieldset className="control-group control-group-days control-group-compact">
+            <legend>Days</legend>
+            <div className="control-actions-row" aria-label="Day selection actions">
+              <button
+                className="secondary-button compact-button"
+                disabled={selection.daysOfWeek.length === daysOfWeek.length}
+                type="button"
+                onClick={() => {
+                  onSelectionChange({
+                    ...selection,
+                    daysOfWeek: [...daysOfWeek],
+                  })
+                }}
+              >
+                Select all
+              </button>
+              <button
+                className="secondary-button compact-button"
+                disabled={selection.daysOfWeek.length === 0}
+                type="button"
+                onClick={() => {
+                  onSelectionChange({
+                    ...selection,
+                    daysOfWeek: [],
+                  })
+                }}
+              >
+                Clear all
+              </button>
+            </div>
+            <div className="day-checkboxes" aria-label="Specific days of week">
+              <span>Specific days</span>
+              <div className="checkbox-row">
+                {daysOfWeek.map((day) => (
+                  <label className="checkbox-pill" key={day}>
+                    <input
+                      type="checkbox"
+                      checked={selection.daysOfWeek.includes(day)}
+                      onChange={() => {
+                        onSelectionChange(updateDaysOfWeek(selection, day))
+                      }}
+                    />
+                    <span>{formatDayOfWeek(day)}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset className="control-group control-group-date">
+            <legend>Date range</legend>
+            <div className="bounds-row bounds-row-with-clear">
+              <label>
+                <span>Start</span>
+                <input
+                  type="date"
+                  value={selection.dateRange?.start ?? ''}
+                  onChange={(event) => {
+                    onSelectionChange(
+                      updateDateRange(selection, 'start', event.currentTarget.value),
+                    )
+                  }}
+                />
+              </label>
+              <button
+                className="secondary-button compact-button"
+                disabled={selection.dateRange?.start === undefined}
+                type="button"
+                onClick={() => {
+                  onSelectionChange(updateDateRange(selection, 'start', ''))
+                }}
+              >
+                Clear start
+              </button>
+              <label>
+                <span>End</span>
+                <input
+                  type="date"
+                  value={selection.dateRange?.end ?? ''}
+                  onChange={(event) => {
+                    onSelectionChange(
+                      updateDateRange(selection, 'end', event.currentTarget.value),
+                    )
+                  }}
+                />
+              </label>
+              <button
+                className="secondary-button compact-button"
+                disabled={selection.dateRange?.end === undefined}
+                type="button"
+                onClick={() => {
+                  onSelectionChange(updateDateRange(selection, 'end', ''))
+                }}
+              >
+                Clear end
+              </button>
+            </div>
+          </fieldset>
+
+          <fieldset className="control-group control-group-seasonal-window">
+            <legend>Seasonal window</legend>
+            <div className="bounds-row">
+              <label>
+                <span>Season start</span>
+                <input
+                  inputMode="numeric"
+                  placeholder="MM-DD"
+                  value={recurringStartInput}
+                  onChange={(event) => {
+                    const value = event.currentTarget.value
+                    setRecurringStartInput(value)
+                    commitRecurringDateRange(selection, value, recurringEndInput, onSelectionChange)
+                  }}
+                />
+              </label>
+              <label>
+                <span>Season end</span>
+                <input
+                  inputMode="numeric"
+                  placeholder="MM-DD"
+                  value={recurringEndInput}
+                  onChange={(event) => {
+                    const value = event.currentTarget.value
+                    setRecurringEndInput(value)
+                    commitRecurringDateRange(selection, recurringStartInput, value, onSelectionChange)
+                  }}
+                />
+              </label>
+            </div>
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() => {
+                setRecurringStartInput(formatMonthDay(defaultRecurringDateRange.start))
+                setRecurringEndInput(formatMonthDay(defaultRecurringDateRange.end))
+                onSelectionChange({
+                  ...selection,
+                  recurringDateRange: cloneRecurringDateRange(defaultRecurringDateRange),
+                })
+              }}
+            >
+              Reset seasonal window
+            </button>
+          </fieldset>
+
+          <fieldset className="control-group control-group-distance">
+            <legend>Distance</legend>
+            <div className="bounds-row">
+              <label>
+                <span>Min mi</span>
+                <input
+                  inputMode="decimal"
+                  type="number"
+                  value={selection.distanceMiles?.min ?? ''}
+                  onChange={(event) => {
+                    onSelectionChange(
+                      updateNumericRange(
+                        selection,
+                        'distanceMiles',
+                        'min',
+                        event.currentTarget.value,
+                      ),
+                    )
+                  }}
+                />
+              </label>
+              <label>
+                <span>Max mi</span>
+                <input
+                  inputMode="decimal"
+                  type="number"
+                  value={selection.distanceMiles?.max ?? ''}
+                  onChange={(event) => {
+                    onSelectionChange(
+                      updateNumericRange(
+                        selection,
+                        'distanceMiles',
+                        'max',
+                        event.currentTarget.value,
+                      ),
+                    )
+                  }}
+                />
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset className="control-group control-group-elevation">
+            <legend>Elevation</legend>
+            <div className="bounds-row">
+              <label>
+                <span>Min ft</span>
+                <input
+                  inputMode="decimal"
+                  type="number"
+                  value={selection.elevationGainFeet?.min ?? ''}
+                  onChange={(event) => {
+                    onSelectionChange(
+                      updateNumericRange(
+                        selection,
+                        'elevationGainFeet',
+                        'min',
+                        event.currentTarget.value,
+                      ),
+                    )
+                  }}
+                />
+              </label>
+              <label>
+                <span>Max ft</span>
+                <input
+                  inputMode="decimal"
+                  type="number"
+                  value={selection.elevationGainFeet?.max ?? ''}
+                  onChange={(event) => {
+                    onSelectionChange(
+                      updateNumericRange(
+                        selection,
+                        'elevationGainFeet',
+                        'max',
+                        event.currentTarget.value,
+                      ),
+                    )
+                  }}
+                />
+              </label>
+            </div>
+          </fieldset>
+        </div>
+      </details>
     </form>
   )
 }
@@ -283,6 +374,10 @@ function getAvailableYears(activities: readonly Activity[]): number[] {
   return Array.from(new Set(activities.map((activity) => activity.year))).sort(
     (left, right) => right - left,
   )
+}
+
+function getYearsForState(availableYears: readonly number[]): number[] {
+  return [...availableYears].sort((left, right) => left - right)
 }
 
 function getAvailableSportTypes(activities: readonly Activity[]): string[] {
@@ -295,7 +390,7 @@ function updateYears(
   selection: ActivitySelection,
   selectedYear: number,
 ): ActivitySelection {
-  const selectedYears = new Set(selection.years ?? [])
+  const selectedYears = new Set(selection.years)
 
   if (selectedYears.has(selectedYear)) {
     selectedYears.delete(selectedYear)
@@ -308,6 +403,25 @@ function updateYears(
   return {
     ...selection,
     years,
+  }
+}
+
+function selectAllYears(
+  selection: ActivitySelection,
+  availableYears: readonly number[],
+): ActivitySelection {
+  return {
+    ...selection,
+    years: getYearsForState(availableYears),
+  }
+}
+
+function buildResetSelection(availableYears: readonly number[]): ActivitySelection {
+  return {
+    ...defaultAnalysisState.selection,
+    years: getYearsForState(availableYears),
+    daysOfWeek: [...daysOfWeek],
+    recurringDateRange: cloneRecurringDateRange(defaultRecurringDateRange),
   }
 }
 
@@ -395,6 +509,58 @@ function updateSportType(
   sportType: string,
 ): ActivitySelection {
   return withOptionalValue(selection, 'sportType', sportType === '' ? undefined : sportType)
+}
+
+function countActiveMoreFilters(selection: ActivitySelection): number {
+  let count = 0
+
+  if (selection.daysOfWeek.length !== daysOfWeek.length) {
+    count += 1
+  }
+
+  if (
+    selection.dateRange?.start !== undefined ||
+    selection.dateRange?.end !== undefined
+  ) {
+    count += 1
+  }
+
+  if (!isDefaultRecurringDateRange(selection.recurringDateRange)) {
+    count += 1
+  }
+
+  if (
+    selection.distanceMiles?.min !== undefined ||
+    selection.distanceMiles?.max !== undefined
+  ) {
+    count += 1
+  }
+
+  if (
+    selection.elevationGainFeet?.min !== undefined ||
+    selection.elevationGainFeet?.max !== undefined
+  ) {
+    count += 1
+  }
+
+  return count
+}
+
+function isDefaultRecurringDateRange(
+  recurringDateRange: RecurringDateRange,
+): boolean {
+  return (
+    recurringDateRange.type === defaultRecurringDateRange.type &&
+    compareMonthDay(recurringDateRange.start, defaultRecurringDateRange.start) === 0 &&
+    compareMonthDay(recurringDateRange.end, defaultRecurringDateRange.end) === 0
+  )
+}
+
+function areNumberArraysEqual(
+  left: readonly number[],
+  right: readonly number[],
+): boolean {
+  return left.length === right.length && left.every((value, index) => value === right[index])
 }
 
 function withOptionalValue<Key extends keyof ActivitySelection>(

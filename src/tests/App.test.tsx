@@ -1,6 +1,7 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { App } from '../App.tsx'
+import { reconcileSelectedYears } from '../state/yearSelection.ts'
 
 afterEach(() => {
   cleanup()
@@ -24,7 +25,7 @@ describe('App shell', () => {
     expect(screen.getByLabelText('Analysis workspace')).toBeInTheDocument()
     expect(screen.getByText('Selection / analysis controls')).toBeInTheDocument()
     expect(
-      await screen.findByText('0 of 12 activities selected'),
+      await screen.findByText('12 of 12 activities selected'),
     ).toBeInTheDocument()
     expect(
       screen.getByLabelText('Average speed over calendar time'),
@@ -39,7 +40,7 @@ describe('App shell', () => {
       'false',
     )
     expect(screen.getByLabelText('Trend metric')).toHaveValue('averageSpeedMph')
-    expect(screen.getByText('No activities match the current filters.')).toBeInTheDocument()
+    expect(screen.getByText('Selection ready.')).toBeInTheDocument()
     expect(screen.getByText('View: trend')).toBeInTheDocument()
     expect(screen.getByLabelText('AI conversation panel')).toBeInTheDocument()
     expect(screen.getByLabelText('Summary and status')).toBeInTheDocument()
@@ -56,9 +57,10 @@ describe('App shell', () => {
     render(<App />)
 
     expect(
-      await screen.findByText('0 of 12 activities selected'),
+      await screen.findByText('12 of 12 activities selected'),
     ).toBeInTheDocument()
 
+    clearAllYears()
     fireEvent.click(screen.getByLabelText('2025'))
 
     expect(screen.getByText('3 of 12 activities selected')).toBeInTheDocument()
@@ -101,10 +103,12 @@ describe('App shell', () => {
     render(<App />)
 
     expect(
-      await screen.findByText('0 of 12 activities selected'),
+      await screen.findByText('12 of 12 activities selected'),
     ).toBeInTheDocument()
+    clearAllYears()
     fireEvent.click(screen.getByLabelText('2025'))
     expect(screen.getByText('3 of 12 activities selected')).toBeInTheDocument()
+    openMoreFilters()
 
     fireEvent.change(screen.getByLabelText('Start'), {
       target: { value: '2030-01-01' },
@@ -127,7 +131,7 @@ describe('App shell', () => {
     render(<App />)
 
     expect(
-      await screen.findByText('0 of 12 activities selected'),
+      await screen.findByText('12 of 12 activities selected'),
     ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Relationship' }))
@@ -146,7 +150,7 @@ describe('App shell', () => {
     expect(screen.getByLabelText('Relationship Y metric')).toHaveValue(
       'averageSpeedMph',
     )
-    expect(screen.getByText('0 of 12 activities selected')).toBeInTheDocument()
+    expect(screen.getByText('12 of 12 activities selected')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Relationship' })).toHaveAttribute(
       'aria-pressed',
       'true',
@@ -174,7 +178,7 @@ describe('App shell', () => {
     render(<App />)
 
     expect(
-      await screen.findByText('0 of 12 activities selected'),
+      await screen.findByText('12 of 12 activities selected'),
     ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Relationship' }))
@@ -210,10 +214,11 @@ describe('App shell', () => {
     render(<App />)
 
     expect(
-      await screen.findByText('0 of 12 activities selected'),
+      await screen.findByText('12 of 12 activities selected'),
     ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Relationship' }))
+    clearAllYears()
     fireEvent.click(screen.getByLabelText('2025'))
 
     expect(screen.getByText('3 of 12 activities selected')).toBeInTheDocument()
@@ -223,3 +228,63 @@ describe('App shell', () => {
     ).toBeInTheDocument()
   })
 })
+
+describe('reconcileSelectedYears', () => {
+  it('selects all available years on first ready load', () => {
+    expect(
+      reconcileSelectedYears({
+        availableYears: [2025, 2023, 2024],
+        selectedYears: [],
+        source: 'demo',
+      }),
+    ).toEqual([2023, 2024, 2025])
+  })
+
+  it('selects all years on source change', () => {
+    expect(
+      reconcileSelectedYears({
+        availableYears: [2020, 2021],
+        previousAvailableYears: [2024, 2025],
+        previousSource: 'demo',
+        selectedYears: [2025],
+        source: 'strava',
+      }),
+    ).toEqual([2020, 2021])
+  })
+
+  it('preserves narrowed same-source selections and removes unavailable years', () => {
+    expect(
+      reconcileSelectedYears({
+        availableYears: [2024, 2026],
+        previousAvailableYears: [2024, 2025, 2026],
+        previousSource: 'strava',
+        selectedYears: [2025, 2026],
+        source: 'strava',
+      }),
+    ).toEqual([2026])
+  })
+
+  it('auto-adds new same-source years only when previous selection was all years', () => {
+    expect(
+      reconcileSelectedYears({
+        availableYears: [2024, 2025, 2026],
+        previousAvailableYears: [2024, 2025],
+        previousSource: 'strava',
+        selectedYears: [2024, 2025],
+        source: 'strava',
+      }),
+    ).toEqual([2024, 2025, 2026])
+  })
+})
+
+function clearAllYears() {
+  fireEvent.click(
+    within(screen.getByLabelText('Year selection actions')).getByRole('button', {
+      name: 'Clear all',
+    }),
+  )
+}
+
+function openMoreFilters() {
+  fireEvent.click(screen.getByText(/^More Filters/))
+}

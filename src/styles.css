@@ -374,9 +374,39 @@ select {
 
 .selection-controls {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   margin-top: 10px;
+}
+
+.selection-controls-primary,
+.selection-controls-more-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 10px;
+  min-width: 0;
+}
+
+.selection-controls-more {
+  min-width: 0;
+  border: 1px solid #d9ded5;
+  border-radius: 8px;
+  background: #fbfcfa;
+}
+
+.selection-controls-more summary {
+  cursor: pointer;
+  padding: 9px 10px;
+  color: #172026;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.selection-controls-more[open] summary {
+  border-bottom: 1px solid #d9ded5;
+}
+
+.selection-controls-more-grid {
+  padding: 10px;
 }
 
 .control-group {
@@ -385,27 +415,6 @@ select {
   border: 1px solid #d9ded5;
   border-radius: 8px;
   padding: 9px 10px 10px;
-}
-
-.control-group-years {
-  grid-column: 1 / -1;
-}
-
-.control-group-date {
-  grid-column: span 1;
-}
-
-.control-group-days {
-  grid-column: span 3;
-}
-
-.control-group-distance,
-.control-group-elevation {
-  grid-column: span 1;
-}
-
-.control-group-actions {
-  grid-column: span 2;
 }
 
 .control-group-compact {
@@ -444,6 +453,11 @@ select {
   gap: 8px;
 }
 
+.bounds-row-with-clear {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+}
+
 .checkbox-row {
   display: flex;
   flex-wrap: wrap;
@@ -475,12 +489,6 @@ select {
   font-size: 0.78rem;
 }
 
-.day-filter-grid {
-  display: grid;
-  grid-template-columns: minmax(132px, 0.55fr) minmax(0, 1.45fr);
-  gap: 10px;
-}
-
 .day-checkboxes {
   display: grid;
   gap: 4px;
@@ -489,15 +497,36 @@ select {
   font-weight: 700;
 }
 
-.control-group-actions {
+.control-group-activity-type {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
   align-items: end;
 }
 
-.control-group-actions legend {
+.control-group-activity-type legend {
   grid-column: 1 / -1;
+}
+
+.control-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.compact-button {
+  min-height: 29px;
+  padding: 4px 8px;
+  font-size: 0.82rem;
+}
+
+.secondary-button:disabled,
+.secondary-button:disabled:focus-visible,
+.secondary-button:disabled:hover {
+  color: #87918d;
+  background: #f3f5f2;
+  cursor: not-allowed;
 }
 
 .conversation-panel {
@@ -763,39 +792,18 @@ select {
     position: static;
   }
 
-  .selection-controls {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .control-group-years,
-  .control-group-date,
-  .control-group-days,
-  .control-group-distance,
-  .control-group-elevation,
-  .control-group-actions {
-    grid-column: span 2;
-  }
-
-  .day-filter-grid {
+  .selection-controls-primary,
+  .selection-controls-more-grid {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 520px) {
-  .selection-controls {
+  .bounds-row {
     grid-template-columns: 1fr;
   }
 
-  .control-group-years,
-  .control-group-date,
-  .control-group-days,
-  .control-group-distance,
-  .control-group-elevation,
-  .control-group-actions {
-    grid-column: auto;
-  }
-
-  .bounds-row {
+  .bounds-row-with-clear {
     grid-template-columns: 1fr;
   }
 

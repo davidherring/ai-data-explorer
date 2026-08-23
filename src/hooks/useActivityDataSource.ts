@@ -94,8 +94,11 @@ export function useActivityDataSource(
     ...snapshot,
     setSource: (source: ActivityDataSourceId) => {
       setSnapshot((current) => ({
-        ...current,
         source,
+        status: current.source === source ? current.status : 'loading',
+        activities: current.source === source ? current.activities : [],
+        metadata: current.source === source ? current.metadata : undefined,
+        error: undefined,
       }))
     },
     refresh,

@@ -55,6 +55,36 @@ describe('useActivityDataSource', () => {
     expect(result.current.activities).toEqual([activity])
   })
 
+  it('clears prior source activities while a newly selected source loads', async () => {
+    const activity = createActivity({ id: 'strava-1' })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        Response.json({
+          activities: [activity],
+          total: 1,
+          filteredOut: 0,
+          deduplicated: 0,
+          refreshed: false,
+        }),
+      ),
+    )
+
+    const { result } = renderHook(() => useActivityDataSource('demo'))
+
+    await waitFor(() => expect(result.current.status).toBe('ready'))
+    expect(result.current.activities.length).toBeGreaterThan(0)
+
+    act(() => result.current.setSource('strava'))
+
+    expect(result.current.source).toBe('strava')
+    expect(result.current.status).toBe('loading')
+    expect(result.current.activities).toEqual([])
+
+    await waitFor(() => expect(result.current.status).toBe('ready'))
+    expect(result.current.activities).toEqual([activity])
+  })
+
   it('represents disconnected Strava state', async () => {
     vi.stubGlobal(
       'fetch',
@@ -121,4 +151,3 @@ function createActivity(overrides: Partial<Activity> = {}): Activity {
     ...overrides,
   }
 }
-

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { ActivitySelectionControls } from './ActivitySelectionControls.tsx'
@@ -63,6 +63,18 @@ describe('ActivitySelectionControls', () => {
     expect(readSelection()).toMatchObject({ years: [2024, 2025] })
   })
 
+  it('selects and clears all available years', () => {
+    renderControls({ ...defaultAnalysisState.selection, years: [2025] })
+
+    const yearActions = within(screen.getByLabelText('Year selection actions'))
+
+    fireEvent.click(yearActions.getByRole('button', { name: 'Select all' }))
+    expect(readSelection().years).toEqual([2024, 2025])
+
+    fireEvent.click(yearActions.getByRole('button', { name: 'Clear all' }))
+    expect(readSelection().years).toEqual([])
+  })
+
   it('removes years when the final selected year is unchecked', () => {
     renderControls({ ...defaultAnalysisState.selection, years: [2025] })
 
@@ -73,6 +85,7 @@ describe('ActivitySelectionControls', () => {
 
   it('updates date range bounds and removes blank bounds', () => {
     renderControls()
+    openMoreFilters()
 
     fireEvent.change(screen.getByLabelText('Start'), {
       target: { value: '2025-01-01' },
@@ -86,19 +99,16 @@ describe('ActivitySelectionControls', () => {
       end: '2025-12-31',
     })
 
-    fireEvent.change(screen.getByLabelText('Start'), {
-      target: { value: '' },
-    })
+    fireEvent.click(screen.getByRole('button', { name: 'Clear start' }))
     expect(readSelection().dateRange).toEqual({ end: '2025-12-31' })
 
-    fireEvent.change(screen.getByLabelText('End'), {
-      target: { value: '' },
-    })
+    fireEvent.click(screen.getByRole('button', { name: 'Clear end' }))
     expect(readSelection().dateRange).toBeUndefined()
   })
 
   it('sets and resets a valid recurring seasonal window', () => {
     renderControls()
+    openMoreFilters()
 
     fireEvent.change(screen.getByLabelText('Season start'), {
       target: { value: '03-15' },
@@ -126,6 +136,7 @@ describe('ActivitySelectionControls', () => {
 
   it('does not commit incomplete or structurally invalid seasonal window input', () => {
     renderControls()
+    openMoreFilters()
 
     fireEvent.change(screen.getByLabelText('Season start'), {
       target: { value: '06-20' },
@@ -154,6 +165,7 @@ describe('ActivitySelectionControls', () => {
 
   it('allows Feb 29 as seasonal window input', () => {
     renderControls()
+    openMoreFilters()
 
     fireEvent.change(screen.getByLabelText('Season start'), {
       target: { value: '02-29' },
@@ -171,6 +183,7 @@ describe('ActivitySelectionControls', () => {
 
   it('toggles days of week and keeps an explicit empty array', () => {
     renderControls({ ...defaultAnalysisState.selection, daysOfWeek: [] })
+    openMoreFilters()
 
     fireEvent.click(screen.getByLabelText('Wed'))
     fireEvent.click(screen.getByLabelText('Sun'))
@@ -183,8 +196,30 @@ describe('ActivitySelectionControls', () => {
     expect(readSelection().daysOfWeek).toEqual([])
   })
 
+  it('selects and clears all days of week', () => {
+    renderControls({ ...defaultAnalysisState.selection, daysOfWeek: ['monday'] })
+    openMoreFilters()
+
+    const dayActions = within(screen.getByLabelText('Day selection actions'))
+
+    fireEvent.click(dayActions.getByRole('button', { name: 'Select all' }))
+    expect(readSelection().daysOfWeek).toEqual([
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+      'sunday',
+    ])
+
+    fireEvent.click(dayActions.getByRole('button', { name: 'Clear all' }))
+    expect(readSelection().daysOfWeek).toEqual([])
+  })
+
   it('updates distance bounds and removes blank bounds', () => {
     renderControls()
+    openMoreFilters()
 
     fireEvent.change(screen.getByLabelText('Min mi'), {
       target: { value: '10' },
@@ -208,6 +243,7 @@ describe('ActivitySelectionControls', () => {
 
   it('does not write NaN for invalid numeric input', () => {
     renderControls()
+    openMoreFilters()
 
     fireEvent.change(screen.getByLabelText('Min mi'), {
       target: { value: 'not-a-number' },
@@ -218,6 +254,7 @@ describe('ActivitySelectionControls', () => {
 
   it('updates elevation bounds and removes blank bounds', () => {
     renderControls()
+    openMoreFilters()
 
     fireEvent.change(screen.getByLabelText('Min ft'), {
       target: { value: '500' },
@@ -266,9 +303,29 @@ describe('ActivitySelectionControls', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Reset filters' }))
 
-    expect(readSelection()).toEqual(defaultAnalysisState.selection)
+    expect(readSelection()).toEqual({
+      ...defaultAnalysisState.selection,
+      years: [2024, 2025],
+    })
+  })
+
+  it('collapses More Filters by default and shows active filter count', () => {
+    renderControls({
+      ...defaultAnalysisState.selection,
+      daysOfWeek: ['monday'],
+      dateRange: { start: '2025-01-01' },
+      distanceMiles: { min: 20 },
+    })
+
+    const moreFilters = screen.getByText('More Filters (3)').closest('details')
+
+    expect(moreFilters).not.toHaveAttribute('open')
   })
 })
+
+function openMoreFilters() {
+  fireEvent.click(screen.getByText(/^More Filters/))
+}
 
 function renderControls(initialSelection: ActivitySelection = defaultAnalysisState.selection) {
   render(<ControlledControls initialSelection={initialSelection} />)
