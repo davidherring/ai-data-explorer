@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { filterActivities } from './filterActivities.ts'
 import type { DayOfWeek, Activity } from '../data/activity.ts'
-import type { ActivitySelection } from '../state/analysisState.ts'
+import {
+  defaultAnalysisState,
+  type ActivitySelection,
+} from '../state/analysisState.ts'
 
 const activities: Activity[] = [
   createActivity({
@@ -68,7 +71,7 @@ const activities: Activity[] = [
 
 describe('filterActivities', () => {
   it('returns all activities when no filters are active', () => {
-    expect(ids(filterActivities(activities, {}))).toEqual([
+    expect(ids(filterActivities(activities, selection()))).toEqual([
       'activity-2024-monday',
       'activity-2024-saturday',
       'activity-2025-wednesday',
@@ -79,7 +82,7 @@ describe('filterActivities', () => {
   })
 
   it('returns a new array and preserves source order', () => {
-    const result = filterActivities(activities, { years: [2020, 2024, 2025] })
+    const result = filterActivities(activities, selection({ years: [2020, 2024, 2025] }))
 
     expect(result).not.toBe(activities)
     expect(result).toEqual(activities)
@@ -90,43 +93,43 @@ describe('filterActivities', () => {
     const originalOrder = [...activities]
     const originalRide = { ...activities[0] }
 
-    filterActivities(activities, { years: [2025], distanceMiles: { min: 30 } })
+    filterActivities(activities, selection({ years: [2025], distanceMiles: { min: 30 } }))
 
     expect(activities).toEqual(originalOrder)
     expect(activities[0]).toEqual(originalRide)
   })
 
   it('filters by years', () => {
-    expect(ids(filterActivities(activities, { years: [2025] }))).toEqual([
+    expect(ids(filterActivities(activities, selection({ years: [2025] })))).toEqual([
       'activity-2025-wednesday',
       'activity-2025-june-window',
       'activity-2025-sunday',
     ])
   })
 
-  it('does not constrain when years is empty', () => {
-    expect(filterActivities(activities, { years: [] })).toHaveLength(6)
+  it('returns no matches when years is empty', () => {
+    expect(filterActivities(activities, selection({ years: [] }))).toEqual([])
   })
 
   it('filters by inclusive date range bounds', () => {
     expect(
       ids(
-        filterActivities(activities, {
+        filterActivities(activities, selection({
           dateRange: { start: '2024-06-15', end: '2025-03-12' },
-        }),
+        })),
       ),
     ).toEqual(['activity-2024-saturday', 'activity-2025-wednesday'])
   })
 
   it('filters by recurring month-day range across selected years', () => {
-    const result = filterActivities(activities, {
+    const result = filterActivities(activities, selection({
       years: [2024, 2025],
       recurringDateRange: {
         type: 'recurring-month-day',
         start: { month: 3, day: 15 },
         end: { month: 6, day: 20 },
       },
-    })
+    }))
 
     expect(ids(result)).toEqual([
       'activity-2024-saturday',
@@ -137,13 +140,13 @@ describe('filterActivities', () => {
   it('includes recurring month-day start and end boundaries', () => {
     expect(
       ids(
-        filterActivities(activities, {
+        filterActivities(activities, selection({
           recurringDateRange: {
             type: 'recurring-month-day',
             start: { month: 6, day: 15 },
             end: { month: 6, day: 15 },
           },
-        }),
+        })),
       ),
     ).toEqual(['activity-2024-saturday'])
   })
@@ -151,32 +154,32 @@ describe('filterActivities', () => {
   it('allows Feb 29 in recurring month-day ranges', () => {
     expect(
       ids(
-        filterActivities(activities, {
+        filterActivities(activities, selection({
           recurringDateRange: {
             type: 'recurring-month-day',
             start: { month: 2, day: 29 },
             end: { month: 2, day: 29 },
           },
-        }),
+        })),
       ),
     ).toEqual(['activity-2020-leap-day'])
   })
 
   it('returns no matches for reversed recurring month-day ranges', () => {
     expect(
-      filterActivities(activities, {
+      filterActivities(activities, selection({
         recurringDateRange: {
           type: 'recurring-month-day',
           start: { month: 6, day: 20 },
           end: { month: 3, day: 15 },
         },
-      }),
+      })),
     ).toEqual([])
   })
 
   it('filters by date start only', () => {
     expect(
-      ids(filterActivities(activities, { dateRange: { start: '2025-01-01' } })),
+      ids(filterActivities(activities, selection({ dateRange: { start: '2025-01-01' } }))),
     ).toEqual([
       'activity-2025-wednesday',
       'activity-2025-june-window',
@@ -186,7 +189,7 @@ describe('filterActivities', () => {
 
   it('filters by date end only', () => {
     expect(
-      ids(filterActivities(activities, { dateRange: { end: '2024-12-31' } })),
+      ids(filterActivities(activities, selection({ dateRange: { end: '2024-12-31' } }))),
     ).toEqual([
       'activity-2024-monday',
       'activity-2024-saturday',
@@ -197,67 +200,53 @@ describe('filterActivities', () => {
   it('intersects year and date range filters', () => {
     expect(
       ids(
-        filterActivities(activities, {
+        filterActivities(activities, selection({
           years: [2024],
           dateRange: { start: '2024-06-01' },
-        }),
+        })),
       ),
     ).toEqual(['activity-2024-saturday'])
   })
 
-  it('filters by dayMode', () => {
-    expect(ids(filterActivities(activities, { dayMode: 'all' }))).toEqual(ids(activities))
-    expect(ids(filterActivities(activities, { dayMode: 'weekday' }))).toEqual([
-      'activity-2024-monday',
-      'activity-2025-wednesday',
-      'activity-2025-june-window',
-    ])
-    expect(ids(filterActivities(activities, { dayMode: 'weekend' }))).toEqual([
-      'activity-2024-saturday',
-      'activity-2025-sunday',
-      'activity-2020-leap-day',
-    ])
-  })
-
   it('filters by daysOfWeek', () => {
     expect(
-      ids(filterActivities(activities, { daysOfWeek: ['wednesday', 'sunday'] })),
+      ids(filterActivities(activities, selection({ daysOfWeek: ['wednesday', 'sunday'] }))),
     ).toEqual(['activity-2025-wednesday', 'activity-2025-sunday'])
   })
 
-  it('does not constrain when daysOfWeek is empty', () => {
-    expect(filterActivities(activities, { daysOfWeek: [] })).toHaveLength(6)
+  it('returns no matches when daysOfWeek is empty', () => {
+    expect(filterActivities(activities, selection({ daysOfWeek: [] }))).toEqual([])
   })
 
   it('filters by inclusive distance bounds', () => {
     expect(
-      ids(filterActivities(activities, { distanceMiles: { min: 20, max: 30 } })),
+      ids(filterActivities(activities, selection({ distanceMiles: { min: 20, max: 30 } }))),
     ).toEqual(['activity-2024-saturday', 'activity-2025-wednesday'])
   })
 
   it('filters by inclusive elevation bounds', () => {
     expect(
-      ids(filterActivities(activities, { elevationGainFeet: { min: 500, max: 1000 } })),
+      ids(filterActivities(activities, selection({ elevationGainFeet: { min: 500, max: 1000 } }))),
     ).toEqual(['activity-2024-saturday', 'activity-2025-wednesday'])
   })
 
   it('returns no matches when numeric min is greater than max', () => {
-    expect(filterActivities(activities, { distanceMiles: { min: 30, max: 20 } })).toEqual(
+    expect(filterActivities(activities, selection({ distanceMiles: { min: 30, max: 20 } }))).toEqual(
       [],
     )
     expect(
-      filterActivities(activities, { elevationGainFeet: { min: 1000, max: 500 } }),
+      filterActivities(activities, selection({ elevationGainFeet: { min: 1000, max: 500 } })),
     ).toEqual([])
   })
 
   it('filters by exact sportType', () => {
-    expect(ids(filterActivities(activities, { sportType: 'GravelRide' }))).toEqual([
+    expect(ids(filterActivities(activities, selection({ sportType: 'GravelRide' })))).toEqual([
       'activity-2024-saturday',
     ])
   })
 
   it('does not constrain when sportType is blank', () => {
-    expect(filterActivities(activities, { sportType: '' })).toHaveLength(6)
+    expect(filterActivities(activities, selection({ sportType: '' }))).toHaveLength(6)
   })
 
   it('combines active filters with AND behavior', () => {
@@ -269,7 +258,6 @@ describe('filterActivities', () => {
         start: { month: 3, day: 1 },
         end: { month: 3, day: 31 },
       },
-      dayMode: 'weekday',
       daysOfWeek: ['wednesday'],
       distanceMiles: { min: 25, max: 35 },
       elevationGainFeet: { min: 900, max: 1100 },
@@ -280,9 +268,17 @@ describe('filterActivities', () => {
   })
 
   it('returns an empty array when no activities match', () => {
-    expect(filterActivities(activities, { sportType: 'MountainBikeRide' })).toEqual([])
+    expect(filterActivities(activities, selection({ sportType: 'MountainBikeRide' }))).toEqual([])
   })
 })
+
+function selection(overrides: Partial<ActivitySelection> = {}): ActivitySelection {
+  return {
+    ...defaultAnalysisState.selection,
+    years: [2020, 2024, 2025],
+    ...overrides,
+  }
+}
 
 function createActivity(overrides: {
   id: string

@@ -41,10 +41,9 @@ export const dayModeValues = [
 
 export type ActivitySelection = {
   dateRange?: DateRange
-  recurringDateRange?: RecurringDateRange
-  years?: number[]
-  dayMode?: DayMode
-  daysOfWeek?: DayOfWeek[]
+  recurringDateRange: RecurringDateRange
+  years: number[]
+  daysOfWeek: DayOfWeek[]
   distanceMiles?: NumericRange
   elevationGainFeet?: NumericRange
   sportType?: string
@@ -152,9 +151,23 @@ export const defaultCumulativeView: CumulativeViewConfiguration = {
   accumulation: 'continuous',
 }
 
+export const defaultRecurringDateRange: RecurringDateRange = {
+  type: 'recurring-month-day',
+  start: { month: 1, day: 1 },
+  end: { month: 12, day: 31 },
+}
+
+export const defaultDaysOfWeek = [...dayOfWeekValues]
+
 export const defaultAnalysisState: AnalysisState = {
   selection: {
-    dayMode: 'all',
+    years: [],
+    daysOfWeek: [...defaultDaysOfWeek],
+    recurringDateRange: {
+      type: 'recurring-month-day',
+      start: { month: 1, day: 1 },
+      end: { month: 12, day: 31 },
+    },
   },
   view: { ...defaultTrendView },
 }

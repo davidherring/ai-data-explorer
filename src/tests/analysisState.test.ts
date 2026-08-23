@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   defaultCumulativeView,
   defaultAnalysisState,
+  defaultDaysOfWeek,
   defaultRelationshipView,
+  defaultRecurringDateRange,
   defaultSeasonalView,
   defaultTrendView,
   supportedViewTypes,
@@ -26,7 +28,9 @@ describe('analysis state contract', () => {
   it('provides a default single-selection trend state', () => {
     expect(defaultAnalysisState).toEqual({
       selection: {
-        dayMode: 'all',
+        years: [],
+        daysOfWeek: defaultDaysOfWeek,
+        recurringDateRange: defaultRecurringDateRange,
       },
       view: defaultTrendView,
     })
@@ -134,6 +138,7 @@ describe('analysis state contract', () => {
     const state: AnalysisState = {
       selection: {
         years: [2017, 2020, 2025],
+        daysOfWeek: defaultDaysOfWeek,
         recurringDateRange: {
           type: 'recurring-month-day',
           start: { month: 3, day: 15 },
@@ -154,16 +159,16 @@ describe('analysis state contract', () => {
     const comparisonState: AnalysisState = {
       selection: {
         years: [2026],
-        dayMode: 'weekday',
         daysOfWeek: ['wednesday'],
+        recurringDateRange: defaultRecurringDateRange,
         distanceMiles: { min: 10, max: 30 },
         elevationGainFeet: { min: 1000, max: 2200 },
         sportType: 'Ride',
       },
       comparison: {
         years: [2023, 2024, 2025],
-        dayMode: 'weekday',
         daysOfWeek: ['wednesday'],
+        recurringDateRange: defaultRecurringDateRange,
         distanceMiles: { min: 10, max: 30 },
         elevationGainFeet: { min: 1000, max: 2200 },
         sportType: 'Ride',

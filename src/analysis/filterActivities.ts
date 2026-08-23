@@ -19,7 +19,6 @@ function matchesSelection(activity: Activity, selection: ActivitySelection): boo
     matchesYears(activity, selection.years) &&
     matchesDateRange(activity, selection.dateRange) &&
     matchesRecurringDateRange(activity, selection.recurringDateRange) &&
-    matchesDayMode(activity, selection.dayMode) &&
     matchesDaysOfWeek(activity, selection.daysOfWeek) &&
     matchesNumericRange(activity.distanceMiles, selection.distanceMiles) &&
     matchesNumericRange(activity.elevationGainFeet, selection.elevationGainFeet) &&
@@ -27,8 +26,8 @@ function matchesSelection(activity: Activity, selection: ActivitySelection): boo
   )
 }
 
-function matchesYears(activity: Activity, years: readonly number[] | undefined): boolean {
-  return years === undefined || years.length === 0 || years.includes(activity.year)
+function matchesYears(activity: Activity, years: readonly number[]): boolean {
+  return years.includes(activity.year)
 }
 
 function matchesDateRange(activity: Activity, dateRange: DateRange | undefined): boolean {
@@ -49,12 +48,8 @@ function matchesDateRange(activity: Activity, dateRange: DateRange | undefined):
 
 function matchesRecurringDateRange(
   activity: Activity,
-  recurringDateRange: RecurringDateRange | undefined,
+  recurringDateRange: ActivitySelection['recurringDateRange'],
 ): boolean {
-  if (recurringDateRange === undefined) {
-    return true
-  }
-
   if (!isValidRecurringDateRange(recurringDateRange)) {
     return false
   }
@@ -67,26 +62,11 @@ function matchesRecurringDateRange(
   )
 }
 
-function matchesDayMode(
-  activity: Activity,
-  dayMode: ActivitySelection['dayMode'],
-): boolean {
-  if (dayMode === undefined || dayMode === 'all') {
-    return true
-  }
-
-  return dayMode === 'weekend' ? activity.isWeekend : !activity.isWeekend
-}
-
 function matchesDaysOfWeek(
   activity: Activity,
-  daysOfWeek: ActivitySelection['daysOfWeek'],
+  daysOfWeek: readonly Activity['dayOfWeek'][],
 ): boolean {
-  return (
-    daysOfWeek === undefined ||
-    daysOfWeek.length === 0 ||
-    daysOfWeek.includes(activity.dayOfWeek)
-  )
+  return daysOfWeek.includes(activity.dayOfWeek)
 }
 
 function matchesNumericRange(

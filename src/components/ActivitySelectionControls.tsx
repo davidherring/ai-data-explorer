@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { Activity, DayOfWeek } from '../data/activity.ts'
 import {
   defaultAnalysisState,
+  defaultRecurringDateRange,
   type ActivitySelection,
   type DateRange,
   type MonthDay,
@@ -62,7 +63,7 @@ export function ActivitySelectionControls({
             </label>
           ))}
         </div>
-        <p className="control-help">No years selected means all years.</p>
+        <p className="control-help">Select at least one year to include activities.</p>
       </fieldset>
 
       <fieldset className="control-group control-group-date">
@@ -129,52 +130,35 @@ export function ActivitySelectionControls({
           className="secondary-button"
           type="button"
           onClick={() => {
-            setRecurringStartInput('')
-            setRecurringEndInput('')
-            onSelectionChange(withOptionalValue(selection, 'recurringDateRange', undefined))
+            setRecurringStartInput(formatMonthDay(defaultRecurringDateRange.start))
+            setRecurringEndInput(formatMonthDay(defaultRecurringDateRange.end))
+            onSelectionChange({
+              ...selection,
+              recurringDateRange: cloneRecurringDateRange(defaultRecurringDateRange),
+            })
           }}
         >
-          Clear seasonal window
+          Reset seasonal window
         </button>
       </fieldset>
 
       <fieldset className="control-group control-group-days control-group-compact">
         <legend>Day filters</legend>
-        <div className="day-filter-grid">
-          <label>
-            <span>Day type</span>
-            <select
-              value={selection.dayMode ?? 'all'}
-              onChange={(event) => {
-                onSelectionChange({
-                  ...selection,
-                  dayMode: event.currentTarget
-                    .value as ActivitySelection['dayMode'],
-                })
-              }}
-            >
-              <option value="all">All days</option>
-              <option value="weekday">Weekdays</option>
-              <option value="weekend">Weekends</option>
-            </select>
-          </label>
-
-          <div className="day-checkboxes" aria-label="Specific days of week">
-            <span>Specific days</span>
-            <div className="checkbox-row">
-              {daysOfWeek.map((day) => (
-                <label className="checkbox-pill" key={day}>
-                  <input
-                    type="checkbox"
-                    checked={selection.daysOfWeek?.includes(day) ?? false}
-                    onChange={() => {
-                      onSelectionChange(updateDaysOfWeek(selection, day))
-                    }}
-                  />
-                  <span>{formatDayOfWeek(day)}</span>
-                </label>
-              ))}
-            </div>
+        <div className="day-checkboxes" aria-label="Specific days of week">
+          <span>Specific days</span>
+          <div className="checkbox-row">
+            {daysOfWeek.map((day) => (
+              <label className="checkbox-pill" key={day}>
+                <input
+                  type="checkbox"
+                  checked={selection.daysOfWeek.includes(day)}
+                  onChange={() => {
+                    onSelectionChange(updateDaysOfWeek(selection, day))
+                  }}
+                />
+                <span>{formatDayOfWeek(day)}</span>
+              </label>
+            ))}
           </div>
         </div>
       </fieldset>
@@ -321,7 +305,10 @@ function updateYears(
 
   const years = Array.from(selectedYears).sort((left, right) => left - right)
 
-  return withOptionalValue(selection, 'years', years.length > 0 ? years : undefined)
+  return {
+    ...selection,
+    years,
+  }
 }
 
 function updateDateRange(
@@ -349,25 +336,23 @@ function commitRecurringDateRange(
   endInput: string,
   onSelectionChange: (selection: ActivitySelection) => void,
 ): void {
-  if (startInput === '' && endInput === '') {
-    onSelectionChange(withOptionalValue(selection, 'recurringDateRange', undefined))
-    return
-  }
-
   const range = parseRecurringDateRange(startInput, endInput)
 
   if (range === undefined) {
     return
   }
 
-  onSelectionChange(withOptionalValue(selection, 'recurringDateRange', range))
+  onSelectionChange({
+    ...selection,
+    recurringDateRange: range,
+  })
 }
 
 function updateDaysOfWeek(
   selection: ActivitySelection,
   selectedDay: DayOfWeek,
 ): ActivitySelection {
-  const selectedDays = new Set(selection.daysOfWeek ?? [])
+  const selectedDays = new Set(selection.daysOfWeek)
 
   if (selectedDays.has(selectedDay)) {
     selectedDays.delete(selectedDay)
@@ -377,11 +362,10 @@ function updateDaysOfWeek(
 
   const days = daysOfWeek.filter((day) => selectedDays.has(day))
 
-  return withOptionalValue(
-    selection,
-    'daysOfWeek',
-    days.length > 0 ? days : undefined,
-  )
+  return {
+    ...selection,
+    daysOfWeek: days,
+  }
 }
 
 function updateNumericRange(
@@ -506,4 +490,14 @@ function compareMonthDay(left: MonthDay, right: MonthDay): number {
 
 function formatDayOfWeek(day: DayOfWeek): string {
   return `${day.slice(0, 1).toUpperCase()}${day.slice(1, 3)}`
+}
+
+function cloneRecurringDateRange(
+  recurringDateRange: RecurringDateRange,
+): RecurringDateRange {
+  return {
+    type: 'recurring-month-day',
+    start: { ...recurringDateRange.start },
+    end: { ...recurringDateRange.end },
+  }
 }

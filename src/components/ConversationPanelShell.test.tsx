@@ -435,7 +435,7 @@ describe('ConversationPanelShell', () => {
     ]
     const staleState: AnalysisState = {
       ...defaultAnalysisState,
-      selection: { years: [2026] },
+      selection: { ...defaultAnalysisState.selection, years: [2026] },
     }
     const { rerender } = render(createPanel())
 
@@ -476,7 +476,7 @@ describe('ConversationPanelShell', () => {
       createPanel({
         analysisState: {
           ...defaultAnalysisState,
-          selection: { years: [2026] },
+          selection: { ...defaultAnalysisState.selection, years: [2026] },
         },
         onApplyViewSuggestion,
       }),
@@ -508,7 +508,7 @@ describe('ConversationPanelShell', () => {
       createPanel({
         analysisState: {
           ...defaultAnalysisState,
-          selection: { years: [2026] },
+          selection: { ...defaultAnalysisState.selection, years: [2026] },
         },
       }),
     )

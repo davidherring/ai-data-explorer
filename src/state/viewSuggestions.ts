@@ -9,7 +9,6 @@ import {
   analysisStateSchema,
   cumulativeMetricKeySchema,
   dateRangeSchema,
-  dayModeSchema,
   dayOfWeekSchema,
   metricKeySchema,
   numericRangeSchema,
@@ -86,11 +85,10 @@ export const viewSuggestionViewPatchSchema = z.discriminatedUnion('type', [
 
 export const viewSuggestionSelectionPatchSchema = z
   .object({
-    years: z.array(z.number()).nullable().optional(),
-    dayMode: dayModeSchema.nullable().optional(),
-    daysOfWeek: z.array(dayOfWeekSchema).nullable().optional(),
+    years: z.array(z.number()).optional(),
+    daysOfWeek: z.array(dayOfWeekSchema).optional(),
     dateRange: dateRangeSchema.nullable().optional(),
-    recurringDateRange: recurringDateRangeSchema.nullable().optional(),
+    recurringDateRange: recurringDateRangeSchema.optional(),
     distanceMiles: numericRangeSchema.nullable().optional(),
     elevationGainFeet: numericRangeSchema.nullable().optional(),
     sportType: z.string().nullable().optional(),
@@ -395,7 +393,6 @@ const metricLabels = {
 
 const selectionFieldLabels = {
   years: 'Years',
-  dayMode: 'Day type',
   daysOfWeek: 'Days of week',
   dateRange: 'Date range',
   recurringDateRange: 'Seasonal window',
@@ -428,8 +425,6 @@ function formatSelectionValue(
   switch (key) {
     case 'years':
       return Array.isArray(value) ? value.join(', ') : ''
-    case 'dayMode':
-      return formatDayMode(String(value))
     case 'daysOfWeek':
       return Array.isArray(value)
         ? value.map((day) => formatDayOfWeek(String(day))).join(', ')
@@ -447,19 +442,6 @@ function formatSelectionValue(
   }
 
   throw new ViewSuggestionError(`Unsupported selection field: ${String(key)}`)
-}
-
-function formatDayMode(value: string): string {
-  switch (value) {
-    case 'all':
-      return 'All days'
-    case 'weekday':
-      return 'Weekdays'
-    case 'weekend':
-      return 'Weekends'
-    default:
-      return value
-  }
 }
 
 function formatDayOfWeek(value: string): string {

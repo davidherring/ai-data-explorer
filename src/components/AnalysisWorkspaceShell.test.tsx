@@ -5,6 +5,7 @@ import { AnalysisWorkspaceShell } from './AnalysisWorkspaceShell.tsx'
 import type { DayOfWeek, Activity } from '../data/activity.ts'
 import {
   defaultCumulativeView,
+  defaultAnalysisState,
   defaultRelationshipView,
   defaultSeasonalView,
   defaultTrendView,
@@ -19,12 +20,12 @@ describe('AnalysisWorkspaceShell', () => {
   it('switches to the default relationship view while preserving analysis state', () => {
     const initialState: AnalysisState = {
       selection: {
+        ...defaultAnalysisState.selection,
         years: [2025],
-        dayMode: 'weekday',
       },
       comparison: {
+        ...defaultAnalysisState.selection,
         years: [2024],
-        dayMode: 'all',
       },
       view: {
         type: 'trend',
@@ -46,12 +47,12 @@ describe('AnalysisWorkspaceShell', () => {
   it('updates the trend metric while preserving analysis state', () => {
     const initialState: AnalysisState = {
       selection: {
+        ...defaultAnalysisState.selection,
         years: [2025],
-        dayMode: 'weekday',
       },
       comparison: {
+        ...defaultAnalysisState.selection,
         years: [2024],
-        dayMode: 'all',
       },
       view: {
         type: 'trend',
@@ -77,9 +78,7 @@ describe('AnalysisWorkspaceShell', () => {
 
   it('renders the active trend metric from analysis state', () => {
     renderWorkspace({
-      selection: {
-        dayMode: 'all',
-      },
+      selection: defaultAnalysisState.selection,
       view: {
         type: 'trend',
         yMetric: 'distanceMiles',
@@ -93,12 +92,12 @@ describe('AnalysisWorkspaceShell', () => {
   it('switches to the default trend view while preserving analysis state', () => {
     const initialState: AnalysisState = {
       selection: {
+        ...defaultAnalysisState.selection,
         years: [2025],
-        dayMode: 'weekday',
       },
       comparison: {
+        ...defaultAnalysisState.selection,
         years: [2024],
-        dayMode: 'all',
       },
       view: {
         type: 'relationship',
@@ -121,12 +120,12 @@ describe('AnalysisWorkspaceShell', () => {
   it('switches to the default seasonal view while preserving analysis state', () => {
     const initialState: AnalysisState = {
       selection: {
+        ...defaultAnalysisState.selection,
         years: [2025],
-        dayMode: 'weekday',
       },
       comparison: {
+        ...defaultAnalysisState.selection,
         years: [2024],
-        dayMode: 'all',
       },
       view: {
         type: 'trend',
@@ -148,12 +147,12 @@ describe('AnalysisWorkspaceShell', () => {
   it('switches to the default cumulative view while preserving analysis state', () => {
     const initialState: AnalysisState = {
       selection: {
+        ...defaultAnalysisState.selection,
         years: [2025],
-        dayMode: 'weekday',
       },
       comparison: {
+        ...defaultAnalysisState.selection,
         years: [2024],
-        dayMode: 'all',
       },
       view: {
         type: 'relationship',
@@ -176,12 +175,12 @@ describe('AnalysisWorkspaceShell', () => {
   it('updates relationship metrics while preserving analysis state', () => {
     const initialState: AnalysisState = {
       selection: {
+        ...defaultAnalysisState.selection,
         years: [2025],
-        dayMode: 'weekday',
       },
       comparison: {
+        ...defaultAnalysisState.selection,
         years: [2024],
-        dayMode: 'all',
       },
       view: {
         type: 'relationship',
@@ -223,12 +222,12 @@ describe('AnalysisWorkspaceShell', () => {
   it('updates seasonal metrics while preserving analysis state', () => {
     const initialState: AnalysisState = {
       selection: {
+        ...defaultAnalysisState.selection,
         years: [2025],
-        dayMode: 'weekday',
       },
       comparison: {
+        ...defaultAnalysisState.selection,
         years: [2024],
-        dayMode: 'all',
       },
       view: {
         type: 'seasonal',
@@ -257,12 +256,12 @@ describe('AnalysisWorkspaceShell', () => {
   it('updates cumulative metrics while preserving analysis state', () => {
     const initialState: AnalysisState = {
       selection: {
+        ...defaultAnalysisState.selection,
         years: [2025],
-        dayMode: 'weekday',
       },
       comparison: {
+        ...defaultAnalysisState.selection,
         years: [2024],
-        dayMode: 'all',
       },
       view: {
         type: 'cumulative',
@@ -290,9 +289,7 @@ describe('AnalysisWorkspaceShell', () => {
 
   it('renders non-default relationship metrics from analysis state', () => {
     renderWorkspace({
-      selection: {
-        dayMode: 'all',
-      },
+      selection: defaultAnalysisState.selection,
       view: {
         type: 'relationship',
         xMetric: 'movingTimeMinutes',
@@ -308,9 +305,7 @@ describe('AnalysisWorkspaceShell', () => {
 
   it('renders the default seasonal view from analysis state', () => {
     renderWorkspace({
-      selection: {
-        dayMode: 'all',
-      },
+      selection: defaultAnalysisState.selection,
       view: defaultSeasonalView,
     })
 
@@ -324,9 +319,7 @@ describe('AnalysisWorkspaceShell', () => {
 
   it('renders the default cumulative view from analysis state', () => {
     renderWorkspace({
-      selection: {
-        dayMode: 'all',
-      },
+      selection: defaultAnalysisState.selection,
       view: defaultCumulativeView,
     })
 
@@ -340,9 +333,7 @@ describe('AnalysisWorkspaceShell', () => {
 
   it('renders non-default seasonal metrics from analysis state', () => {
     renderWorkspace({
-      selection: {
-        dayMode: 'all',
-      },
+      selection: defaultAnalysisState.selection,
       view: {
         type: 'seasonal',
         yMetric: 'distanceMiles',
@@ -356,9 +347,7 @@ describe('AnalysisWorkspaceShell', () => {
 
   it('renders non-default cumulative metrics from analysis state', () => {
     renderWorkspace({
-      selection: {
-        dayMode: 'all',
-      },
+      selection: defaultAnalysisState.selection,
       view: {
         type: 'cumulative',
         yMetric: 'elevationGainFeet',
@@ -373,9 +362,7 @@ describe('AnalysisWorkspaceShell', () => {
   it('passes empty selected activities through seasonal and cumulative charts', () => {
     renderWorkspace(
       {
-        selection: {
-          dayMode: 'all',
-        },
+        selection: defaultAnalysisState.selection,
         view: defaultSeasonalView,
       },
       vi.fn(),
@@ -390,9 +377,7 @@ describe('AnalysisWorkspaceShell', () => {
 
     renderWorkspace(
       {
-        selection: {
-          dayMode: 'all',
-        },
+        selection: defaultAnalysisState.selection,
         view: defaultCumulativeView,
       },
       vi.fn(),

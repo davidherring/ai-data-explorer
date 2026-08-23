@@ -50,6 +50,7 @@ describe('analysisStateSchema', () => {
       analysisStateSchema.parse({
         ...defaultAnalysisState,
         selection: {
+          ...defaultAnalysisState.selection,
           recurringDateRange: {
             type: 'recurring-month-day',
             start: { month: 2, day: 29 },
@@ -83,10 +84,46 @@ describe('analysisStateSchema', () => {
       expect(() =>
         analysisStateSchema.parse({
           ...defaultAnalysisState,
-          selection: { recurringDateRange },
+          selection: { ...defaultAnalysisState.selection, recurringDateRange },
         }),
       ).toThrow()
     }
+  })
+
+  it('requires explicit selection years, days, and recurring range', () => {
+    for (const selection of [
+      {
+        daysOfWeek: defaultAnalysisState.selection.daysOfWeek,
+        recurringDateRange: defaultAnalysisState.selection.recurringDateRange,
+      },
+      {
+        years: defaultAnalysisState.selection.years,
+        recurringDateRange: defaultAnalysisState.selection.recurringDateRange,
+      },
+      {
+        years: defaultAnalysisState.selection.years,
+        daysOfWeek: defaultAnalysisState.selection.daysOfWeek,
+      },
+    ]) {
+      expect(() =>
+        analysisStateSchema.parse({
+          ...defaultAnalysisState,
+          selection,
+        }),
+      ).toThrow()
+    }
+  })
+
+  it('rejects dayMode as a selection field', () => {
+    expect(() =>
+      analysisStateSchema.parse({
+        ...defaultAnalysisState,
+        selection: {
+          ...defaultAnalysisState.selection,
+          dayMode: 'weekend',
+        },
+      }),
+    ).toThrow()
   })
 
   it('rejects unknown state fields', () => {

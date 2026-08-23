@@ -58,8 +58,8 @@ describe('view suggestion contract', () => {
     const sourceState: AnalysisState = {
       ...defaultAnalysisState,
       selection: {
+        ...defaultAnalysisState.selection,
         years: [2025],
-        dayMode: 'weekend',
         distanceMiles: { min: 10, max: 40 },
       },
     }
@@ -78,7 +78,8 @@ describe('view suggestion contract', () => {
 
     expect(suggestion.proposedState.selection).toEqual({
       years: [2025, 2026],
-      dayMode: 'weekend',
+      daysOfWeek: defaultAnalysisState.selection.daysOfWeek,
+      recurringDateRange: defaultAnalysisState.selection.recurringDateRange,
       distanceMiles: { min: 10, max: 40 },
     })
     expect(suggestion.proposedState.view).toEqual({
@@ -87,31 +88,33 @@ describe('view suggestion contract', () => {
     })
   })
 
-  it('uses null to clear a supported selection filter', () => {
+  it('uses explicit empty arrays for required selection filters', () => {
     const sourceState: AnalysisState = {
       ...defaultAnalysisState,
       selection: {
+        ...defaultAnalysisState.selection,
         years: [2025],
-        dayMode: 'weekend',
       },
     }
     const suggestion = buildViewSuggestion(sourceState, {
-      label: 'Remove year filter',
+      label: 'Clear year selection',
       patch: {
         selection: {
-          years: null,
+          years: [],
         },
       },
     })
 
     expect(suggestion.proposedState.selection).toEqual({
-      dayMode: 'weekend',
+      ...defaultAnalysisState.selection,
+      years: [],
     })
     expect(suggestion.changes).toEqual([
       {
         field: 'selection.years',
-        action: 'clear',
+        action: 'set',
         label: 'Years',
+        value: '',
       },
     ])
   })
@@ -187,6 +190,7 @@ describe('view suggestion contract', () => {
     for (const patch of [
       { comparison: { years: [2025] } },
       { grouping: 'year' },
+      { selection: { dayMode: 'weekend' } },
       { query: 'weekend activities' },
     ]) {
       expect(() =>
@@ -254,7 +258,8 @@ describe('view suggestion contract', () => {
     const first: AnalysisState = {
       selection: {
         years: [2025],
-        dayMode: 'weekend',
+        daysOfWeek: ['saturday', 'sunday'],
+        recurringDateRange: defaultAnalysisState.selection.recurringDateRange,
       },
       view: {
         type: 'trend',
@@ -267,7 +272,8 @@ describe('view suggestion contract', () => {
         type: 'trend',
       },
       selection: {
-        dayMode: 'weekend',
+        daysOfWeek: ['saturday', 'sunday'],
+        recurringDateRange: defaultAnalysisState.selection.recurringDateRange,
         years: [2025],
       },
     } as AnalysisState
@@ -280,11 +286,11 @@ describe('view suggestion contract', () => {
   it('keeps array ordering significant in fingerprints', () => {
     const first: AnalysisState = {
       ...defaultAnalysisState,
-      selection: { years: [2025, 2026] },
+      selection: { ...defaultAnalysisState.selection, years: [2025, 2026] },
     }
     const second: AnalysisState = {
       ...defaultAnalysisState,
-      selection: { years: [2026, 2025] },
+      selection: { ...defaultAnalysisState.selection, years: [2026, 2025] },
     }
 
     expect(getAnalysisStateFingerprint(first)).not.toBe(

@@ -24,7 +24,7 @@ describe('App shell', () => {
     expect(screen.getByLabelText('Analysis workspace')).toBeInTheDocument()
     expect(screen.getByText('Selection / analysis controls')).toBeInTheDocument()
     expect(
-      await screen.findByText('12 of 12 activities selected'),
+      await screen.findByText('0 of 12 activities selected'),
     ).toBeInTheDocument()
     expect(
       screen.getByLabelText('Average speed over calendar time'),
@@ -39,7 +39,7 @@ describe('App shell', () => {
       'false',
     )
     expect(screen.getByLabelText('Trend metric')).toHaveValue('averageSpeedMph')
-    expect(screen.getByText('Selection ready.')).toBeInTheDocument()
+    expect(screen.getByText('No activities match the current filters.')).toBeInTheDocument()
     expect(screen.getByText('View: trend')).toBeInTheDocument()
     expect(screen.getByLabelText('AI conversation panel')).toBeInTheDocument()
     expect(screen.getByLabelText('Summary and status')).toBeInTheDocument()
@@ -56,7 +56,7 @@ describe('App shell', () => {
     render(<App />)
 
     expect(
-      await screen.findByText('12 of 12 activities selected'),
+      await screen.findByText('0 of 12 activities selected'),
     ).toBeInTheDocument()
 
     fireEvent.click(screen.getByLabelText('2025'))
@@ -101,8 +101,10 @@ describe('App shell', () => {
     render(<App />)
 
     expect(
-      await screen.findByText('12 of 12 activities selected'),
+      await screen.findByText('0 of 12 activities selected'),
     ).toBeInTheDocument()
+    fireEvent.click(screen.getByLabelText('2025'))
+    expect(screen.getByText('3 of 12 activities selected')).toBeInTheDocument()
 
     fireEvent.change(screen.getByLabelText('Start'), {
       target: { value: '2030-01-01' },
@@ -125,7 +127,7 @@ describe('App shell', () => {
     render(<App />)
 
     expect(
-      await screen.findByText('12 of 12 activities selected'),
+      await screen.findByText('0 of 12 activities selected'),
     ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Relationship' }))
@@ -144,7 +146,7 @@ describe('App shell', () => {
     expect(screen.getByLabelText('Relationship Y metric')).toHaveValue(
       'averageSpeedMph',
     )
-    expect(screen.getByText('12 of 12 activities selected')).toBeInTheDocument()
+    expect(screen.getByText('0 of 12 activities selected')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Relationship' })).toHaveAttribute(
       'aria-pressed',
       'true',
@@ -172,7 +174,7 @@ describe('App shell', () => {
     render(<App />)
 
     expect(
-      await screen.findByText('12 of 12 activities selected'),
+      await screen.findByText('0 of 12 activities selected'),
     ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Relationship' }))
@@ -208,7 +210,7 @@ describe('App shell', () => {
     render(<App />)
 
     expect(
-      await screen.findByText('12 of 12 activities selected'),
+      await screen.findByText('0 of 12 activities selected'),
     ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Relationship' }))

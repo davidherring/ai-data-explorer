@@ -3,7 +3,11 @@ import { useState } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { ActivitySelectionControls } from './ActivitySelectionControls.tsx'
 import type { DayOfWeek, Activity } from '../data/activity.ts'
-import type { ActivitySelection } from '../state/analysisState.ts'
+import {
+  defaultAnalysisState,
+  defaultRecurringDateRange,
+  type ActivitySelection,
+} from '../state/analysisState.ts'
 
 const activities: Activity[] = [
   createActivity({
@@ -60,11 +64,11 @@ describe('ActivitySelectionControls', () => {
   })
 
   it('removes years when the final selected year is unchecked', () => {
-    renderControls({ years: [2025] })
+    renderControls({ ...defaultAnalysisState.selection, years: [2025] })
 
     fireEvent.click(screen.getByLabelText('2025'))
 
-    expect(readSelection().years).toBeUndefined()
+    expect(readSelection().years).toEqual([])
   })
 
   it('updates date range bounds and removes blank bounds', () => {
@@ -93,13 +97,17 @@ describe('ActivitySelectionControls', () => {
     expect(readSelection().dateRange).toBeUndefined()
   })
 
-  it('sets and clears a valid recurring seasonal window', () => {
+  it('sets and resets a valid recurring seasonal window', () => {
     renderControls()
 
     fireEvent.change(screen.getByLabelText('Season start'), {
       target: { value: '03-15' },
     })
-    expect(readSelection().recurringDateRange).toBeUndefined()
+    expect(readSelection().recurringDateRange).toEqual({
+      type: 'recurring-month-day',
+      start: { month: 3, day: 15 },
+      end: { month: 12, day: 31 },
+    })
 
     fireEvent.change(screen.getByLabelText('Season end'), {
       target: { value: '06-20' },
@@ -111,9 +119,9 @@ describe('ActivitySelectionControls', () => {
       end: { month: 6, day: 20 },
     })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Clear seasonal window' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Reset seasonal window' }))
 
-    expect(readSelection().recurringDateRange).toBeUndefined()
+    expect(readSelection().recurringDateRange).toEqual(defaultRecurringDateRange)
   })
 
   it('does not commit incomplete or structurally invalid seasonal window input', () => {
@@ -122,11 +130,17 @@ describe('ActivitySelectionControls', () => {
     fireEvent.change(screen.getByLabelText('Season start'), {
       target: { value: '06-20' },
     })
+    const latestValidRange = {
+      type: 'recurring-month-day' as const,
+      start: { month: 6, day: 20 },
+      end: { month: 12, day: 31 },
+    }
+
     fireEvent.change(screen.getByLabelText('Season end'), {
       target: { value: '03-15' },
     })
 
-    expect(readSelection().recurringDateRange).toBeUndefined()
+    expect(readSelection().recurringDateRange).toEqual(latestValidRange)
 
     fireEvent.change(screen.getByLabelText('Season start'), {
       target: { value: '02-30' },
@@ -135,7 +149,7 @@ describe('ActivitySelectionControls', () => {
       target: { value: '03-15' },
     })
 
-    expect(readSelection().recurringDateRange).toBeUndefined()
+    expect(readSelection().recurringDateRange).toEqual(latestValidRange)
   })
 
   it('allows Feb 29 as seasonal window input', () => {
@@ -155,18 +169,8 @@ describe('ActivitySelectionControls', () => {
     })
   })
 
-  it('updates day mode', () => {
-    renderControls()
-
-    fireEvent.change(screen.getByLabelText('Day type'), {
-      target: { value: 'weekend' },
-    })
-
-    expect(readSelection()).toMatchObject({ dayMode: 'weekend' })
-  })
-
-  it('toggles days of week and removes the field when empty', () => {
-    renderControls()
+  it('toggles days of week and keeps an explicit empty array', () => {
+    renderControls({ ...defaultAnalysisState.selection, daysOfWeek: [] })
 
     fireEvent.click(screen.getByLabelText('Wed'))
     fireEvent.click(screen.getByLabelText('Sun'))
@@ -176,7 +180,7 @@ describe('ActivitySelectionControls', () => {
     fireEvent.click(screen.getByLabelText('Wed'))
     fireEvent.click(screen.getByLabelText('Sun'))
 
-    expect(readSelection().daysOfWeek).toBeUndefined()
+    expect(readSelection().daysOfWeek).toEqual([])
   })
 
   it('updates distance bounds and removes blank bounds', () => {
@@ -251,22 +255,22 @@ describe('ActivitySelectionControls', () => {
   it('resets to the default primary selection', () => {
     renderControls({
       years: [2025],
+      daysOfWeek: ['saturday', 'sunday'],
       recurringDateRange: {
         type: 'recurring-month-day',
         start: { month: 3, day: 15 },
         end: { month: 6, day: 20 },
       },
-      dayMode: 'weekend',
       sportType: 'VirtualRide',
     })
 
     fireEvent.click(screen.getByRole('button', { name: 'Reset filters' }))
 
-    expect(readSelection()).toEqual({ dayMode: 'all' })
+    expect(readSelection()).toEqual(defaultAnalysisState.selection)
   })
 })
 
-function renderControls(initialSelection: ActivitySelection = { dayMode: 'all' }) {
+function renderControls(initialSelection: ActivitySelection = defaultAnalysisState.selection) {
   render(<ControlledControls initialSelection={initialSelection} />)
 }
 

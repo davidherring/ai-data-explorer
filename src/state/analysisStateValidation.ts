@@ -57,10 +57,9 @@ export const numericRangeSchema = z
 export const activitySelectionSchema = z
   .object({
     dateRange: dateRangeSchema.optional(),
-    recurringDateRange: recurringDateRangeSchema.optional(),
-    years: z.array(z.number()).optional(),
-    dayMode: dayModeSchema.optional(),
-    daysOfWeek: z.array(dayOfWeekSchema).optional(),
+    recurringDateRange: recurringDateRangeSchema,
+    years: z.array(z.number()),
+    daysOfWeek: z.array(dayOfWeekSchema),
     distanceMiles: numericRangeSchema.optional(),
     elevationGainFeet: numericRangeSchema.optional(),
     sportType: z.string().optional(),

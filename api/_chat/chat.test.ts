@@ -621,7 +621,10 @@ describe('handleChat', () => {
                 label: 'Earlier suggestion',
                 proposedState: {
                   ...defaultAnalysisState,
-                  selection: { years: [2017, 2025] },
+                  selection: {
+                    ...defaultAnalysisState.selection,
+                    years: [2017, 2025],
+                  },
                 },
                 changes: [
                   {
@@ -644,7 +647,10 @@ describe('handleChat', () => {
       ],
       currentAnalysisState: {
         ...defaultAnalysisState,
-        selection: { years: [2025] },
+        selection: {
+          ...defaultAnalysisState.selection,
+          years: [2025],
+        },
       },
       datasetProfile: buildDatasetProfile(selectedActivities),
       totalActivityCount: selectedActivities.length,
@@ -1018,8 +1024,9 @@ describe('analysis chat tools', () => {
     const currentAnalysisState: AnalysisState = {
       ...defaultAnalysisState,
       selection: {
+        ...defaultAnalysisState.selection,
         years: [2025],
-        dayMode: 'weekend',
+        daysOfWeek: ['saturday', 'sunday'],
       },
     }
     const tools = createTools(
@@ -1050,7 +1057,8 @@ describe('analysis chat tools', () => {
       proposedState: {
         selection: {
           years: [2025, 2026],
-          dayMode: 'weekend',
+          daysOfWeek: ['saturday', 'sunday'],
+          recurringDateRange: defaultAnalysisState.selection.recurringDateRange,
         },
         view: {
           type: 'relationship',
