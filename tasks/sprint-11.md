@@ -236,3 +236,19 @@ Verification / exit criteria:
 ## Remaining Ambiguity
 
 No remaining approval issue is known.
+
+## Closeout Notes
+
+- Shipped reusable strict `AnalysisState` validation for shared client/server state and chat contracts, plus typed constrained View Suggestion patches.
+- Registered `proposeViewSuggestion` as a server-side AI tool: the model supplies only a constrained patch, while the server derives and validates the complete `proposedState`.
+- Suggestions include deterministic source-state fingerprints; AI suggestions never mutate `AnalysisState` automatically, and `AppShell` remains the state owner.
+- Suggestion cards support Apply/Dismiss. Apply requires a matching current-state fingerprint, stale suggestions cannot apply, and Dismiss never mutates analysis state.
+- Applied/dismissed cards retain original suggestion content as conversation history while replacing buttons with terminal status.
+- Suggestion cards render after assistant explanatory text. Successful Apply sends compact one-turn `recentlyAppliedViewSuggestion` metadata on the next matching chat turn without exposing raw activities or prior tool results.
+- Prior assistant `tool-*` parts continue to be stripped from model-visible history; current submitted `AnalysisState` and `selectedActivities` remain authoritative.
+- Prompt guidance now normally makes concrete supported recommendations actionable through `proposeViewSuggestion`; deterministic analytical tools remain required for numerical claims.
+- Assistant markdown is safely rendered with `react-markdown`; user messages remain plain text, raw HTML is not enabled, and safe links are restricted to approved schemes.
+- Production smoke testing confirmed useful suggestion cards, correct Apply behavior, post-Apply continuity, stale-state protection, fixed card ordering/lifecycle issues, improved markdown readability, and continued deterministic-tool grounding.
+- Final verification: `npm run typecheck` passed; `npm run lint` passed; `npm test` passed with 33 files and 395 tests; `npm run build` passed. Existing Vite chunk-size warning remains.
+- Deferred: multiple simultaneous suggestion UX, accepted-suggestion persistence/transcript event modeling, stale-state reconciliation, broader selector/query capability, provisional `comparison` state, richer markdown/GFM, broader chat polish, large-payload transport scaling, and suggestion persistence/database support.
+- Architectural lesson: View Suggestions are safest as typed proposals against a specific source state, with explicit user application and fingerprint-based stale-state protection.
