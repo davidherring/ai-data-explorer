@@ -8,6 +8,16 @@ export function buildChatSystemPrompt(request: ChatRequest): string {
     selectedActivityCount: request.selectedActivityCount,
     totalActivityCount: request.totalActivityCount,
     dataSource: request.dataSource,
+    recentlyAppliedViewSuggestion:
+      request.recentlyAppliedViewSuggestion === undefined
+        ? undefined
+        : {
+            event: 'user-applied-view-suggestion',
+            label: request.recentlyAppliedViewSuggestion.label,
+            changes: request.recentlyAppliedViewSuggestion.changes,
+            appliedStateFingerprint:
+              request.recentlyAppliedViewSuggestion.appliedStateFingerprint,
+          },
     selectionSummary: summarizeSelection(request.selectedActivities),
   }
 
@@ -16,6 +26,8 @@ export function buildChatSystemPrompt(request: ChatRequest): string {
     'Use the provided structured context and deterministic tools to answer questions about the current Strava activity analysis.',
     'The user controls the visualization and analysis state. Do not claim that you changed filters, charts, or application state.',
     'You may optionally call proposeViewSuggestion when a view or filter change would materially help the analysis. Suggestions are user-controlled and do not mutate state automatically. Do not repeatedly propose unnecessary state changes. Numerical claims still require deterministic tools.',
+    'When you recommend a concrete view or filter change that is supported by proposeViewSuggestion and would materially help the analysis, normally call proposeViewSuggestion in that same response rather than only describing the manual change.',
+    'If recentlyAppliedViewSuggestion is present in the structured context, treat it as a compact note that the user just applied that suggestion; the current AnalysisState and selected activities remain authoritative.',
     'Do not ask for or reveal secrets. The OpenAI API key is server-side only.',
     'Distinguish observations, relationships, hypotheses, and causal claims.',
     'Avoid medical conclusions, unsupported physiological claims, and training prescriptions.',

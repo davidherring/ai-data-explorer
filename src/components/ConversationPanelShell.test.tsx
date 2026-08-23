@@ -306,6 +306,25 @@ describe('ConversationPanelShell', () => {
     expect(screen.queryByText('Analyzed selection')).not.toBeInTheDocument()
   })
 
+  it('renders assistant suggestion cards after explanatory text even if the tool part arrives first', () => {
+    chatState.messages = [
+      {
+        id: 'assistant-message',
+        role: 'assistant',
+        parts: [
+          createSuggestionToolPart(createSuggestion()),
+          { type: 'text', text: 'This relationship view would help.' },
+        ],
+      } as UIMessage,
+    ]
+
+    const { container } = render(createPanel())
+    const content = container.querySelector('.conversation-message-content')
+
+    expect(content?.children[0]).toHaveTextContent('This relationship view would help.')
+    expect(content?.children[1]).toHaveAccessibleName('View suggestion')
+  })
+
   it('applies a suggestion only through the parent callback', () => {
     const onApplyViewSuggestion = vi.fn()
     const suggestion = createSuggestion()
@@ -324,6 +343,86 @@ describe('ConversationPanelShell', () => {
     expect(onApplyViewSuggestion).toHaveBeenCalledWith(suggestion)
     expect(screen.getByText('Suggestion applied')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled()
+  })
+
+  it('sends applied suggestion context once when the next submit matches the applied state', () => {
+    const suggestion = createSuggestion()
+    chatState.messages = [
+      {
+        id: 'assistant-message',
+        role: 'assistant',
+        parts: [createSuggestionToolPart(suggestion)],
+      } as UIMessage,
+    ]
+    const { rerender } = render(createPanel())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
+    rerender(createPanel({ analysisState: suggestion.proposedState }))
+    fireEvent.change(screen.getByLabelText('Ask about the current view'), {
+      target: { value: 'Ok, what do we see?' },
+    })
+    fireEvent.submit(screen.getByRole('button', { name: 'Send' }).closest('form')!)
+
+    expect(chatState.sendMessage).toHaveBeenCalledWith(
+      { text: 'Ok, what do we see?' },
+      expect.objectContaining({
+        body: expect.objectContaining({
+          recentlyAppliedViewSuggestion: {
+            label: suggestion.label,
+            changes: suggestion.changes,
+            appliedStateFingerprint: getAnalysisStateFingerprint(
+              suggestion.proposedState,
+            ),
+          },
+        }),
+      }),
+    )
+
+    fireEvent.change(screen.getByLabelText('Ask about the current view'), {
+      target: { value: 'And now?' },
+    })
+    fireEvent.submit(screen.getByRole('button', { name: 'Send' }).closest('form')!)
+
+    expect(chatState.sendMessage.mock.calls[1][1].body).not.toHaveProperty(
+      'recentlyAppliedViewSuggestion',
+    )
+  })
+
+  it('omits and clears applied suggestion context when current state no longer matches', () => {
+    const suggestion = createSuggestion()
+    chatState.messages = [
+      {
+        id: 'assistant-message',
+        role: 'assistant',
+        parts: [createSuggestionToolPart(suggestion)],
+      } as UIMessage,
+    ]
+    const staleState: AnalysisState = {
+      ...defaultAnalysisState,
+      selection: { years: [2026] },
+    }
+    const { rerender } = render(createPanel())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
+    rerender(createPanel({ analysisState: staleState }))
+    fireEvent.change(screen.getByLabelText('Ask about the current view'), {
+      target: { value: 'What now?' },
+    })
+    fireEvent.submit(screen.getByRole('button', { name: 'Send' }).closest('form')!)
+
+    expect(chatState.sendMessage.mock.calls[0][1].body).not.toHaveProperty(
+      'recentlyAppliedViewSuggestion',
+    )
+
+    rerender(createPanel({ analysisState: suggestion.proposedState }))
+    fireEvent.change(screen.getByLabelText('Ask about the current view'), {
+      target: { value: 'Try again' },
+    })
+    fireEvent.submit(screen.getByRole('button', { name: 'Send' }).closest('form')!)
+
+    expect(chatState.sendMessage.mock.calls[1][1].body).not.toHaveProperty(
+      'recentlyAppliedViewSuggestion',
+    )
   })
 
   it('prevents applying a stale suggestion after analysis state changes', () => {
@@ -507,6 +606,30 @@ describe('ConversationPanelShell', () => {
     expect(chatState.clearError).toHaveBeenCalled()
     expect(screen.getByLabelText('Ask about the current view')).toHaveValue('')
     expect(chatState.sendMessage).not.toHaveBeenCalled()
+  })
+
+  it('clears pending applied suggestion context for New Chat', () => {
+    const suggestion = createSuggestion()
+    chatState.messages = [
+      {
+        id: 'assistant-message',
+        role: 'assistant',
+        parts: [createSuggestionToolPart(suggestion)],
+      } as UIMessage,
+    ]
+    const { rerender } = render(createPanel())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
+    rerender(createPanel({ analysisState: suggestion.proposedState }))
+    fireEvent.click(screen.getByRole('button', { name: 'New Chat' }))
+    fireEvent.change(screen.getByLabelText('Ask about the current view'), {
+      target: { value: 'Fresh question' },
+    })
+    fireEvent.submit(screen.getByRole('button', { name: 'Send' }).closest('form')!)
+
+    expect(chatState.sendMessage.mock.calls[0][1].body).not.toHaveProperty(
+      'recentlyAppliedViewSuggestion',
+    )
   })
 
   it('shows loading and disables submit while submitted or streaming', () => {

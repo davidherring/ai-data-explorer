@@ -9,6 +9,7 @@ import {
   dayOfWeekSchema,
   metricKeySchema,
 } from '../../src/state/analysisStateValidation.js'
+import { viewSuggestionChangeSchema } from '../../src/state/viewSuggestions.js'
 
 export const MAX_SELECTED_ACTIVITIES_FOR_CHAT = 2000
 export const MAX_CHAT_REQUEST_BYTES = 3_000_000
@@ -71,6 +72,14 @@ const uiMessageSchema = z
   })
   .passthrough()
 
+export const recentlyAppliedViewSuggestionSchema = z
+  .object({
+    label: z.string().min(1),
+    changes: z.array(viewSuggestionChangeSchema),
+    appliedStateFingerprint: z.string().min(1),
+  })
+  .strict()
+
 export const chatRequestSchema = z
   .object({
     id: z.string().optional(),
@@ -85,6 +94,7 @@ export const chatRequestSchema = z
     selectedActivityCount: z.number(),
     totalActivityCount: z.number(),
     dataSource: z.enum(['demo', 'strava']),
+    recentlyAppliedViewSuggestion: recentlyAppliedViewSuggestionSchema.optional(),
   })
   .strict()
   .superRefine((value, context) => {

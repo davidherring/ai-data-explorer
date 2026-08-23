@@ -23,6 +23,11 @@ type ConversationPanelShellProps = {
 }
 
 type SuggestionStatus = 'applied' | 'dismissed'
+type RecentlyAppliedViewSuggestion = {
+  label: string
+  changes: ViewSuggestion['changes']
+  appliedStateFingerprint: string
+}
 
 export function ConversationPanelShell({
   analysisState,
@@ -37,6 +42,8 @@ export function ConversationPanelShell({
   const [suggestionStatuses, setSuggestionStatuses] = useState<
     Record<string, SuggestionStatus>
   >({})
+  const [recentlyAppliedViewSuggestion, setRecentlyAppliedViewSuggestion] =
+    useState<RecentlyAppliedViewSuggestion | undefined>(undefined)
   const transport = useMemo(
     () => new DefaultChatTransport<UIMessage>({ api: '/api/chat' }),
     [],
@@ -57,6 +64,13 @@ export function ConversationPanelShell({
       return
     }
 
+    const currentStateFingerprint = getAnalysisStateFingerprint(analysisState)
+    const activeAppliedSuggestion =
+      recentlyAppliedViewSuggestion?.appliedStateFingerprint ===
+      currentStateFingerprint
+        ? recentlyAppliedViewSuggestion
+        : undefined
+
     void sendMessage(
       { text },
       {
@@ -67,16 +81,21 @@ export function ConversationPanelShell({
           selectedActivityCount,
           totalActivityCount,
           dataSource,
+          ...(activeAppliedSuggestion !== undefined
+            ? { recentlyAppliedViewSuggestion: activeAppliedSuggestion }
+            : {}),
         },
       },
     )
     setComposerText('')
+    setRecentlyAppliedViewSuggestion(undefined)
   }
 
   function handleNewChat() {
     setMessages([])
     setComposerText('')
     setSuggestionStatuses({})
+    setRecentlyAppliedViewSuggestion(undefined)
     clearError()
   }
 
@@ -89,6 +108,11 @@ export function ConversationPanelShell({
     }
 
     onApplyViewSuggestion(suggestion)
+    setRecentlyAppliedViewSuggestion({
+      label: suggestion.label,
+      changes: suggestion.changes,
+      appliedStateFingerprint: getAnalysisStateFingerprint(suggestion.proposedState),
+    })
     setSuggestionStatuses((current) => ({
       ...current,
       [suggestion.id]: 'applied',
@@ -183,43 +207,41 @@ function ConversationMessage({
   const hasAnalyticalToolActivity = message.parts.some(
     (part) => isToolUIPart(part) && part.type !== 'tool-proposeViewSuggestion',
   )
+  const textParts = message.parts.filter((part) => part.type === 'text')
+  const suggestionParts =
+    message.role === 'assistant'
+      ? message.parts.filter((part) => part.type === 'tool-proposeViewSuggestion')
+      : []
   const roleLabel = message.role === 'user' ? 'You' : 'Assistant'
 
   return (
     <article className={`conversation-message conversation-message-${message.role}`}>
       <p className="conversation-message-role">{roleLabel}</p>
       <div className="conversation-message-content">
-        {message.parts.map((part, index) => {
-          if (part.type !== 'text') {
-            if (part.type === 'tool-proposeViewSuggestion') {
-              return (
-                <ViewSuggestionToolPart
-                  key={`${message.id}-${index}`}
-                  part={part}
-                  analysisState={analysisState}
-                  statusBySuggestionId={suggestionStatuses}
-                  onApply={onApplySuggestion}
-                  onDismiss={onDismissSuggestion}
-                />
-              )
-            }
-
-            return null
-          }
-
+        {textParts.map((part, index) => {
           if (message.role === 'assistant') {
             return (
-              <AssistantMarkdown key={`${message.id}-${index}`}>
+              <AssistantMarkdown key={`${message.id}-text-${index}`}>
                 {part.text}
               </AssistantMarkdown>
             )
           }
 
-          return <p key={`${message.id}-${index}`}>{part.text}</p>
+          return <p key={`${message.id}-text-${index}`}>{part.text}</p>
         })}
         {message.role === 'assistant' && hasAnalyticalToolActivity && (
           <p className="conversation-tool-status">Analyzed selection</p>
         )}
+        {suggestionParts.map((part, index) => (
+          <ViewSuggestionToolPart
+            key={`${message.id}-suggestion-${index}`}
+            part={part}
+            analysisState={analysisState}
+            statusBySuggestionId={suggestionStatuses}
+            onApply={onApplySuggestion}
+            onDismiss={onDismissSuggestion}
+          />
+        ))}
       </div>
     </article>
   )

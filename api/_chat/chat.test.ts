@@ -31,6 +31,7 @@ import {
   compareGroupsToolInputSchema,
   MAX_CHAT_REQUEST_BYTES,
   MAX_SELECTED_ACTIVITIES_FOR_CHAT,
+  recentlyAppliedViewSuggestionSchema,
   relationshipToolInputSchema,
 } from './schema.js'
 import { AI_CHAT_MODEL_ID, createChatModel } from './model.js'
@@ -472,6 +473,85 @@ describe('handleChat', () => {
     expect(system).toContain('do not mutate state automatically')
     expect(system).toContain('Do not repeatedly propose unnecessary state changes')
     expect(system).toContain('Numerical claims still require deterministic tools')
+    expect(system).toContain(
+      'When you recommend a concrete view or filter change',
+    )
+    expect(system).toContain('normally call proposeViewSuggestion')
+  })
+
+  it('includes compact applied suggestion context in the system prompt', async () => {
+    const streamTextMock = vi.fn(() => ({
+      pipeUIMessageStreamToResponse: vi.fn(),
+    }))
+    const selectedActivities = [
+      createActivity({ id: 'private-a', localDate: '2026-01-01' }),
+    ]
+    const response = createMockResponse()
+    const body = createValidChatBody({
+      selectedActivities,
+      selectedActivityCount: selectedActivities.length,
+      recentlyAppliedViewSuggestion: {
+        label: 'Focus on low-elevation activities',
+        changes: [
+          {
+            field: 'selection.elevationGainFeet',
+            action: 'set',
+            label: 'Elevation gain',
+            value: '0 to 500',
+          },
+        ],
+        appliedStateFingerprint: getAnalysisStateFingerprint(defaultAnalysisState),
+      },
+    })
+
+    await handleChat(
+      createMockRequest('POST', JSON.stringify(body)),
+      response,
+      createMockDependencies({ streamText: streamTextMock }),
+    )
+
+    const streamTextCalls = streamTextMock.mock.calls as unknown as Array<
+      [{ system: string }]
+    >
+    const system = streamTextCalls[0][0].system
+
+    expect(system).toContain('recentlyAppliedViewSuggestion')
+    expect(system).toContain('user-applied-view-suggestion')
+    expect(system).toContain('Focus on low-elevation activities')
+    expect(system).toContain('Elevation gain')
+    expect(system).toContain(getAnalysisStateFingerprint(defaultAnalysisState))
+    expect(system).toContain(
+      'the current AnalysisState and selected activities remain authoritative',
+    )
+    expect(system).not.toContain('private-a')
+    expect(system).not.toContain('selectedActivities')
+    expect(system).not.toContain('tool-calculateTrend')
+  })
+
+  it('validates compact applied suggestion metadata strictly', () => {
+    expect(
+      recentlyAppliedViewSuggestionSchema.safeParse({
+        label: 'Focus on low-elevation activities',
+        changes: [
+          {
+            field: 'selection.elevationGainFeet',
+            action: 'set',
+            label: 'Elevation gain',
+            value: '0 to 500',
+          },
+        ],
+        appliedStateFingerprint: 'state-fnv1a:abc',
+      }).success,
+    ).toBe(true)
+
+    expect(
+      recentlyAppliedViewSuggestionSchema.safeParse({
+        label: 'Focus on low-elevation activities',
+        changes: [],
+        appliedStateFingerprint: 'state-fnv1a:abc',
+        selectedActivities: [{ id: 'private-a' }],
+      }).success,
+    ).toBe(false)
   })
 
   it('strips stale assistant tool output from model-visible history while preserving text and current context', async () => {
@@ -1080,6 +1160,7 @@ function createValidChatBody(
     currentAnalysisState: unknown
     selectedActivities: Activity[]
     selectedActivityCount: number
+    recentlyAppliedViewSuggestion: unknown
   }> = {},
 ) {
   const selectedActivities =
@@ -1109,6 +1190,12 @@ function createValidChatBody(
     selectedActivityCount: overrides.selectedActivityCount ?? selectedActivities.length,
     totalActivityCount: selectedActivities.length,
     dataSource: 'demo',
+    ...(overrides.recentlyAppliedViewSuggestion !== undefined
+      ? {
+          recentlyAppliedViewSuggestion:
+            overrides.recentlyAppliedViewSuggestion,
+        }
+      : {}),
   }
 }
 
