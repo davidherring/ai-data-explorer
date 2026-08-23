@@ -14,7 +14,7 @@ describe('RelationshipScatterChart', () => {
   })
 
   it('preserves default elevation gain vs average speed behavior', async () => {
-    renderChart([rideA, rideB, rideC])
+    renderChart([activityA, activityB, activityC])
 
     expect(
       screen.getByLabelText('Elevation gain vs Average speed'),
@@ -33,7 +33,7 @@ describe('RelationshipScatterChart', () => {
   })
 
   it('shows a year legend when valid plotted points span multiple years', async () => {
-    renderChart([rideA, rideD, rideE])
+    renderChart([activityA, activityD, activityE])
 
     await waitFor(() => {
       expect(getLegendSwatchLabels()).toEqual(['2025', '2026'])
@@ -41,7 +41,7 @@ describe('RelationshipScatterChart', () => {
   })
 
   it('does not show a year legend for single-year plotted points', async () => {
-    renderChart([rideA, rideB, rideC])
+    renderChart([activityA, activityB, activityC])
 
     await waitFor(() => {
       expect(document.querySelector('.relationship-chart-container svg')).toBeInTheDocument()
@@ -52,7 +52,7 @@ describe('RelationshipScatterChart', () => {
 
   it('does not show a year legend when only one selected year has valid plotted points', async () => {
     renderChart([
-      rideA,
+      activityA,
       createActivity({
         id: 'invalid-2026',
         localDate: '2026-08-20',
@@ -134,7 +134,7 @@ describe('RelationshipScatterChart', () => {
   })
 
   it('renders one valid point with a sparse relationship message', async () => {
-    renderChart([rideA])
+    renderChart([activityA])
 
     expect(
       screen.getByText('Too few valid activities to calculate Pearson r.'),
@@ -146,7 +146,7 @@ describe('RelationshipScatterChart', () => {
   })
 
   it('renders two valid points with a sparse relationship message', async () => {
-    renderChart([rideA, rideB])
+    renderChart([activityA, activityB])
 
     expect(
       screen.getByText('Too few valid activities to calculate Pearson r.'),
@@ -158,7 +158,7 @@ describe('RelationshipScatterChart', () => {
   })
 
   it('renders a normal scatter plot for three or more valid points', async () => {
-    renderChart([rideA, rideB, rideC])
+    renderChart([activityA, activityB, activityC])
 
     expect(
       screen.queryByText('Too few valid activities to calculate Pearson r.'),
@@ -173,7 +173,7 @@ describe('RelationshipScatterChart', () => {
   })
 
   it('renders non-default distance vs average speed title and tooltip', async () => {
-    renderChart([rideA, rideB, rideC], 'distanceMiles', 'averageSpeedMph')
+    renderChart([activityA, activityB, activityC], 'distanceMiles', 'averageSpeedMph')
 
     expect(
       screen.getByLabelText('Distance vs Average speed'),
@@ -190,7 +190,7 @@ describe('RelationshipScatterChart', () => {
   })
 
   it('renders moving time vs distance with metric formatting', async () => {
-    renderChart([rideA, rideB, rideC], 'movingTimeMinutes', 'distanceMiles')
+    renderChart([activityA, activityB, activityC], 'movingTimeMinutes', 'distanceMiles')
 
     expect(screen.getByLabelText('Moving time vs Distance')).toBeInTheDocument()
 
@@ -204,7 +204,7 @@ describe('RelationshipScatterChart', () => {
   })
 
   it('renders same-metric pairs and shows the metric once in tooltip', async () => {
-    renderChart([rideA, rideB, rideC], 'distanceMiles', 'distanceMiles')
+    renderChart([activityA, activityB, activityC], 'distanceMiles', 'distanceMiles')
 
     expect(screen.getByLabelText('Distance vs Distance')).toBeInTheDocument()
 
@@ -217,7 +217,7 @@ describe('RelationshipScatterChart', () => {
   })
 
   it('does not duplicate elevation context when elevation is an active metric', async () => {
-    renderChart([rideA, rideB, rideC], 'distanceMiles', 'elevationGainFeet')
+    renderChart([activityA, activityB, activityC], 'distanceMiles', 'elevationGainFeet')
 
     await waitFor(() => {
       expect(document.querySelector('svg')).toBeInTheDocument()
@@ -231,15 +231,15 @@ describe('RelationshipScatterChart', () => {
 
   it('does not include invalid activities in plotted tooltip data', async () => {
     renderChart([
-      rideA,
+      activityA,
       createActivity({
         id: 'invalid-a',
         localDate: '2025-04-01',
         elevationGainFeet: Number.NaN,
         averageSpeedMph: 99,
       }),
-      rideB,
-      rideC,
+      activityB,
+      activityC,
     ])
 
     await waitFor(() => {
@@ -292,7 +292,7 @@ describe('RelationshipScatterChart', () => {
   })
 
   it('replaces Plot output when the metric pair changes', async () => {
-    const { rerender } = renderChart([rideA, rideB, rideC])
+    const { rerender } = renderChart([activityA, activityB, activityC])
 
     await waitFor(() => {
       expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
@@ -300,7 +300,7 @@ describe('RelationshipScatterChart', () => {
 
     rerender(
       createChartElement(
-        [rideA, rideB, rideC],
+        [activityA, activityB, activityC],
         'movingTimeMinutes',
         'distanceMiles',
       ),
@@ -315,13 +315,13 @@ describe('RelationshipScatterChart', () => {
   })
 
   it('replaces Plot output when activities change', async () => {
-    const { rerender } = renderChart([rideA, rideB, rideC])
+    const { rerender } = renderChart([activityA, activityB, activityC])
 
     await waitFor(() => {
       expect(document.body.textContent).toContain('2025-03-12')
     })
 
-    rerender(createChartElement([rideD, rideE, rideF]))
+    rerender(createChartElement([activityD, activityE, activityF]))
 
     await waitFor(() => {
       expect(document.body.textContent).toContain('2026-07-04')
@@ -379,7 +379,7 @@ function getLegendSwatchLabels(): string[] {
   )
 }
 
-const rideA = createActivity({
+const activityA = createActivity({
   id: 'activity-a',
   localDate: '2025-03-12',
   averageSpeedMph: 15.24,
@@ -389,7 +389,7 @@ const rideA = createActivity({
   sportType: 'Ride',
 })
 
-const rideB = createActivity({
+const activityB = createActivity({
   id: 'activity-b',
   localDate: '2025-06-14',
   averageSpeedMph: 14.87,
@@ -399,7 +399,7 @@ const rideB = createActivity({
   sportType: 'GravelRide',
 })
 
-const rideC = createActivity({
+const activityC = createActivity({
   id: 'activity-c',
   localDate: '2025-09-20',
   averageSpeedMph: 16.1,
@@ -409,7 +409,7 @@ const rideC = createActivity({
   sportType: 'Ride',
 })
 
-const rideD = createActivity({
+const activityD = createActivity({
   id: 'activity-d',
   localDate: '2026-07-04',
   averageSpeedMph: 16.01,
@@ -419,7 +419,7 @@ const rideD = createActivity({
   sportType: 'Ride',
 })
 
-const rideE = createActivity({
+const activityE = createActivity({
   id: 'activity-e',
   localDate: '2026-08-04',
   averageSpeedMph: 15.2,
@@ -429,7 +429,7 @@ const rideE = createActivity({
   sportType: 'Ride',
 })
 
-const rideF = createActivity({
+const activityF = createActivity({
   id: 'activity-f',
   localDate: '2026-09-04',
   averageSpeedMph: 14.9,

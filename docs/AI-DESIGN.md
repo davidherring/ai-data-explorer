@@ -51,7 +51,6 @@ Potential fields include:
 
 - dataset date range;
 - total activity count;
-- total ride count;
 - available metrics;
 - missing metrics;
 - typical distance distribution;
@@ -85,7 +84,7 @@ For example, an athlete may say:
 
 "I usually use Wednesdays for hill rides."
 
-The assistant may use this as useful context, but should still verify whether the selected rides actually show higher elevation.
+The assistant may use this as useful context, but should still verify whether the selected activities actually show higher elevation.
 
 The optional profile is not required for MVP operation.
 
@@ -104,7 +103,6 @@ type AnalysisState = {
   selection: ActivitySelection;
   view: ViewConfiguration;
   grouping?: GroupingConfiguration;
-  aggregation?: AggregationConfiguration;
 };
 ```
 
@@ -183,7 +181,7 @@ Trend
 Metric:
 Average speed
 
-Ride count:
+Activity count:
 10
 
 This allows the user to ask:
@@ -202,7 +200,7 @@ Prior analytical snapshots should allow natural follow-up language.
 
 Examples:
 
-"those rides"
+"those activities"
 "same thing but last year"
 "what about elevation?"
 "now just compare weekends"
@@ -225,7 +223,7 @@ summary statistics;
 trend calculations;
 selection comparisons;
 relationships between metrics;
-identifying similar rides;
+identifying similar activities;
 recent-vs-historical analysis.
 
 This improves:
@@ -251,7 +249,7 @@ Possible output:
 
 ```ts
 type SelectionSummary = {
-  rideCount: number;
+  activityCount: number;
   dateRange: DateRange;
   averageSpeed?: number;
   medianSpeed?: number;
@@ -276,11 +274,11 @@ The comparison should not be limited to time periods.
 
 Possible outputs include:
 
-ride counts;
+activity counts;
 mean/median differences;
 percent differences where meaningful;
 distribution summaries;
-major differences in ride composition.
+major differences in activity composition.
 
 ### 9.3 calculateTrend
 
@@ -319,11 +317,11 @@ range information;
 possible clusters/outliers;
 warnings about causal interpretation.
 
-### 9.5 findSimilarRides
+### 9.5 findSimilarActivities
 
 Purpose:
 
-Find rides similar to a target ride or current selection.
+Find activities similar to a target activity or current selection.
 
 Similarity may initially use dimensions such as:
 
@@ -342,7 +340,7 @@ Compare a recent window with a relevant historical baseline.
 
 Example:
 
-last 6 weeks of weekday 10–30 mile rides;
+last 6 weeks of weekday 10–30 mile activities;
 same seasonal period across previous years.
 
 This tool can support recent-trend analysis and potential experiment suggestions.
@@ -407,11 +405,11 @@ The assistant should distinguish:
 
 Observation
 
-"Recent rides in this selection have lower average speed."
+"Recent activities in this selection have lower average speed."
 
 Contextual relationship
 
-"Those rides also have higher elevation."
+"Those activities also have higher elevation."
 
 Hypothesis
 
@@ -505,11 +503,11 @@ Because Strava data updates over time, the assistant may use recent activities t
 
 Example:
 
-"Your recent high-elevation rides are slower than comparable rides from earlier in the season, while weekly volume has also increased."
+"Your recent high-elevation activities are slower than comparable activities from earlier in the season, while weekly volume has also increased."
 
 Possible follow-up:
 
-"One useful experiment would be to compare performance on a lower-elevation ride similar to your earlier weekday rides."
+"One useful experiment would be to compare performance on a lower-elevation activity similar to your earlier weekday activities."
 
 Such suggestions should be framed as exploratory experiments rather than training prescriptions.
 

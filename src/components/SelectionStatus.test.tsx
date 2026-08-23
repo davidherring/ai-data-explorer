@@ -19,7 +19,7 @@ describe('SelectionStatus', () => {
   })
 
   it('renders a sparse state for one selected activity with singular wording', () => {
-    render(<SelectionStatus activities={[rideA]} totalActivityCount={1} />)
+    render(<SelectionStatus activities={[activityA]} totalActivityCount={1} />)
 
     expect(screen.getByText('1 of 1 activity selected')).toBeInTheDocument()
     expect(
@@ -28,7 +28,7 @@ describe('SelectionStatus', () => {
   })
 
   it('renders a sparse state for two selected activities', () => {
-    render(<SelectionStatus activities={[rideA, rideB]} totalActivityCount={4} />)
+    render(<SelectionStatus activities={[activityA, activityB]} totalActivityCount={4} />)
 
     expect(screen.getByText('2 of 4 activities selected')).toBeInTheDocument()
     expect(
@@ -37,46 +37,46 @@ describe('SelectionStatus', () => {
   })
 
   it('renders a normal state for three or more selected activities', () => {
-    render(<SelectionStatus activities={[rideA, rideB, rideC]} totalActivityCount={5} />)
+    render(<SelectionStatus activities={[activityA, activityB, activityC]} totalActivityCount={5} />)
 
     expect(screen.getByText('3 of 5 activities selected')).toBeInTheDocument()
     expect(screen.getByText('Selection ready.')).toBeInTheDocument()
   })
 
   it('formats average speed with one decimal and mph', () => {
-    render(<SelectionStatus activities={[rideA, rideB, rideC]} totalActivityCount={3} />)
+    render(<SelectionStatus activities={[activityA, activityB, activityC]} totalActivityCount={3} />)
 
     expect(screen.getByText('15.2 mph')).toBeInTheDocument()
   })
 
   it('formats average distance with one decimal and mi', () => {
-    render(<SelectionStatus activities={[rideA, rideB, rideC]} totalActivityCount={3} />)
+    render(<SelectionStatus activities={[activityA, activityB, activityC]} totalActivityCount={3} />)
 
     expect(screen.getByText('21.8 mi')).toBeInTheDocument()
   })
 
   it('formats average elevation as whole feet with separators', () => {
-    render(<SelectionStatus activities={[rideA, rideB, rideC]} totalActivityCount={3} />)
+    render(<SelectionStatus activities={[activityA, activityB, activityC]} totalActivityCount={3} />)
 
     expect(screen.getByText('1,301 ft')).toBeInTheDocument()
   })
 })
 
-const rideA = createActivity({
+const activityA = createActivity({
   id: 'activity-a',
   averageSpeedMph: 14.84,
   distanceMiles: 10.25,
   elevationGainFeet: 500,
 })
 
-const rideB = createActivity({
+const activityB = createActivity({
   id: 'activity-b',
   averageSpeedMph: 15.16,
   distanceMiles: 20.75,
   elevationGainFeet: 1000,
 })
 
-const rideC = createActivity({
+const activityC = createActivity({
   id: 'activity-c',
   averageSpeedMph: 15.48,
   distanceMiles: 34.25,

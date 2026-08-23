@@ -44,7 +44,7 @@ Future generalization should emerge from successful use of the interaction model
 
 ### Decision
 
-Do not hard-code ride categories based on one athlete's routine.
+Do not hard-code activity categories based on one athlete's routine.
 
 ### Rationale
 
@@ -120,15 +120,15 @@ New visualization types should only be added when they support a clearly unmet a
 
 ---
 
-## D005 — Avoid ride-count-based rolling averages as the default trend
+## D005 — Avoid activity-count-based rolling averages as the default trend
 
 ### Decision
 
-Do not use a fixed trailing-N-rides average as the primary trend representation.
+Do not use a fixed trailing-N-activities average as the primary trend representation.
 
 ### Rationale
 
-A fixed ride count may represent very different calendar durations depending on riding frequency.
+A fixed activity count may represent very different calendar durations depending on activity frequency.
 
 It can also create misleading continuity across gaps.
 
@@ -180,7 +180,7 @@ Elevation participates in:
 - summaries;
 - comparisons;
 - relationships;
-- ride similarity;
+- activity similarity;
 - AI reasoning.
 
 ---
@@ -225,9 +225,9 @@ The view provides useful information without requiring a performance metric.
 
 Cumulative views should operate on the current selection so the same mechanism can examine:
 
-- all rides;
-- long rides;
-- weekend rides;
+- all activities;
+- long activities;
+- weekend activities;
 - other cohorts.
 
 ---
@@ -286,7 +286,7 @@ Maintain prior user/assistant turns within the active chat.
 
 Natural analytical conversation relies on references such as:
 
-- "those rides";
+- "those activities";
 - "same thing last year";
 - "what about elevation?";
 - "does that explain it?"
@@ -370,7 +370,7 @@ Initial tools may include:
 - `compareSelections`
 - `calculateTrend`
 - `relationshipBetweenMetrics`
-- `findSimilarRides`
+- `findSimilarActivities`
 - `summarizeRecentVsHistorical`
 
 ---
@@ -598,7 +598,7 @@ Wind should not be a central MVP analytical variable.
 
 ### Rationale
 
-A single wind value poorly represents conditions across rides that:
+A single wind value poorly represents conditions across activities that:
 
 - change direction;
 - last multiple hours;

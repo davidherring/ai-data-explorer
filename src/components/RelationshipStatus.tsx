@@ -44,13 +44,14 @@ function formatRelationshipStatus(
 }
 
 function formatPairCount(relationship: MetricRelationshipResult): string {
-  const rideLabel = relationship.validPairCount === 1 ? 'activity' : 'activities'
+  const activityLabel =
+    relationship.validPairCount === 1 ? 'activity' : 'activities'
 
   if (relationship.sampleCount === relationship.validPairCount) {
-    return `${relationship.validPairCount} ${rideLabel}`
+    return `${relationship.validPairCount} ${activityLabel}`
   }
 
-  return `${relationship.validPairCount} valid ${rideLabel}`
+  return `${relationship.validPairCount} valid ${activityLabel}`
 }
 
 function formatPearson(pearsonR: number | undefined): string {

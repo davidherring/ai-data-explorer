@@ -27,7 +27,7 @@ Strava API types
     ↓
 Normalization
     ↓
-Normalized Activity / Ride
+Normalized Activity
     ↓
 Derived analytical fields
     ↓
@@ -40,13 +40,13 @@ The normalization boundary should make API-specific changes easier to isolate.
 
 ## 3. MVP Activity Scope
 
-The initial application focuses on cycling activities.
+The initial application focuses on supported Strava activities.
 
-Other Strava activity types may exist in the connected account but do not need to participate in the cycling analysis MVP.
+Other Strava activity types may exist in the connected account but do not need to participate in the MVP.
 
 The application should preserve enough abstraction that additional activity types could be supported later without redesigning the entire system.
 
-## 4. Normalized Ride
+## 4. Normalized Activity
 
 A first-pass normalized activity model may look like:
 
@@ -88,7 +88,7 @@ The internal model may preserve a Strava activity identifier for:
 refresh/update logic;
 deduplication;
 linking to the source activity if desired;
-finding a specific ride.
+finding a specific activity.
 
 Public demo or fixture datasets should replace or remove personal identifiers.
 
@@ -131,8 +131,7 @@ The normalized value should be represented in miles per hour for the MVP interfa
 The app should preserve the distinction between:
 
 average speed;
-moving time;
-elapsed time.
+moving time.
 
 The application should not invent an elevation-adjusted speed metric without a defensible methodology.
 
@@ -148,7 +147,7 @@ selection summaries;
 similarity calculations;
 AI analysis.
 
-Elevation is especially important because broad speed comparisons may be misleading when ride difficulty changes.
+Elevation is especially important because broad speed comparisons may be misleading when activity difficulty changes.
 
 ## 10. Weather
 
@@ -166,13 +165,13 @@ Strava activity data;
 an external historical weather service;
 another future enrichment layer.
 
-Starting temperature should be understood as a snapshot rather than a complete description of conditions over a long ride.
+Starting temperature should be understood as a snapshot rather than a complete description of conditions over a long activity.
 
 Wind is inherently more difficult to interpret because:
 
 direction changes throughout a route;
 wind direction matters;
-conditions change during the ride.
+conditions change during the activity.
 
 Weather should therefore remain contextual rather than treated as a definitive difficulty metric.
 
@@ -210,7 +209,7 @@ The MVP does not require heart rate or power.
 
 ## 12. Activity Selection
 
-A selection describes a subset of rides.
+A selection describes a subset of activities.
 
 Conceptually:
 
@@ -237,13 +236,13 @@ type ActivitySelection = {
     max?: number;
   };
 
-  activityType?: string;
+  sportType?: string;
 };
 ```
 
-The exact representation should avoid redundant state where possible.
-
-For example, implementation should define how years interacts with a full date range.
+Recurring month/day windows are represented separately from year-bearing
+absolute date ranges so the same seasonal window can be applied across selected
+years.
 
 ## 13. Selection Semantics
 
@@ -265,7 +264,7 @@ Elevation:
 
 The application should apply all active conditions together.
 
-No implicit ride category should be required.
+No implicit activity category should be required.
 
 ## 14. Comparison Model
 
@@ -357,15 +356,15 @@ Low-sample summaries should be identifiable by the visualization and AI layers.
 
 ## 18. Dataset Profile
 
-The application should derive a compact profile from all normalized rides.
+The application should derive a compact profile from all normalized activities.
 
 Conceptually:
 
 type AthleteDatasetProfile = {
-  firstRideDate: string;
-  lastRideDate: string;
+  firstActivityDate: string;
+  lastActivityDate: string;
 
-  totalRideCount: number;
+  totalActivityCount: number;
 
   metricAvailability: MetricAvailability;
 
@@ -403,7 +402,7 @@ Conceptually:
 
 ```ts
 type SelectionSummary = {
-  rideCount: number;
+  activityCount: number;
 
   dateRange?: DateRange;
 
@@ -432,7 +431,7 @@ Analysis functions should explicitly represent insufficient or sparse data.
 
 Examples:
 
-fewer than 2 rides;
+fewer than 2 activities;
 too few observations for a meaningful trend;
 too few observations for a relationship calculation.
 
@@ -448,7 +447,7 @@ The AI should not need to infer data quality indirectly.
 
 ## 22. Similarity
 
-The MVP may support ride similarity using existing normalized dimensions.
+The MVP may support activity similarity using existing normalized dimensions.
 
 A simple similarity model may compare:
 
@@ -486,7 +485,7 @@ The public repository should not contain the developer's private Strava export.
 
 A demo strategy may use:
 
-synthetic rides;
+synthetic activities;
 sanitized fixture data;
 a small generated dataset with realistic distributions.
 
@@ -516,7 +515,7 @@ The exact persistence strategy will be determined in the architecture design.
 
 The data layer should have strong automated tests around:
 
-Strava-to-Ride normalization;
+Strava-to-Activity normalization;
 unit conversion;
 date-derived fields;
 selection filtering;
@@ -537,6 +536,6 @@ live Strava API calls.
 
 The data model should be flexible enough to support different athletes without attempting to predict every future data source or analytical domain.
 
-The MVP should model the cycling data it actually needs.
+The MVP should model the activity data it actually needs.
 
 Future abstractions should emerge from real requirements.

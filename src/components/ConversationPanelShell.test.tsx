@@ -70,8 +70,8 @@ describe('ConversationPanelShell', () => {
   })
 
   it('uses a fresh snapshot on a later send after props change', () => {
-    const initialRides = [createActivity({ id: 'a' }), createActivity({ id: 'b' })]
-    const nextRides = [createActivity({ id: 'next', localDate: '2026-05-01' })]
+    const initialActivities = [createActivity({ id: 'a' }), createActivity({ id: 'b' })]
+    const nextActivities = [createActivity({ id: 'next', localDate: '2026-05-01' })]
     const nextAnalysisState: AnalysisState = {
       ...defaultAnalysisState,
       view: {
@@ -83,9 +83,9 @@ describe('ConversationPanelShell', () => {
     const { rerender } = render(
       <ConversationPanelShell
         analysisState={defaultAnalysisState}
-        selectedActivities={initialRides}
-        datasetProfile={buildDatasetProfile(initialRides)}
-        selectedActivityCount={initialRides.length}
+        selectedActivities={initialActivities}
+        datasetProfile={buildDatasetProfile(initialActivities)}
+        selectedActivityCount={initialActivities.length}
         totalActivityCount={12}
         dataSource="demo"
       />,
@@ -99,9 +99,9 @@ describe('ConversationPanelShell', () => {
     rerender(
       <ConversationPanelShell
         analysisState={nextAnalysisState}
-        selectedActivities={nextRides}
-        datasetProfile={buildDatasetProfile(nextRides)}
-        selectedActivityCount={nextRides.length}
+        selectedActivities={nextActivities}
+        datasetProfile={buildDatasetProfile(nextActivities)}
+        selectedActivityCount={nextActivities.length}
         totalActivityCount={20}
         dataSource="strava"
       />,
@@ -115,7 +115,7 @@ describe('ConversationPanelShell', () => {
     expect(chatState.sendMessage.mock.calls[1][1]).toMatchObject({
       body: {
         currentAnalysisState: nextAnalysisState,
-        selectedActivities: nextRides,
+        selectedActivities: nextActivities,
         selectedActivityCount: 1,
         totalActivityCount: 20,
         dataSource: 'strava',

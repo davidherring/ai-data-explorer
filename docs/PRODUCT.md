@@ -2,9 +2,9 @@
 
 ## 1. Product Summary
 
-Interactive AI Data Explorer is a Strava-based cycling analysis application that combines interactive data visualization with an embedded AI analytical collaborator.
+Interactive AI Data Explorer is a Strava-based activity analysis application that combines interactive data visualization with an embedded AI analytical collaborator.
 
-The application is intended to help athletes explore their own historical activity data, test hypotheses, compare periods or ride populations, identify potentially meaningful patterns, and decide what to investigate next.
+The application is intended to help athletes explore their own historical activity data, test hypotheses, compare periods or activity populations, identify potentially meaningful patterns, and decide what to investigate next.
 
 The core product idea is not "a dashboard with a chatbot."
 
@@ -43,15 +43,15 @@ The success condition is that the interaction feels like a useful analytical col
 
 ## 3. Primary User
 
-The MVP is designed for a Strava athlete who wants to explore long-term cycling data in more flexible ways than standard activity summaries allow.
+The MVP is designed for a Strava athlete who wants to explore long-term supported activity data in more flexible ways than standard activity summaries allow.
 
 The user may want to investigate questions such as:
 
 - Am I faster or slower than I was in prior years?
 - How does performance change through the season?
-- Are recent rides actually comparable with historical rides?
+- Are recent activities actually comparable with historical activities?
 - Does elevation appear related to speed?
-- Has total or long-ride volume changed?
+- Has total or long-activity volume changed?
 - Is a suspected training pattern supported by the data?
 - What else in the data looks worth investigating?
 
@@ -93,9 +93,9 @@ The application should make it easy to refine a population before interpreting t
 
 For example, a user may want to distinguish:
 
-- shorter rides from long rides;
-- weekday rides from weekend rides;
-- flatter rides from high-elevation rides;
+- shorter activities from long activities;
+- weekday activities from weekend activities;
+- flatter activities from high-elevation activities;
 - one seasonal period from another.
 
 The product should help the user notice when a comparison may be misleading.
@@ -108,7 +108,7 @@ The application should not assume that every athlete follows the same training r
 
 The user's personal riding patterns informed the discovery process, but the product model should remain generic.
 
-The application should be built from reusable analytical primitives rather than hard-coded ride categories.
+The application should be built from reusable analytical primitives rather than hard-coded activity categories.
 
 ---
 
@@ -152,7 +152,7 @@ It may identify relationships or changes in the data, but should not claim causa
 For example:
 
 Good:
-"Recent rides in this selection are slower and also include substantially more elevation."
+"Recent activities in this selection are slower and also include substantially more elevation."
 
 Bad:
 "More climbing caused your performance decline."
@@ -168,9 +168,9 @@ The application should be especially cautious about medical, physiological, or t
 The MVP should:
 
 - authenticate a user with Strava OAuth;
-- retrieve cycling activity data;
+- retrieve supported Strava activity data;
 - refresh activity data;
-- normalize Strava activity data into an internal ride model.
+- normalize Strava activity data into an internal Activity model.
 
 The application should support a continuously updating dataset rather than rely on a static export.
 
@@ -196,7 +196,7 @@ The MVP should support a small set of flexible analytical views.
 
 #### Trend over time
 
-Show individual rides and performance trends over calendar time.
+Show individual activities and performance trends over calendar time.
 
 Useful for questions about recent or long-term changes.
 
@@ -208,7 +208,7 @@ Example:
 
 - elevation gain vs. average speed.
 
-Useful for identifying confounders or distinct ride populations.
+Useful for identifying confounders or distinct activity populations.
 
 #### Seasonal overlay
 
@@ -247,7 +247,7 @@ An AI response may optionally include a structured suggestion.
 
 Example:
 
-"Recent Wednesday rides are slower, but elevation is also much higher than the historical selection. A speed-versus-elevation view may be more informative."
+"Recent Wednesday activities are slower, but elevation is also much higher than the historical selection. A speed-versus-elevation view may be more informative."
 
 [View Suggestion]
 
@@ -309,7 +309,7 @@ The initial tool layer should support capabilities such as:
 - `compareSelections`
 - `calculateTrend`
 - `relationshipBetweenMetrics`
-- `findSimilarRides`
+- `findSimilarActivities`
 - `summarizeRecentVsHistorical`
 
 Tool outputs should be structured and testable.
@@ -354,7 +354,7 @@ The two-week MVP is successful if:
 
 ## 10. MVP Boundaries
 
-The MVP will stay focused on Strava cycling analysis.
+The MVP will stay focused on Strava activity analysis.
 
 It will not attempt to become a general-purpose analytics platform during the initial build.
 

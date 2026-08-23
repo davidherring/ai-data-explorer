@@ -57,9 +57,9 @@ minimum and maximum distance;
 minimum and maximum elevation;
 activity type.
 
-The user should not be required to understand a predefined ride taxonomy.
+The user should not be required to understand a predefined activity taxonomy.
 
-For example, an athlete may construct a practical "weekday ride" population through:
+For example, an athlete may construct a practical "weekday activity" population through:
 
 weekdays;
 10–30 miles;
@@ -115,7 +115,7 @@ Show how a selected metric changes over calendar time.
 
 Initial behavior:
 
-individual rides visible where appropriate;
+individual activities visible where appropriate;
 optional smoothing or aggregation for dense selections;
 sparse selections should avoid misleading trend lines.
 
@@ -141,8 +141,8 @@ This view should help identify:
 
 confounders;
 clusters;
-unusual rides;
-shifts in ride composition.
+unusual activities;
+shifts in activity composition.
 
 Potential optional encodings include:
 
@@ -178,9 +178,9 @@ The view should work with any active selection.
 
 For example:
 
-all rides;
-rides over 30 miles;
-weekend rides;
+all activities;
+activities over 30 miles;
+weekend activities;
 another user-defined cohort.
 
 ## 7. Adaptive visualization behavior
@@ -264,10 +264,10 @@ User:
 "Why does this look slower?"
 
 Assistant:
-"Recent rides in this selection are slower, but they also contain substantially more elevation than the historical rides. I would be cautious about comparing average speed directly."
+"Recent activities in this selection are slower, but they also contain substantially more elevation than the historical activities. I would be cautious about comparing average speed directly."
 
 User:
-"What about similar-elevation rides?"
+"What about similar-elevation activities?"
 
 The assistant should understand the conversational reference without requiring the user to restate the full selection.
 
@@ -293,7 +293,7 @@ Example:
 
 Assistant:
 
-"Your 2026 Wednesday rides contain substantially more elevation than earlier years. A speed-versus-elevation view would help test whether ride difficulty explains the difference."
+"Your 2026 Wednesday activities contain substantially more elevation than earlier years. A speed-versus-elevation view would help test whether activity difficulty explains the difference."
 
 [View Suggestion]
 
@@ -371,7 +371,7 @@ This allows the assistant to begin with useful context before the user has selec
 Potential information includes:
 
 years represented;
-number of rides;
+number of activities;
 available metrics;
 typical distance ranges;
 typical elevation ranges;
@@ -412,7 +412,7 @@ The assistant should explicitly surface limitations when relevant.
 
 Examples:
 
-"Only 4 rides match this selection."
+"Only 4 activities match this selection."
 "Elevation differs substantially between these groups."
 "This relationship does not establish causation."
 "The dataset does not contain heart-rate or power data."

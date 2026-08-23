@@ -32,9 +32,9 @@ describe('CumulativeMetricChart', () => {
   })
 
   it('renders the cumulative title, supporting text, and chart output', async () => {
-    renderChart([rideA, rideB], 'distanceMiles', [
-      createPoint({ activity: rideA, value: 31.44, cumulativeValue: 31.44 }),
-      createPoint({ activity: rideB, value: 42, cumulativeValue: 73.44 }),
+    renderChart([activityA, activityB], 'distanceMiles', [
+      createPoint({ activity: activityA, value: 31.44, cumulativeValue: 31.44 }),
+      createPoint({ activity: activityB, value: 42, cumulativeValue: 73.44 }),
     ])
 
     expect(screen.getByLabelText('Cumulative Distance')).toBeInTheDocument()
@@ -47,8 +47,8 @@ describe('CumulativeMetricChart', () => {
   })
 
   it('uses metric metadata in tooltip text', async () => {
-    renderChart([rideA], 'distanceMiles', [
-      createPoint({ activity: rideA, value: 31.44, cumulativeValue: 31.44 }),
+    renderChart([activityA], 'distanceMiles', [
+      createPoint({ activity: activityA, value: 31.44, cumulativeValue: 31.44 }),
     ])
 
     await waitFor(() => {
@@ -64,8 +64,8 @@ describe('CumulativeMetricChart', () => {
   })
 
   it('renders non-default metric formatting and avoids duplicate elevation context', async () => {
-    renderChart([rideA], 'elevationGainFeet', [
-      createPoint({ activity: rideA, value: 1250, cumulativeValue: 1250 }),
+    renderChart([activityA], 'elevationGainFeet', [
+      createPoint({ activity: activityA, value: 1250, cumulativeValue: 1250 }),
     ])
 
     expect(screen.getByLabelText('Cumulative Elevation gain')).toBeInTheDocument()
@@ -85,8 +85,8 @@ describe('CumulativeMetricChart', () => {
   })
 
   it('renders time metric values with context lines', async () => {
-    renderChart([rideA], 'movingTimeMinutes', [
-      createPoint({ activity: rideA, value: 125.6, cumulativeValue: 125.6 }),
+    renderChart([activityA], 'movingTimeMinutes', [
+      createPoint({ activity: activityA, value: 125.6, cumulativeValue: 125.6 }),
     ])
 
     expect(screen.getByLabelText('Cumulative Moving time')).toBeInTheDocument()
@@ -102,8 +102,8 @@ describe('CumulativeMetricChart', () => {
   })
 
   it('replaces Plot output when metric and points change', async () => {
-    const { rerender } = renderChart([rideA], 'distanceMiles', [
-      createPoint({ activity: rideA, value: 31.44, cumulativeValue: 31.44 }),
+    const { rerender } = renderChart([activityA], 'distanceMiles', [
+      createPoint({ activity: activityA, value: 31.44, cumulativeValue: 31.44 }),
     ])
 
     await waitFor(() => {
@@ -112,10 +112,10 @@ describe('CumulativeMetricChart', () => {
 
     rerender(
       <CumulativeMetricChart
-        activities={[rideA]}
+        activities={[activityA]}
         totalActivityCount={1}
         yMetric="elevationGainFeet"
-        points={[createPoint({ activity: rideA, value: 1250, cumulativeValue: 1250 })]}
+        points={[createPoint({ activity: activityA, value: 1250, cumulativeValue: 1250 })]}
       />,
     )
 
@@ -180,7 +180,7 @@ function parseLocalCalendarDate(localDate: string): Date {
   return new Date(year, month - 1, day)
 }
 
-const rideA = createActivity({
+const activityA = createActivity({
   id: 'activity-a',
   localDate: '2025-03-12',
   distanceMiles: 31.44,
@@ -189,7 +189,7 @@ const rideA = createActivity({
   sportType: 'Ride',
 })
 
-const rideB = createActivity({
+const activityB = createActivity({
   id: 'activity-b',
   localDate: '2025-04-12',
   distanceMiles: 42,

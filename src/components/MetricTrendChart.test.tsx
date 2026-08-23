@@ -22,7 +22,7 @@ describe('MetricTrendChart', () => {
   })
 
   it('preserves default average-speed behavior', async () => {
-    renderChart([rideA, rideB], 'averageSpeedMph')
+    renderChart([activityA, activityB], 'averageSpeedMph')
 
     expect(
       screen.getByLabelText('Average speed over calendar time'),
@@ -41,7 +41,7 @@ describe('MetricTrendChart', () => {
   })
 
   it('shows a year legend when valid plotted points span multiple years', async () => {
-    renderChart([rideA, rideB], 'averageSpeedMph')
+    renderChart([activityA, activityB], 'averageSpeedMph')
 
     await waitFor(() => {
       expect(getLegendSwatchLabels()).toEqual(['2025', '2026'])
@@ -51,7 +51,7 @@ describe('MetricTrendChart', () => {
   it('does not show a year legend for single-year plotted points', async () => {
     renderChart(
       [
-        rideA,
+        activityA,
         createActivity({
           id: 'activity-c',
           localDate: '2025-08-20',
@@ -71,7 +71,7 @@ describe('MetricTrendChart', () => {
   it('does not show a year legend when only one selected year has valid plotted points', async () => {
     renderChart(
       [
-        rideA,
+        activityA,
         createActivity({
           id: 'invalid-2026',
           localDate: '2026-08-20',
@@ -89,7 +89,7 @@ describe('MetricTrendChart', () => {
   })
 
   it('renders a distance trend with metric title, accessibility, and tooltip', async () => {
-    renderChart([rideA], 'distanceMiles')
+    renderChart([activityA], 'distanceMiles')
 
     expect(screen.getByLabelText('Distance over calendar time')).toBeInTheDocument()
     expect(screen.getByText('Distance over calendar time')).toBeInTheDocument()
@@ -104,7 +104,7 @@ describe('MetricTrendChart', () => {
   })
 
   it('renders an elevation trend with whole-number formatting', async () => {
-    renderChart([rideA], 'elevationGainFeet')
+    renderChart([activityA], 'elevationGainFeet')
 
     expect(
       screen.getByLabelText('Elevation gain over calendar time'),
@@ -120,7 +120,7 @@ describe('MetricTrendChart', () => {
   })
 
   it('renders a time metric trend with whole-number minute formatting', async () => {
-    renderChart([rideA], 'movingTimeMinutes')
+    renderChart([activityA], 'movingTimeMinutes')
 
     expect(
       screen.getByLabelText('Moving time over calendar time'),
@@ -136,7 +136,7 @@ describe('MetricTrendChart', () => {
   it('does not plot non-finite active metric values', async () => {
     renderChart(
       [
-        rideA,
+        activityA,
         createActivity({
           id: 'invalid-distance',
           localDate: '2025-04-01',
@@ -199,7 +199,7 @@ describe('MetricTrendChart', () => {
   })
 
   it('replaces Plot output when the metric changes', async () => {
-    const { rerender } = renderChart([rideA], 'averageSpeedMph')
+    const { rerender } = renderChart([activityA], 'averageSpeedMph')
 
     await waitFor(() => {
       expect(document.body.textContent).toContain('Average speed: 15.2 mph')
@@ -207,7 +207,7 @@ describe('MetricTrendChart', () => {
 
     rerender(
       <MetricTrendChart
-        activities={[rideA]}
+        activities={[activityA]}
         totalActivityCount={1}
         yMetric="distanceMiles"
       />,
@@ -223,7 +223,7 @@ describe('MetricTrendChart', () => {
   })
 
   it('replaces Plot output when activities change', async () => {
-    const { rerender } = renderChart([rideA], 'averageSpeedMph')
+    const { rerender } = renderChart([activityA], 'averageSpeedMph')
 
     await waitFor(() => {
       expect(document.body.textContent).toContain('2025-03-12')
@@ -231,7 +231,7 @@ describe('MetricTrendChart', () => {
 
     rerender(
       <MetricTrendChart
-        activities={[rideB]}
+        activities={[activityB]}
         totalActivityCount={1}
         yMetric="averageSpeedMph"
       />,
@@ -270,7 +270,7 @@ function getLegendSwatchLabels(): string[] {
   )
 }
 
-const rideA = createActivity({
+const activityA = createActivity({
   id: 'activity-a',
   localDate: '2025-03-12',
   averageSpeedMph: 15.24,
@@ -280,7 +280,7 @@ const rideA = createActivity({
   sportType: 'Ride',
 })
 
-const rideB = createActivity({
+const activityB = createActivity({
   id: 'activity-b',
   localDate: '2026-07-04',
   averageSpeedMph: 16.01,

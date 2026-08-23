@@ -227,3 +227,18 @@ Verification / exit criteria:
 ## Remaining Ambiguity
 
 No remaining approval issue is known.
+
+## Closeout Notes
+
+- Generalized domain migration from `Ride` to `Activity` shipped across the active model, data-source flow, client state, and AI request contract.
+- Strava loading now supports `Walk` and `Hike` alongside the approved cycling activity types; `/api/strava/activities` and the client contract use `activities`.
+- AI grounding uses the submitted current `selectedActivities`; stale prior assistant tool-result stripping remains intact.
+- Removed obsolete top-level `AnalysisState.aggregation`; Seasonal keeps `aggregation: 'biweekly-median'` and Cumulative keeps `accumulation: 'continuous'` inside view config.
+- Added recurring month/day selection with AND composition across selected years and other filters; wraparound recurring ranges remain out of scope.
+- Removed `elapsedTimeMinutes` and `temperatureF`; active metrics are `averageSpeedMph`, `distanceMiles`, `elevationGainFeet`, and `movingTimeMinutes`.
+- Weather/temperature is deferred as future enrichment rather than retained as an always-missing active metric.
+- Per-view metric validity is centralized; Cumulative is restricted to additive metrics and excludes average speed.
+- Trend and Relationship encode plotted points by year only when valid plotted points span multiple years; single-year charts remain uncluttered.
+- Seasonal and Cumulative otherwise remain behaviorally intact.
+- Manual/production smoke tests passed for Demo and Strava loading, activity filtering, recurring seasonal windows, absolute and recurring date-range composition, metric selector behavior, multi-year chart encoding, current-selection AI grounding, and stale-tool-result regression behavior.
+- Deferred work: selector/layout redesign, better interaction between absolute and recurring date controls, richer hover tooltips, broader visualization polish, View Suggestions and AI-driven `AnalysisState` changes, weather enrichment, exhaustive Strava taxonomy support, future reconsideration of provisional `comparison` state, and chart lifecycle consolidation if later justified.
