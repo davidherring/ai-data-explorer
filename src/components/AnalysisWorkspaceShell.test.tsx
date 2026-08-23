@@ -303,6 +303,37 @@ describe('AnalysisWorkspaceShell', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('renders chart controls and selection summary in stable chart-card regions', () => {
+    const { container } = renderWorkspace({
+      selection: defaultAnalysisState.selection,
+      view: {
+        type: 'relationship',
+        xMetric: 'elevationGainFeet',
+        yMetric: 'averageSpeedMph',
+      },
+    })
+
+    const controls = container.querySelector('.chart-card-controls')
+    const viewControls = container.querySelector('.chart-view-controls')
+    const metricControls = container.querySelector('.chart-metric-controls')
+    const summary = container.querySelector('.chart-card-selection-summary')
+
+    expect(controls).toBeInTheDocument()
+    expect(viewControls).toContainElement(
+      screen.getByRole('group', { name: 'Visualization view' }),
+    )
+    expect(metricControls).toContainElement(
+      screen.getByRole('group', { name: 'Chart metrics' }),
+    )
+    expect(summary).toContainElement(screen.getByLabelText('Selection status'))
+    expect(metricControls).toContainElement(
+      screen.getByLabelText('Relationship X metric'),
+    )
+    expect(metricControls).toContainElement(
+      screen.getByLabelText('Relationship Y metric'),
+    )
+  })
+
   it('renders the default seasonal view from analysis state', () => {
     renderWorkspace({
       selection: defaultAnalysisState.selection,

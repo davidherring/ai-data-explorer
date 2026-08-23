@@ -97,13 +97,6 @@ export function AnalysisWorkspaceShell({
       }}
     />
   )
-  const headerControls = (
-    <div className="chart-header-controls">
-      {viewSwitcher}
-      {metricControls}
-    </div>
-  )
-
   return (
     <section className="analysis-workspace" aria-label="Analysis workspace">
       {activeView === 'trend' && (
@@ -111,7 +104,8 @@ export function AnalysisWorkspaceShell({
           activities={selectedActivities}
           totalActivityCount={activities.length}
           yMetric={analysisState.view.yMetric}
-          headerControls={headerControls}
+          viewControls={viewSwitcher}
+          metricControls={metricControls}
         />
       )}
 
@@ -123,7 +117,8 @@ export function AnalysisWorkspaceShell({
           yMetric={analysisState.view.yMetric}
           relationship={relationship}
           points={relationshipPoints}
-          headerControls={headerControls}
+          viewControls={viewSwitcher}
+          metricControls={metricControls}
         />
       )}
 
@@ -133,7 +128,8 @@ export function AnalysisWorkspaceShell({
           totalActivityCount={activities.length}
           yMetric={analysisState.view.yMetric}
           buckets={seasonalBuckets}
-          headerControls={headerControls}
+          viewControls={viewSwitcher}
+          metricControls={metricControls}
         />
       )}
 
@@ -143,7 +139,8 @@ export function AnalysisWorkspaceShell({
           totalActivityCount={activities.length}
           yMetric={analysisState.view.yMetric}
           points={cumulativePoints}
-          headerControls={headerControls}
+          viewControls={viewSwitcher}
+          metricControls={metricControls}
         />
       )}
 

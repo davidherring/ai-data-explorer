@@ -168,8 +168,8 @@ select {
 
 .trend-chart {
   display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 8px;
+  grid-template-rows: auto auto auto 1fr;
+  gap: 10px;
   min-width: 0;
   min-height: 320px;
   margin: 0;
@@ -177,44 +177,62 @@ select {
 }
 
 .trend-chart-header {
-  display: flex;
-  align-items: start;
-  flex-wrap: wrap;
-  gap: 12px 18px;
-  justify-content: space-between;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
 }
 
 .trend-chart-title {
   display: grid;
   gap: 2px;
+  min-width: 0;
 }
 
 .trend-chart-title strong {
+  min-width: 0;
   color: #172026;
   font-size: 1.1rem;
+  overflow-wrap: anywhere;
 }
 
-.chart-header-controls,
+.chart-card-controls {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(180px, 1fr);
+  gap: 8px 12px;
+  align-items: start;
+  min-width: 0;
+}
+
+.chart-view-controls,
+.chart-metric-controls,
 .metric-view-controls {
   display: flex;
   align-items: center;
-  flex: 0 0 auto;
   flex-wrap: wrap;
   gap: 8px;
+  min-width: 0;
+}
+
+.chart-metric-controls {
+  justify-content: end;
 }
 
 .metric-view-control {
   display: flex;
   align-items: center;
+  flex: 1 1 150px;
   gap: 6px;
+  min-width: 0;
   color: #46524e;
   font-size: 0.82rem;
   font-weight: 800;
 }
 
 .metric-view-control select {
+  flex: 1 1 0;
   min-height: 32px;
-  min-width: 112px;
+  min-width: 0;
+  max-width: 100%;
   border: 1px solid #cfd8d4;
   border-radius: 6px;
   padding: 5px 26px 5px 8px;
@@ -225,16 +243,19 @@ select {
 }
 
 .relationship-status {
+  min-width: 0;
   margin: 0;
   color: #53605c;
   font-size: 0.86rem;
   font-weight: 800;
+  overflow-wrap: anywhere;
 }
 
 .view-switcher {
   display: inline-flex;
   align-items: center;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   border: 1px solid #cfd8d4;
   border-radius: 7px;
@@ -242,7 +263,9 @@ select {
 }
 
 .view-switcher-button {
+  flex: 1 1 auto;
   min-height: 32px;
+  min-width: 0;
   border: 0;
   border-right: 1px solid #cfd8d4;
   padding: 6px 10px;
@@ -251,6 +274,7 @@ select {
   cursor: pointer;
   font-size: 0.86rem;
   font-weight: 800;
+  overflow-wrap: anywhere;
 }
 
 .view-switcher-button:last-child {
@@ -319,6 +343,12 @@ select {
   border: 0;
   background: transparent;
   box-shadow: none;
+}
+
+.chart-card-selection-summary .selection-status {
+  justify-content: start;
+  border-top: 1px solid #e6ebe8;
+  padding-top: 10px;
 }
 
 .selection-status-primary {
@@ -792,6 +822,14 @@ select {
     position: static;
   }
 
+  .chart-card-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-metric-controls {
+    justify-content: start;
+  }
+
   .selection-controls-primary,
   .selection-controls-more-grid {
     grid-template-columns: 1fr;
@@ -799,6 +837,29 @@ select {
 }
 
 @media (max-width: 520px) {
+  .view-switcher {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .view-switcher-button {
+    border-bottom: 1px solid #cfd8d4;
+  }
+
+  .view-switcher-button:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .view-switcher-button:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+
+  .metric-view-controls,
+  .metric-view-control {
+    width: 100%;
+  }
+
   .bounds-row {
     grid-template-columns: 1fr;
   }

@@ -25,7 +25,8 @@ type RelationshipScatterChartProps = {
   yMetric: MetricKey
   relationship: MetricRelationshipResult
   points: MetricRelationshipPoint[]
-  headerControls?: ReactNode
+  viewControls?: ReactNode
+  metricControls?: ReactNode
 }
 
 const fallbackChartWidth = 720
@@ -38,7 +39,8 @@ export function RelationshipScatterChart({
   yMetric,
   relationship,
   points,
-  headerControls,
+  viewControls,
+  metricControls,
 }: RelationshipScatterChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [chartWidth, setChartWidth] = useState(fallbackChartWidth)
@@ -169,9 +171,16 @@ export function RelationshipScatterChart({
             yMetric={yMetric}
           />
         </div>
-        {headerControls}
-        <SelectionStatus activities={activities} totalActivityCount={totalActivityCount} />
       </figcaption>
+
+      <div className="chart-card-controls">
+        <div className="chart-view-controls">{viewControls}</div>
+        <div className="chart-metric-controls">{metricControls}</div>
+      </div>
+
+      <div className="chart-card-selection-summary">
+        <SelectionStatus activities={activities} totalActivityCount={totalActivityCount} />
+      </div>
 
       <div ref={containerRef} className="trend-chart-container relationship-chart-container">
         {hasNoSelectedActivities && (

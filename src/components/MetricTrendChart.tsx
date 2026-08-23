@@ -18,7 +18,8 @@ type MetricTrendChartProps = {
   activities: Activity[]
   totalActivityCount: number
   yMetric: MetricKey
-  headerControls?: ReactNode
+  viewControls?: ReactNode
+  metricControls?: ReactNode
 }
 
 type TrendPoint = {
@@ -34,7 +35,8 @@ export function MetricTrendChart({
   activities,
   totalActivityCount,
   yMetric,
-  headerControls,
+  viewControls,
+  metricControls,
 }: MetricTrendChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [chartWidth, setChartWidth] = useState(fallbackChartWidth)
@@ -176,9 +178,16 @@ export function MetricTrendChart({
           <span className="section-label">Trend</span>
           <strong>{chartLabel}</strong>
         </div>
-        {headerControls}
-        <SelectionStatus activities={activities} totalActivityCount={totalActivityCount} />
       </figcaption>
+
+      <div className="chart-card-controls">
+        <div className="chart-view-controls">{viewControls}</div>
+        <div className="chart-metric-controls">{metricControls}</div>
+      </div>
+
+      <div className="chart-card-selection-summary">
+        <SelectionStatus activities={activities} totalActivityCount={totalActivityCount} />
+      </div>
 
       <div ref={containerRef} className="trend-chart-container">
         {hasNoSelectedActivities && (
