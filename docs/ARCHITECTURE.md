@@ -165,7 +165,13 @@ Proposed AnalysisState applied
       ↓
 Visualization rerenders
       ↓
-Acceptance event stored in conversation
+Compact one-turn applied-suggestion context may be sent with the next chat turn
+
+Selection years are source-aware. The static default state is source-independent,
+but when a source first reaches ready state the app selects all available years.
+Source changes initialize against the new source. Same-source refresh preserves
+narrowed selections, removes unavailable years, and auto-adds newly available
+years only when the prior selection represented all previously available years.
 
 
 ## 6. Strava Integration
@@ -397,9 +403,10 @@ configuration fields, validates the resulting state, and returns only valid
 structured suggestion data.
 
 Supported first-version patches cover view metric changes and selected activity
-filters: years, day mode, days of week, absolute date range, recurring date
-range, distance, elevation gain, and sport type. `comparison`, `grouping`, and
-arbitrary query language are not supported.
+filters: years, days of week, absolute date range, recurring date range,
+distance, elevation gain, and sport type. Required selection fields are patched
+with explicit values, not `null`. `comparison`, `grouping`, and arbitrary query
+language are not supported.
 
 The frontend receives the suggestion and renders Apply/Dismiss controls. Apply
 compares the source-state fingerprint with the current `AnalysisState` before
@@ -407,8 +414,8 @@ calling:
 
 setAnalysisState(suggestion.proposedState);
 
-Stale suggestions are not merged or reconciled. Sprint 11 does not add synthetic
-Apply/Dismiss transcript events.
+Stale suggestions are not merged or reconciled. The current implementation does
+not add synthetic Apply/Dismiss transcript events.
 
 
 ## 16. Visualization Layer
@@ -418,6 +425,12 @@ The visualization layer should be driven entirely by:
 normalized activity data;
 current analysis state;
 analytical outputs.
+
+Chart cards keep View and Metric controls with the chart while separating them
+from selection controls. The chart card structure is: analytical heading, View
+controls, view-specific Metric controls, selection summary, and visualization.
+The selection summary is a stable region rather than part of an overloaded
+header row.
 
 It should not contain duplicated filter logic.
 

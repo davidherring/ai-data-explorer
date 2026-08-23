@@ -108,6 +108,12 @@ type AnalysisState = {
 
 The snapshot should include enough information to reproduce the current analysis.
 
+Selection state uses explicit required `years`, `daysOfWeek`, and
+`recurringDateRange` values. `years: []` and `daysOfWeek: []` intentionally
+represent empty selections. Manual selection does not include `dayMode`;
+weekday/weekend remains available only as a deterministic grouped-comparison
+mode.
+
 ## 4. Conversation History
 
 The application should retain the conversation transcript within the active chat.
@@ -443,9 +449,11 @@ type AnalysisSuggestion = {
 };
 ```
 
-Sprint 11 supports patches for view metrics and these selection fields:
-`years`, `dayMode`, `daysOfWeek`, `dateRange`, `recurringDateRange`,
-`distanceMiles`, `elevationGainFeet`, and `sportType`.
+View Suggestions support patches for view metrics and these selection fields:
+`years`, `daysOfWeek`, `dateRange`, `recurringDateRange`, `distanceMiles`,
+`elevationGainFeet`, and `sportType`. Required selection fields are supplied as
+explicit values: clear years with `years: []`, clear days with
+`daysOfWeek: []`, and reset the Seasonal window with `01-01` through `12-31`.
 
 It does not support `comparison`, `grouping`, or arbitrary query expressions.
 

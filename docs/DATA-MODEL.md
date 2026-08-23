@@ -215,16 +215,14 @@ Conceptually:
 
 ```ts
 type ActivitySelection = {
+  years: number[];
+  daysOfWeek: DayOfWeek[];
+  recurringDateRange: RecurringDateRange;
+
   dateRange?: {
     start?: string;
     end?: string;
   };
-
-  years?: number[];
-
-  dayMode?: "all" | "weekday" | "weekend";
-
-  daysOfWeek?: DayOfWeek[];
 
   distanceMiles?: {
     min?: number;
@@ -240,9 +238,19 @@ type ActivitySelection = {
 };
 ```
 
-Recurring month/day windows are represented separately from year-bearing
+`years`, `daysOfWeek`, and `recurringDateRange` are explicit required fields.
+`years: []` means zero matching activities. `daysOfWeek: []` also means zero
+matching activities; all seven days means no day-of-week narrowing.
+
+The static default state is source-independent. Once a data source reaches ready
+state, the app initializes `years` to all available years for that source.
+Same-source refresh preserves narrowed year selections, removes unavailable
+years, and only auto-adds newly available years when the prior selection covered
+all previously available years.
+
+The recurring month/day range is represented separately from year-bearing
 absolute date ranges so the same seasonal window can be applied across selected
-years.
+years. The default and reset value is the full year, `01-01` through `12-31`.
 
 ## 13. Selection Semantics
 
@@ -263,6 +271,10 @@ Elevation:
 1200–1500 feet
 
 The application should apply all active conditions together.
+
+Absolute date ranges and recurring month/day ranges compose with AND semantics.
+For example, a selected year set plus a March 15 through June 20 recurring
+window selects only that seasonal window inside each selected year.
 
 No implicit activity category should be required.
 
@@ -322,6 +334,9 @@ weekday/weekend;
 day of week.
 
 Grouping should be represented explicitly in analysis state rather than inferred from visualization code.
+
+Manual selection no longer contains `dayMode`; weekday/weekend remains a
+deterministic grouped-comparison abstraction.
 
 
 ## 17. Aggregation

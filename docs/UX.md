@@ -48,16 +48,31 @@ The important requirement is that the visualization, controls, and AI conversati
 
 The user should be able to create a single active selection using direct controls.
 
-Initial controls may include:
+Current primary controls are:
 
-date or year range;
-weekday / weekend / all;
-specific day of week;
-minimum and maximum distance;
-minimum and maximum elevation;
+years;
 activity type.
 
+Additional filters live in collapsed-by-default More Filters:
+
+specific days of week;
+absolute date range;
+Seasonal window;
+minimum and maximum distance;
+minimum and maximum elevation.
+
+Manual day selection uses explicit `daysOfWeek` only. There is no manual
+weekday/weekend selector; weekday/weekend remains available as deterministic
+grouped-comparison output.
+
 The user should not be required to understand a predefined activity taxonomy.
+
+When activity data first loads, all available years are selected. Clearing all
+years intentionally produces an empty selection.
+
+Changing data sources initializes the year selection from the new source.
+Refreshing the same source preserves narrowed year selections unless the prior
+selection represented every previously available year.
 
 For example, an athlete may construct a practical "weekday activity" population through:
 
@@ -204,9 +219,10 @@ Conceptually:
 
 Selection
 - activity type
-- date/year range
-- weekday/weekend
-- day of week
+- explicit years
+- optional absolute date range
+- explicit recurring Seasonal window
+- explicit days of week
 - distance range
 - elevation range
 
@@ -226,13 +242,15 @@ Grouping / encoding
 - year
 - month
 
-Aggregation
-- raw
-- weekly
-- biweekly
-- other supported mode
+Seasonal and Cumulative fixed view behavior
+- biweekly median Seasonal aggregation
+- continuous Cumulative accumulation
 
 This state drives both the visualization and the AI context.
+
+Chart cards separate the analytical heading, View controls, view-specific Metric
+controls, selection summary, and visualization. The selection summary should not
+compete with chart controls for header space.
 
 ## 9. Manual interaction
 
@@ -334,8 +352,9 @@ Dismiss
 The underlying structured state preserves exactly what will change.
 
 The first version supports constrained view metric changes and selected activity
-filters. It does not support comparison mode, grouping, or arbitrary query
-language.
+filters. Required selection fields such as `years`, `daysOfWeek`, and
+`recurringDateRange` are proposed with explicit values. It does not support
+comparison mode, grouping, or arbitrary query language.
 
 ## 14. Conversation transcript
 

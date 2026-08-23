@@ -39,4 +39,10 @@ Deterministic tools perform analytical calculations server-side over the submitt
 
 Grouped comparison tools can compare years, months, weekdays/weekends, or days of week only within the activities included in the submitted selection; they do not reach outside the current selection. Their outputs are deterministic observations and associations for the assistant to interpret, not causal proof.
 
-The assistant may propose a typed View Suggestion when changing a view or filter would materially help. Suggestions are validated server-side, shown as user-controlled Apply/Dismiss cards, and never mutate `AnalysisState` automatically. Apply is guarded by a source-state fingerprint, so stale suggestions cannot apply after the user changes the current view or filters. Sprint 11 suggestions support only constrained view and selection fields; `comparison`, `grouping`, and arbitrary query language are not supported.
+The assistant may propose a typed View Suggestion when changing a view or filter would materially help. Suggestions are validated server-side, shown as user-controlled Apply/Dismiss cards, and never mutate `AnalysisState` automatically. Apply is guarded by a source-state fingerprint, so stale suggestions cannot apply after the user changes the current view or filters. Suggestions support only constrained view and selection fields; `comparison`, `grouping`, and arbitrary query language are not supported.
+
+## Current Workspace Semantics
+
+Manual selection uses explicit years, days of week, and a recurring Seasonal window. When a source loads, the app selects all available years; clearing all years intentionally selects zero activities. Clearing all days also selects zero activities. The default Seasonal window is the full year, `01-01` through `12-31`, and absolute date ranges compose with that recurring window using AND semantics.
+
+Primary selection controls are Years and Activity type. Days, absolute date range, Seasonal window, distance, and elevation live under collapsed `More Filters`. Chart View and Metric controls stay with the chart, while the selection summary has a stable chart-card region.
