@@ -12,6 +12,7 @@ import type { GroupedComparison } from '../../src/analysis/groupComparisons.js'
 import type { MetricTrendAnalysis } from '../../src/analysis/metricTrends.js'
 import type { DayOfWeek, Activity } from '../../src/data/activity.js'
 import { defaultAnalysisState } from '../../src/state/analysisState.js'
+import { safeParseAnalysisState } from '../../src/state/analysisStateValidation.js'
 import chatHandler from '../chat.js'
 import {
   handleChat,
@@ -195,6 +196,35 @@ describe('handleChat', () => {
       },
     })
     const response = createMockResponse()
+
+    await handleChat(
+      createMockRequest('POST', JSON.stringify(body)),
+      response,
+      createMockDependencies(),
+    )
+
+    expect(response.statusCode).toBe(400)
+    expect(JSON.parse(response.body)).toEqual({ error: 'invalid_chat_request' })
+  })
+
+  it('uses the shared AnalysisState validation contract for chat state', async () => {
+    const invalidState = {
+      ...defaultAnalysisState,
+      selection: {
+        ...defaultAnalysisState.selection,
+        recurringDateRange: {
+          type: 'recurring-month-day',
+          start: { month: 2, day: 29 },
+          end: { month: 2, day: 28 },
+        },
+      },
+    }
+    const body = createValidChatBody({
+      currentAnalysisState: invalidState,
+    })
+    const response = createMockResponse()
+
+    expect(safeParseAnalysisState(invalidState).success).toBe(false)
 
     await handleChat(
       createMockRequest('POST', JSON.stringify(body)),

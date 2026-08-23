@@ -1,5 +1,15 @@
 import type { DayOfWeek } from '../data/activity.js'
 
+export const dayOfWeekValues = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday',
+] as const satisfies readonly DayOfWeek[]
+
 export type DateRange = {
   start?: string
   end?: string
@@ -23,6 +33,12 @@ export type NumericRange = {
 
 export type DayMode = 'all' | 'weekday' | 'weekend'
 
+export const dayModeValues = [
+  'all',
+  'weekday',
+  'weekend',
+] as const satisfies readonly DayMode[]
+
 export type ActivitySelection = {
   dateRange?: DateRange
   recurringDateRange?: RecurringDateRange
@@ -40,11 +56,31 @@ export type MetricKey =
   | 'elevationGainFeet'
   | 'movingTimeMinutes'
 
+export const metricKeyValues = [
+  'averageSpeedMph',
+  'distanceMiles',
+  'elevationGainFeet',
+  'movingTimeMinutes',
+] as const satisfies readonly MetricKey[]
+
 export type CumulativeMetricKey = Exclude<MetricKey, 'averageSpeedMph'>
+
+export const cumulativeMetricKeyValues = [
+  'distanceMiles',
+  'elevationGainFeet',
+  'movingTimeMinutes',
+] as const satisfies readonly CumulativeMetricKey[]
 
 export type ViewType = 'trend' | 'relationship' | 'seasonal' | 'cumulative'
 
 export type GroupingKey = 'year' | 'month' | 'dayOfWeek' | 'dayMode'
+
+export const groupingKeyValues = [
+  'year',
+  'month',
+  'dayOfWeek',
+  'dayMode',
+] as const satisfies readonly GroupingKey[]
 
 export type TrendViewConfiguration = {
   type: 'trend'

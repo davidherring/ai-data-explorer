@@ -1,129 +1,17 @@
 import { z } from 'zod'
 import type { DatasetProfile } from '../../src/analysis/aiContext.js'
 import type { Activity } from '../../src/data/activity.js'
-import type { AnalysisState, MetricKey } from '../../src/state/analysisState.js'
+import type { AnalysisState } from '../../src/state/analysisState.js'
+import {
+  analysisStateSchema,
+  dateRangeSchema,
+  dayModeSchema,
+  dayOfWeekSchema,
+  metricKeySchema,
+} from '../../src/state/analysisStateValidation.js'
 
 export const MAX_SELECTED_ACTIVITIES_FOR_CHAT = 2000
 export const MAX_CHAT_REQUEST_BYTES = 3_000_000
-
-export const metricKeyValues = [
-  'averageSpeedMph',
-  'distanceMiles',
-  'elevationGainFeet',
-  'movingTimeMinutes',
-] as const satisfies readonly MetricKey[]
-
-const cumulativeMetricKeySchema = z.enum([
-  'distanceMiles',
-  'elevationGainFeet',
-  'movingTimeMinutes',
-])
-
-const dayOfWeekSchema = z.enum([
-  'monday',
-  'tuesday',
-  'wednesday',
-  'thursday',
-  'friday',
-  'saturday',
-  'sunday',
-])
-
-const metricKeySchema = z.enum(metricKeyValues)
-
-const dateRangeSchema = z
-  .object({
-    start: z.string().optional(),
-    end: z.string().optional(),
-  })
-  .strict()
-
-const monthDaySchema = z
-  .object({
-    month: z.number().int().min(1).max(12),
-    day: z.number().int().min(1).max(31),
-  })
-  .strict()
-  .refine(isValidMonthDay, {
-    message: 'Invalid month/day',
-  })
-
-const recurringDateRangeSchema = z
-  .object({
-    type: z.literal('recurring-month-day'),
-    start: monthDaySchema,
-    end: monthDaySchema,
-  })
-  .strict()
-  .refine((range) => compareMonthDay(range.start, range.end) <= 0, {
-    message: 'Recurring date range start must be before or equal to end',
-    path: ['start'],
-  })
-
-const numericRangeSchema = z
-  .object({
-    min: z.number().optional(),
-    max: z.number().optional(),
-  })
-  .strict()
-
-const activitySelectionSchema = z
-  .object({
-    dateRange: dateRangeSchema.optional(),
-    recurringDateRange: recurringDateRangeSchema.optional(),
-    years: z.array(z.number()).optional(),
-    dayMode: z.enum(['all', 'weekday', 'weekend']).optional(),
-    daysOfWeek: z.array(dayOfWeekSchema).optional(),
-    distanceMiles: numericRangeSchema.optional(),
-    elevationGainFeet: numericRangeSchema.optional(),
-    sportType: z.string().optional(),
-  })
-  .strict()
-
-const trendViewSchema = z
-  .object({
-    type: z.literal('trend'),
-    yMetric: metricKeySchema,
-  })
-  .strict()
-
-const relationshipViewSchema = z
-  .object({
-    type: z.literal('relationship'),
-    xMetric: metricKeySchema,
-    yMetric: metricKeySchema,
-  })
-  .strict()
-
-const seasonalViewSchema = z
-  .object({
-    type: z.literal('seasonal'),
-    yMetric: metricKeySchema,
-    aggregation: z.literal('biweekly-median'),
-  })
-  .strict()
-
-const cumulativeViewSchema = z
-  .object({
-    type: z.literal('cumulative'),
-    yMetric: cumulativeMetricKeySchema,
-    accumulation: z.literal('continuous'),
-  })
-  .strict()
-
-const analysisStateSchema = z
-  .object({
-    selection: activitySelectionSchema,
-    comparison: activitySelectionSchema.optional(),
-    view: z.discriminatedUnion('type', [
-      trendViewSchema,
-      relationshipViewSchema,
-      seasonalViewSchema,
-      cumulativeViewSchema,
-    ]),
-    grouping: z.enum(['year', 'month', 'dayOfWeek', 'dayMode']).optional(),
-  })
-  .strict()
 
 const activitySchema = z
   .object({
@@ -223,7 +111,6 @@ export const calculateTrendToolInputSchema = z
   .strict()
 
 const monthGroupSchema = z.number().int().min(1).max(12)
-const dayModeGroupSchema = z.enum(['weekday', 'weekend'])
 
 export const compareGroupsToolInputSchema = z.discriminatedUnion('groupBy', [
   z
@@ -241,7 +128,7 @@ export const compareGroupsToolInputSchema = z.discriminatedUnion('groupBy', [
   z
     .object({
       groupBy: z.literal('dayMode'),
-      groups: z.array(dayModeGroupSchema).optional(),
+      groups: z.array(dayModeSchema.exclude(['all'])).optional(),
     })
     .strict(),
   z
@@ -259,28 +146,3 @@ export type ChatRequest = z.infer<typeof chatRequestSchema> & {
 }
 
 export type ChatUIMessage = z.infer<typeof uiMessageSchema>
-
-function isValidMonthDay(monthDay: { month: number; day: number }): boolean {
-  return monthDay.day <= getDaysInMonth(monthDay.month)
-}
-
-function getDaysInMonth(month: number): number {
-  switch (month) {
-    case 2:
-      return 29
-    case 4:
-    case 6:
-    case 9:
-    case 11:
-      return 30
-    default:
-      return 31
-  }
-}
-
-function compareMonthDay(
-  left: { month: number; day: number },
-  right: { month: number; day: number },
-): number {
-  return left.month - right.month || left.day - right.day
-}
