@@ -327,19 +327,11 @@ function ViewSuggestionToolPart({
   const suggestion = parsedSuggestion.data
   const status = statusBySuggestionId[suggestion.id]
 
-  if (status === 'dismissed') {
-    return (
-      <p className="conversation-suggestion-status">Suggestion dismissed</p>
-    )
-  }
-
-  if (status === 'applied') {
-    return (
-      <p className="conversation-suggestion-status">Suggestion applied</p>
-    )
-  }
-
+  const isApplied = status === 'applied'
+  const isDismissed = status === 'dismissed'
+  const isTerminal = isApplied || isDismissed
   const isStale =
+    !isTerminal &&
     getAnalysisStateFingerprint(analysisState) !== suggestion.sourceStateFingerprint
 
   return (
@@ -371,27 +363,33 @@ function ViewSuggestionToolPart({
           Current view or filters changed. Ask for a new suggestion.
         </p>
       )}
-      <div className="conversation-suggestion-actions">
-        <button
-          className="secondary-button"
-          type="button"
-          disabled={isStale}
-          onClick={() => {
-            onApply(suggestion)
-          }}
-        >
-          Apply
-        </button>
-        <button
-          className="secondary-button"
-          type="button"
-          onClick={() => {
-            onDismiss(suggestion)
-          }}
-        >
-          Dismiss
-        </button>
-      </div>
+      {isTerminal ? (
+        <p className="conversation-suggestion-status">
+          {isApplied ? 'Suggestion applied' : 'Suggestion dismissed'}
+        </p>
+      ) : (
+        <div className="conversation-suggestion-actions">
+          <button
+            className="secondary-button"
+            type="button"
+            disabled={isStale}
+            onClick={() => {
+              onApply(suggestion)
+            }}
+          >
+            Apply
+          </button>
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={() => {
+              onDismiss(suggestion)
+            }}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
     </section>
   )
 }

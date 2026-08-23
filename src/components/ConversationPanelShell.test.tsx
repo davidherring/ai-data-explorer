@@ -346,6 +346,35 @@ describe('ConversationPanelShell', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
 
     expect(onApplyViewSuggestion).toHaveBeenCalledWith(suggestion)
+    expect(screen.getByRole('region', { name: 'View suggestion' })).toBeInTheDocument()
+    expect(screen.getByText('Compare speed and elevation')).toBeInTheDocument()
+    expect(screen.getByText('Elevation may explain the speed pattern.')).toBeInTheDocument()
+    expect(screen.getByText('View')).toBeInTheDocument()
+    expect(screen.getByText('Relationship')).toBeInTheDocument()
+    expect(screen.getByText('X metric')).toBeInTheDocument()
+    expect(screen.getByText('Elevation gain')).toBeInTheDocument()
+    expect(screen.getByText('Suggestion applied')).toBeInTheDocument()
+    expect(screen.queryByText(/Current view or filters changed/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Apply' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Dismiss' })).not.toBeInTheDocument()
+  })
+
+  it('keeps an applied suggestion card from becoming visually stale after state changes', () => {
+    const suggestion = createSuggestion()
+    chatState.messages = [
+      {
+        id: 'assistant-message',
+        role: 'assistant',
+        parts: [createSuggestionToolPart(suggestion)],
+      } as UIMessage,
+    ]
+    const { rerender } = render(createPanel())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
+    rerender(createPanel({ analysisState: suggestion.proposedState }))
+
+    expect(screen.getByRole('region', { name: 'View suggestion' })).toBeInTheDocument()
+    expect(screen.getByText('Compare speed and elevation')).toBeInTheDocument()
     expect(screen.getByText('Suggestion applied')).toBeInTheDocument()
     expect(screen.queryByText(/Current view or filters changed/)).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Apply' })).not.toBeInTheDocument()
@@ -504,6 +533,13 @@ describe('ConversationPanelShell', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }))
 
     expect(onApplyViewSuggestion).not.toHaveBeenCalled()
+    expect(screen.getByRole('region', { name: 'View suggestion' })).toBeInTheDocument()
+    expect(screen.getByText('Compare speed and elevation')).toBeInTheDocument()
+    expect(screen.getByText('Elevation may explain the speed pattern.')).toBeInTheDocument()
+    expect(screen.getByText('View')).toBeInTheDocument()
+    expect(screen.getByText('Relationship')).toBeInTheDocument()
+    expect(screen.getByText('X metric')).toBeInTheDocument()
+    expect(screen.getByText('Elevation gain')).toBeInTheDocument()
     expect(screen.getByText('Suggestion dismissed')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Apply' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Dismiss' })).not.toBeInTheDocument()
