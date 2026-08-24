@@ -160,6 +160,16 @@ export function getAnalysisStateFingerprint(state: AnalysisState): string {
   return `state-fnv1a:${hashCanonicalValue(analysisStateSchema.parse(state))}`
 }
 
+export function buildActivityDataContextId(
+  source: string,
+  activities: readonly { id: string }[],
+): string {
+  return `activity-context-fnv1a:${hashCanonicalValue({
+    source,
+    activityIds: activities.map((activity) => activity.id),
+  })}`
+}
+
 export function applyViewSuggestionPatch(
   currentState: AnalysisState,
   patch: ProposeViewSuggestionInput['patch'],

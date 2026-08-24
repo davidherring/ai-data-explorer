@@ -1,6 +1,13 @@
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport, isToolUIPart, type UIMessage } from 'ai'
-import { useMemo, useState, type FormEvent } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from 'react'
 import Markdown, { type Components } from 'react-markdown'
 import type { DatasetProfile } from '../analysis/aiContext.ts'
 import type { ActivityDataSourceId } from '../data/activityDataSource.ts'
@@ -20,13 +27,14 @@ type ConversationPanelShellProps = {
   selectedActivityCount: number
   totalActivityCount: number
   dataSource: ActivityDataSourceId
+  activityDataContextId: string
   onApplyViewSuggestion: (
     suggestion: ViewSuggestion,
     nextAnalysisState: AnalysisState,
   ) => void
 }
 
-type SuggestionStatus = 'applied' | 'dismissed'
+type SuggestionStatus = 'applied' | 'dismissed' | 'ignored'
 type RecentlyAppliedViewSuggestion = {
   label: string
   changes: ViewSuggestion['changes']
@@ -40,14 +48,19 @@ export function ConversationPanelShell({
   selectedActivityCount,
   totalActivityCount,
   dataSource,
+  activityDataContextId,
   onApplyViewSuggestion,
 }: ConversationPanelShellProps) {
   const [composerText, setComposerText] = useState('')
   const [suggestionStatuses, setSuggestionStatuses] = useState<
     Record<string, SuggestionStatus>
   >({})
+  const [unavailableSuggestionIds, setUnavailableSuggestionIds] = useState<
+    Record<string, true>
+  >({})
   const [recentlyAppliedViewSuggestion, setRecentlyAppliedViewSuggestion] =
     useState<RecentlyAppliedViewSuggestion | undefined>(undefined)
+  const previousActivityDataContextId = useRef(activityDataContextId)
   const transport = useMemo(
     () => new DefaultChatTransport<UIMessage>({ api: '/api/chat' }),
     [],
@@ -59,6 +72,42 @@ export function ConversationPanelShell({
   const isWorking = status === 'submitted' || status === 'streaming'
   const canSubmit = status === 'ready' && composerText.trim().length > 0
 
+  const markPendingSuggestionsAsIgnored = useCallback(() => {
+    const suggestions = getValidViewSuggestions(messages)
+
+    if (suggestions.length === 0) {
+      return
+    }
+
+    setSuggestionStatuses((current) => {
+      let next = current
+
+      for (const suggestion of suggestions) {
+        if (
+          current[suggestion.id] === undefined &&
+          unavailableSuggestionIds[suggestion.id] !== true
+        ) {
+          if (next === current) {
+            next = { ...current }
+          }
+
+          next[suggestion.id] = 'ignored'
+        }
+      }
+
+      return next
+    })
+  }, [messages, unavailableSuggestionIds])
+
+  useEffect(() => {
+    if (previousActivityDataContextId.current === activityDataContextId) {
+      return
+    }
+
+    previousActivityDataContextId.current = activityDataContextId
+    markPendingSuggestionsAsIgnored()
+  }, [activityDataContextId, markPendingSuggestionsAsIgnored])
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -67,6 +116,8 @@ export function ConversationPanelShell({
     if (text.length === 0 || status !== 'ready') {
       return
     }
+
+    markPendingSuggestionsAsIgnored()
 
     const currentStateFingerprint = getAnalysisStateFingerprint(analysisState)
     const activeAppliedSuggestion =
@@ -99,12 +150,23 @@ export function ConversationPanelShell({
     setMessages([])
     setComposerText('')
     setSuggestionStatuses({})
+    setUnavailableSuggestionIds({})
     setRecentlyAppliedViewSuggestion(undefined)
     clearError()
   }
 
   function handleApplySuggestion(suggestion: ViewSuggestion) {
-    const nextAnalysisState = applyViewSuggestion(analysisState, suggestion)
+    let nextAnalysisState: AnalysisState
+
+    try {
+      nextAnalysisState = applyViewSuggestion(analysisState, suggestion)
+    } catch {
+      setUnavailableSuggestionIds((current) => ({
+        ...current,
+        [suggestion.id]: true,
+      }))
+      return
+    }
 
     onApplyViewSuggestion(suggestion, nextAnalysisState)
     setRecentlyAppliedViewSuggestion({
@@ -151,8 +213,8 @@ export function ConversationPanelShell({
           <ConversationMessage
             key={message.id}
             message={message}
-            analysisState={analysisState}
             suggestionStatuses={suggestionStatuses}
+            unavailableSuggestionIds={unavailableSuggestionIds}
             onApplySuggestion={handleApplySuggestion}
             onDismissSuggestion={handleDismissSuggestion}
           />
@@ -192,14 +254,14 @@ export function ConversationPanelShell({
 
 function ConversationMessage({
   message,
-  analysisState,
   suggestionStatuses,
+  unavailableSuggestionIds,
   onApplySuggestion,
   onDismissSuggestion,
 }: {
   message: UIMessage
-  analysisState: AnalysisState
   suggestionStatuses: Record<string, SuggestionStatus>
+  unavailableSuggestionIds: Record<string, true>
   onApplySuggestion: (suggestion: ViewSuggestion) => void
   onDismissSuggestion: (suggestion: ViewSuggestion) => void
 }) {
@@ -235,8 +297,8 @@ function ConversationMessage({
           <ViewSuggestionToolPart
             key={`${message.id}-suggestion-${index}`}
             part={part}
-            analysisState={analysisState}
             statusBySuggestionId={suggestionStatuses}
+            unavailableSuggestionIds={unavailableSuggestionIds}
             onApply={onApplySuggestion}
             onDismiss={onDismissSuggestion}
           />
@@ -298,16 +360,16 @@ function isSafeMarkdownLink(href: string | undefined): href is string {
 
 type ViewSuggestionToolPartProps = {
   part: UIMessage['parts'][number]
-  analysisState: AnalysisState
   statusBySuggestionId: Record<string, SuggestionStatus>
+  unavailableSuggestionIds: Record<string, true>
   onApply: (suggestion: ViewSuggestion) => void
   onDismiss: (suggestion: ViewSuggestion) => void
 }
 
 function ViewSuggestionToolPart({
   part,
-  analysisState: _analysisState,
   statusBySuggestionId,
+  unavailableSuggestionIds,
   onApply,
   onDismiss,
 }: ViewSuggestionToolPartProps) {
@@ -328,7 +390,9 @@ function ViewSuggestionToolPart({
 
   const isApplied = status === 'applied'
   const isDismissed = status === 'dismissed'
-  const isTerminal = isApplied || isDismissed
+  const isIgnored = status === 'ignored'
+  const isUnavailable = unavailableSuggestionIds[suggestion.id] === true
+  const isTerminal = isApplied || isDismissed || isIgnored || isUnavailable
 
   return (
     <section className="conversation-suggestion-card" aria-label="View suggestion">
@@ -356,7 +420,7 @@ function ViewSuggestionToolPart({
 
       {isTerminal ? (
         <p className="conversation-suggestion-status">
-          {isApplied ? 'Suggestion applied' : 'Suggestion dismissed'}
+          {getSuggestionTerminalStatusText(status, isUnavailable)}
         </p>
       ) : (
         <div className="conversation-suggestion-actions">
@@ -382,4 +446,52 @@ function ViewSuggestionToolPart({
       )}
     </section>
   )
+}
+
+function getSuggestionTerminalStatusText(
+  status: SuggestionStatus | undefined,
+  isUnavailable: boolean,
+): string {
+  if (isUnavailable) {
+    return 'Suggestion unavailable'
+  }
+
+  switch (status) {
+    case 'applied':
+      return 'Suggestion applied'
+    case 'dismissed':
+      return 'Suggestion dismissed'
+    case 'ignored':
+      return 'Suggestion ignored'
+    default:
+      return 'Suggestion unavailable'
+  }
+}
+
+function getValidViewSuggestions(messages: readonly UIMessage[]): ViewSuggestion[] {
+  const suggestions: ViewSuggestion[] = []
+
+  for (const message of messages) {
+    if (message.role !== 'assistant') {
+      continue
+    }
+
+    for (const part of message.parts) {
+      if (part.type !== 'tool-proposeViewSuggestion') {
+        continue
+      }
+
+      if (!('state' in part) || part.state !== 'output-available') {
+        continue
+      }
+
+      const parsedSuggestion = viewSuggestionSchema.safeParse(part.output)
+
+      if (parsedSuggestion.success) {
+        suggestions.push(parsedSuggestion.data)
+      }
+    }
+  }
+
+  return suggestions
 }

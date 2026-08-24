@@ -50,6 +50,7 @@ describe('ConversationPanelShell', () => {
         selectedActivityCount={selectedActivities.length}
         totalActivityCount={12}
         dataSource="demo"
+        activityDataContextId="demo:a,b"
         onApplyViewSuggestion={() => {}}
       />,
     )
@@ -94,6 +95,7 @@ describe('ConversationPanelShell', () => {
         selectedActivityCount={initialActivities.length}
         totalActivityCount={12}
         dataSource="demo"
+        activityDataContextId="demo:a,b"
         onApplyViewSuggestion={() => {}}
       />,
     )
@@ -111,6 +113,7 @@ describe('ConversationPanelShell', () => {
         selectedActivityCount={nextActivities.length}
         totalActivityCount={20}
         dataSource="strava"
+        activityDataContextId="strava:next"
         onApplyViewSuggestion={() => {}}
       />,
     )
@@ -141,6 +144,7 @@ describe('ConversationPanelShell', () => {
         selectedActivityCount={activities.length}
         totalActivityCount={12}
         dataSource="demo"
+        activityDataContextId="demo:a"
         onApplyViewSuggestion={() => {}}
       />,
     )
@@ -156,6 +160,7 @@ describe('ConversationPanelShell', () => {
         selectedActivityCount={0}
         totalActivityCount={12}
         dataSource="demo"
+        activityDataContextId="demo:a"
         onApplyViewSuggestion={() => {}}
       />,
     )
@@ -554,6 +559,158 @@ describe('ConversationPanelShell', () => {
     expect(screen.queryByText(/Current view or filters changed/)).not.toBeInTheDocument()
   })
 
+  it('marks pending suggestions ignored before a manual user submit', () => {
+    const firstSuggestion = createSuggestion({ id: 'suggestion-a' })
+    const secondSuggestion = createSuggestion({
+      id: 'suggestion-b',
+      label: 'Focus 2025',
+      patch: { selection: { years: [2025] } },
+      changes: [
+        {
+          field: 'selection.years',
+          action: 'set',
+          label: 'Years',
+          value: '2025',
+        },
+      ],
+    })
+    chatState.messages = [
+      {
+        id: 'assistant-message',
+        role: 'assistant',
+        parts: [
+          createSuggestionToolPart(firstSuggestion),
+          createSuggestionToolPart(secondSuggestion),
+        ],
+      } as UIMessage,
+    ]
+
+    render(createPanel())
+
+    fireEvent.change(screen.getByLabelText('Ask about the current view'), {
+      target: { value: 'What about weekends?' },
+    })
+    fireEvent.submit(screen.getByRole('button', { name: 'Send' }).closest('form')!)
+
+    expect(chatState.sendMessage).toHaveBeenCalledTimes(1)
+    expect(screen.getAllByText('Suggestion ignored')).toHaveLength(2)
+    expect(screen.queryByRole('button', { name: 'Apply' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Dismiss' })).not.toBeInTheDocument()
+    expect(screen.getByText('Compare speed and elevation')).toBeInTheDocument()
+    expect(screen.getByText('Focus 2025')).toBeInTheDocument()
+  })
+
+  it('does not change terminal suggestion statuses on manual submit', () => {
+    const appliedSuggestion = createSuggestion({ id: 'suggestion-a' })
+    const dismissedSuggestion = createSuggestion({
+      id: 'suggestion-b',
+      label: 'Focus 2025',
+    })
+    chatState.messages = [
+      {
+        id: 'assistant-message',
+        role: 'assistant',
+        parts: [
+          createSuggestionToolPart(appliedSuggestion),
+          createSuggestionToolPart(dismissedSuggestion),
+        ],
+      } as UIMessage,
+    ]
+
+    render(createPanel())
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Apply' })[0])
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }))
+    fireEvent.change(screen.getByLabelText('Ask about the current view'), {
+      target: { value: 'Next question' },
+    })
+    fireEvent.submit(screen.getByRole('button', { name: 'Send' }).closest('form')!)
+
+    expect(screen.getByText('Suggestion applied')).toBeInTheDocument()
+    expect(screen.getByText('Suggestion dismissed')).toBeInTheDocument()
+    expect(screen.queryByText('Suggestion ignored')).not.toBeInTheDocument()
+  })
+
+  it('marks pending suggestions ignored when activity data context changes', () => {
+    chatState.messages = [
+      {
+        id: 'assistant-message',
+        role: 'assistant',
+        parts: [createSuggestionToolPart(createSuggestion())],
+      } as UIMessage,
+    ]
+    const { rerender } = render(
+      createPanel({ activityDataContextId: 'demo:a,b,c' }),
+    )
+
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeEnabled()
+
+    rerender(createPanel({ activityDataContextId: 'strava:x,y,z' }))
+
+    expect(screen.getByText('Suggestion ignored')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Apply' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Dismiss' })).not.toBeInTheDocument()
+  })
+
+  it('keeps pending suggestions when activity data context stays the same', () => {
+    chatState.messages = [
+      {
+        id: 'assistant-message',
+        role: 'assistant',
+        parts: [createSuggestionToolPart(createSuggestion())],
+      } as UIMessage,
+    ]
+    const { rerender } = render(
+      createPanel({ activityDataContextId: 'demo:a,b,c' }),
+    )
+
+    rerender(
+      createPanel({
+        activityDataContextId: 'demo:a,b,c',
+        analysisState: {
+          ...defaultAnalysisState,
+          selection: { ...defaultAnalysisState.selection, years: [2025] },
+        },
+      }),
+    )
+
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Dismiss' })).toBeEnabled()
+    expect(screen.queryByText('Suggestion ignored')).not.toBeInTheDocument()
+  })
+
+  it('renders suggestion unavailable when apply-time validation fails', () => {
+    const onApplyViewSuggestion = vi.fn()
+    chatState.messages = [
+      {
+        id: 'assistant-message',
+        role: 'assistant',
+        parts: [createSuggestionToolPart(createSuggestion())],
+      } as UIMessage,
+    ]
+
+    render(
+      createPanel({
+        analysisState: {
+          ...defaultAnalysisState,
+          view: {
+            type: 'cumulative',
+            yMetric: 'averageSpeedMph',
+            accumulation: 'continuous',
+          },
+        } as never,
+        onApplyViewSuggestion,
+      }),
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
+
+    expect(onApplyViewSuggestion).not.toHaveBeenCalled()
+    expect(screen.getByText('Suggestion unavailable')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Apply' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Dismiss' })).not.toBeInTheDocument()
+  })
+
   it('clears local suggestion status for New Chat', () => {
     chatState.messages = [
       {
@@ -737,6 +894,7 @@ function createPanel(
     selectedActivityCount: number
     totalActivityCount: number
     dataSource: 'demo' | 'strava'
+    activityDataContextId: string
     onApplyViewSuggestion: (
       suggestion: ViewSuggestion,
       nextAnalysisState: AnalysisState,
@@ -757,6 +915,7 @@ function createPanel(
       selectedActivityCount={overrides.selectedActivityCount ?? selectedActivities.length}
       totalActivityCount={overrides.totalActivityCount ?? selectedActivities.length}
       dataSource={overrides.dataSource ?? 'demo'}
+      activityDataContextId={overrides.activityDataContextId ?? 'demo:a,b,c'}
       onApplyViewSuggestion={overrides.onApplyViewSuggestion ?? vi.fn()}
     />
   )

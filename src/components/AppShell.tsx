@@ -16,7 +16,10 @@ import {
   reconcileSelectedYears,
   sortYearsAscending,
 } from '../state/yearSelection.ts'
-import type { ViewSuggestion } from '../state/viewSuggestions.ts'
+import {
+  buildActivityDataContextId,
+  type ViewSuggestion,
+} from '../state/viewSuggestions.ts'
 
 type ReadySourceSnapshot = {
   source: ActivityDataSourceId
@@ -76,6 +79,14 @@ export function AppShell() {
     () => buildDatasetProfile(activityDataSource.activities),
     [activityDataSource.activities],
   )
+  const activityDataContextId = useMemo(
+    () =>
+      buildActivityDataContextId(
+        activityDataSource.source,
+        activityDataSource.activities,
+      ),
+    [activityDataSource.activities, activityDataSource.source],
+  )
 
   return (
     <main className="app-shell">
@@ -103,6 +114,7 @@ export function AppShell() {
           selectedActivityCount={selectedActivities.length}
           totalActivityCount={activityDataSource.activities.length}
           dataSource={activityDataSource.source}
+          activityDataContextId={activityDataContextId}
           onApplyViewSuggestion={(
             _suggestion: ViewSuggestion,
             nextAnalysisState: AnalysisState,
