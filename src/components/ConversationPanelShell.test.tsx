@@ -227,6 +227,29 @@ describe('ConversationPanelShell', () => {
     expect(screen.queryByText(/\*\*Important\*\*/)).not.toBeInTheDocument()
   })
 
+  it('renders assistant markdown tables semantically inside a local scroll wrapper', () => {
+    chatState.messages = [
+      createMessage(
+        'assistant-message',
+        'assistant',
+        '| Metric | 2025 | 2026 |\n| --- | ---: | ---: |\n| Avg speed | 15.2 | 15.8 |\n| Distance | 120 | 140 |',
+      ),
+    ]
+
+    const { container } = render(createPanel())
+
+    const tableWrapper = container.querySelector(
+      '.conversation-markdown-table-scroll',
+    )
+    expect(tableWrapper).toBeInTheDocument()
+    expect(tableWrapper?.querySelector('table')).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Metric' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: '2025' })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'Avg speed' })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: '15.8' })).toBeInTheDocument()
+    expect(screen.queryByText('| Metric | 2025 | 2026 |')).not.toBeInTheDocument()
+  })
+
   it('renders assistant safe links and blocks unsafe links', () => {
     chatState.messages = [
       createMessage(
@@ -279,6 +302,24 @@ describe('ConversationPanelShell', () => {
 
     expect(screen.getByText('**Do not format my input**')).toBeInTheDocument()
     expect(container.querySelector('strong')).not.toBeInTheDocument()
+  })
+
+  it('keeps user table syntax as plain text', () => {
+    chatState.messages = [
+      createMessage(
+        'user-message',
+        'user',
+        '| Metric | Value |\n| --- | --- |\n| Speed | 15 |',
+      ),
+    ]
+
+    const { container } = render(createPanel())
+
+    expect(screen.getByText(/\| Metric \| Value \|/)).toBeInTheDocument()
+    expect(container.querySelector('table')).not.toBeInTheDocument()
+    expect(
+      container.querySelector('.conversation-markdown-table-scroll'),
+    ).not.toBeInTheDocument()
   })
 
   it('renders one minimal tool status for assistant tool activity', () => {

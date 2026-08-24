@@ -9,6 +9,7 @@ import {
   type FormEvent,
 } from 'react'
 import Markdown, { type Components } from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import type { DatasetProfile } from '../analysis/aiContext.ts'
 import type { ActivityDataSourceId } from '../data/activityDataSource.ts'
 import type { Activity } from '../data/activity.ts'
@@ -409,14 +410,37 @@ const assistantMarkdownComponents: Components = {
       </a>
     )
   },
+  table({ children }) {
+    return (
+      <div className="conversation-markdown-table-scroll">
+        <table>{children}</table>
+      </div>
+    )
+  },
 }
 
 function AssistantMarkdown({ children }: { children: string }) {
   return (
     <div className="conversation-markdown">
       <Markdown
-        allowedElements={['p', 'strong', 'em', 'ol', 'ul', 'li', 'code', 'a']}
+        allowedElements={[
+          'p',
+          'strong',
+          'em',
+          'ol',
+          'ul',
+          'li',
+          'code',
+          'a',
+          'table',
+          'thead',
+          'tbody',
+          'tr',
+          'th',
+          'td',
+        ]}
         components={assistantMarkdownComponents}
+        remarkPlugins={[remarkGfm]}
         unwrapDisallowed
         urlTransform={(url) => url}
       >
