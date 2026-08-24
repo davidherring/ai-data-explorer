@@ -516,10 +516,16 @@ describe('handleChat', () => {
     expect(system).toContain('automatic-post-apply-analysis')
     expect(system).toContain('Focus on low-elevation activities')
     expect(system).toContain('Elevation gain')
+    expect(system).toContain('automatic follow-up')
+    expect(system).toContain('just accepted that View Suggestion')
     expect(system).toContain(
-      'the current AnalysisState and selected activities already reflect it',
+      'current AnalysisState and selected activities already include the newly applied change',
     )
-    expect(system).toContain('Analyze what the updated selection and view show')
+    expect(system).toContain('Analyze the result of that change')
+    expect(system).toContain(
+      'Do not say the suggested change is already active',
+    )
+    expect(system).toContain('do not suggest applying the same change again')
     expect(system).not.toContain('appliedStateFingerprint')
     expect(system).not.toContain('private-a')
     expect(system).not.toContain('selectedActivities')
