@@ -16,10 +16,7 @@ import {
   type AnalysisState,
 } from '../../src/state/analysisState.js'
 import { safeParseAnalysisState } from '../../src/state/analysisStateValidation.js'
-import {
-  getAnalysisStateFingerprint,
-  type ViewSuggestion,
-} from '../../src/state/viewSuggestions.js'
+import type { ViewSuggestion } from '../../src/state/viewSuggestions.js'
 import chatHandler from '../chat.js'
 import {
   handleChat,
@@ -31,7 +28,7 @@ import {
   compareGroupsToolInputSchema,
   MAX_CHAT_REQUEST_BYTES,
   MAX_SELECTED_ACTIVITIES_FOR_CHAT,
-  recentlyAppliedViewSuggestionSchema,
+  appliedViewSuggestionContextSchema,
   relationshipToolInputSchema,
 } from './schema.js'
 import { AI_CHAT_MODEL_ID, createChatModel } from './model.js'
@@ -479,7 +476,7 @@ describe('handleChat', () => {
     expect(system).toContain('normally call proposeViewSuggestion')
   })
 
-  it('includes compact applied suggestion context in the system prompt', async () => {
+  it('includes compact automatic applied suggestion context in the system prompt', async () => {
     const streamTextMock = vi.fn(() => ({
       pipeUIMessageStreamToResponse: vi.fn(),
     }))
@@ -490,7 +487,8 @@ describe('handleChat', () => {
     const body = createValidChatBody({
       selectedActivities,
       selectedActivityCount: selectedActivities.length,
-      recentlyAppliedViewSuggestion: {
+      appliedViewSuggestionContext: {
+        trigger: 'automatic-post-apply-analysis',
         label: 'Focus on low-elevation activities',
         changes: [
           {
@@ -500,7 +498,6 @@ describe('handleChat', () => {
             value: '0 to 500',
           },
         ],
-        appliedStateFingerprint: getAnalysisStateFingerprint(defaultAnalysisState),
       },
     })
 
@@ -515,14 +512,15 @@ describe('handleChat', () => {
     >
     const system = streamTextCalls[0][0].system
 
-    expect(system).toContain('recentlyAppliedViewSuggestion')
-    expect(system).toContain('user-applied-view-suggestion')
+    expect(system).toContain('appliedViewSuggestionContext')
+    expect(system).toContain('automatic-post-apply-analysis')
     expect(system).toContain('Focus on low-elevation activities')
     expect(system).toContain('Elevation gain')
-    expect(system).toContain(getAnalysisStateFingerprint(defaultAnalysisState))
     expect(system).toContain(
-      'the current AnalysisState and selected activities remain authoritative',
+      'the current AnalysisState and selected activities already reflect it',
     )
+    expect(system).toContain('Analyze what the updated selection and view show')
+    expect(system).not.toContain('appliedStateFingerprint')
     expect(system).not.toContain('private-a')
     expect(system).not.toContain('selectedActivities')
     expect(system).not.toContain('tool-calculateTrend')
@@ -530,7 +528,8 @@ describe('handleChat', () => {
 
   it('validates compact applied suggestion metadata strictly', () => {
     expect(
-      recentlyAppliedViewSuggestionSchema.safeParse({
+      appliedViewSuggestionContextSchema.safeParse({
+        trigger: 'automatic-post-apply-analysis',
         label: 'Focus on low-elevation activities',
         changes: [
           {
@@ -540,16 +539,23 @@ describe('handleChat', () => {
             value: '0 to 500',
           },
         ],
-        appliedStateFingerprint: 'state-fnv1a:abc',
       }).success,
     ).toBe(true)
 
     expect(
-      recentlyAppliedViewSuggestionSchema.safeParse({
+      appliedViewSuggestionContextSchema.safeParse({
+        trigger: 'automatic-post-apply-analysis',
         label: 'Focus on low-elevation activities',
         changes: [],
-        appliedStateFingerprint: 'state-fnv1a:abc',
         selectedActivities: [{ id: 'private-a' }],
+      }).success,
+    ).toBe(false)
+
+    expect(
+      appliedViewSuggestionContextSchema.safeParse({
+        trigger: 'manual-follow-up',
+        label: 'Focus on low-elevation activities',
+        changes: [],
       }).success,
     ).toBe(false)
   })
@@ -690,6 +696,101 @@ describe('handleChat', () => {
     expect(system).toContain('"years":[2025]')
     expect(system).toContain('"selectedActivityCount":3')
     expect(system).not.toContain('current-2025-a')
+  })
+
+  it('strips hidden automatic post-Apply triggers from model-visible history', async () => {
+    const body = {
+      ...createValidChatBody({
+        appliedViewSuggestionContext: {
+          trigger: 'automatic-post-apply-analysis',
+          label: 'Focus on low-elevation activities',
+          changes: [
+            {
+              field: 'selection.elevationGainFeet',
+              action: 'set',
+              label: 'Elevation gain',
+              value: '0 to 500',
+            },
+          ],
+        },
+      }),
+      messages: [
+        {
+          id: 'user-a',
+          role: 'user',
+          parts: [{ type: 'text', text: 'Can you suggest a filter?' }],
+        },
+        {
+          id: 'assistant-a',
+          role: 'assistant',
+          parts: [
+            { type: 'text', text: 'Apply this and I can analyze it.' },
+            {
+              type: 'tool-proposeViewSuggestion',
+              toolCallId: 'tool-a',
+              state: 'output-available',
+              input: {},
+              output: {
+                id: 'suggestion-a',
+                label: 'Focus on low-elevation activities',
+                patch: {
+                  selection: {
+                    elevationGainFeet: { max: 500 },
+                  },
+                },
+                changes: [
+                  {
+                    field: 'selection.elevationGainFeet',
+                    action: 'set',
+                    label: 'Elevation gain',
+                    value: 'At most 500 ft',
+                  },
+                ],
+              },
+            },
+          ],
+        },
+        {
+          id: 'automatic-post-apply-suggestion-a',
+          role: 'user',
+          parts: [],
+          metadata: {
+            internalTrigger: 'automatic-post-apply-analysis',
+          },
+        },
+      ],
+    }
+    const streamTextMock = vi.fn(() => ({
+      pipeUIMessageStreamToResponse: vi.fn(),
+    }))
+    const response = createMockResponse()
+
+    await handleChat(
+      createMockRequest('POST', JSON.stringify(body)),
+      response,
+      createMockDependencies({
+        streamText: streamTextMock,
+        convertToModelMessages: (messages) =>
+          convertUiToModelMessages(messages as never, {
+            ignoreIncompleteToolCalls: true,
+          }),
+      }),
+    )
+
+    const streamTextCalls = streamTextMock.mock.calls as unknown as Array<
+      [{ messages: ModelMessage[]; system: string }]
+    >
+    const modelMessagesJson = JSON.stringify(streamTextCalls[0][0].messages)
+    const system = streamTextCalls[0][0].system
+
+    expect(modelMessagesJson).toContain('Can you suggest a filter?')
+    expect(modelMessagesJson).toContain('Apply this and I can analyze it.')
+    expect(modelMessagesJson).not.toContain('automatic-post-apply-suggestion-a')
+    expect(modelMessagesJson).not.toContain('automatic-post-apply-analysis')
+    expect(modelMessagesJson).not.toContain('tool-proposeViewSuggestion')
+    expect(modelMessagesJson).not.toContain('At most 500 ft')
+    expect(system).toContain('appliedViewSuggestionContext')
+    expect(system).toContain('Focus on low-elevation activities')
   })
 
   it('uses the model factory, converts messages, and pipes the UI message stream', async () => {
@@ -1167,7 +1268,7 @@ function createValidChatBody(
     currentAnalysisState: unknown
     selectedActivities: Activity[]
     selectedActivityCount: number
-    recentlyAppliedViewSuggestion: unknown
+    appliedViewSuggestionContext: unknown
   }> = {},
 ) {
   const selectedActivities =
@@ -1197,10 +1298,9 @@ function createValidChatBody(
     selectedActivityCount: overrides.selectedActivityCount ?? selectedActivities.length,
     totalActivityCount: selectedActivities.length,
     dataSource: 'demo',
-    ...(overrides.recentlyAppliedViewSuggestion !== undefined
+    ...(overrides.appliedViewSuggestionContext !== undefined
       ? {
-          recentlyAppliedViewSuggestion:
-            overrides.recentlyAppliedViewSuggestion,
+          appliedViewSuggestionContext: overrides.appliedViewSuggestionContext,
         }
       : {}),
   }

@@ -72,11 +72,11 @@ const uiMessageSchema = z
   })
   .passthrough()
 
-export const recentlyAppliedViewSuggestionSchema = z
+export const appliedViewSuggestionContextSchema = z
   .object({
+    trigger: z.literal('automatic-post-apply-analysis'),
     label: z.string().min(1),
     changes: z.array(viewSuggestionChangeSchema),
-    appliedStateFingerprint: z.string().min(1),
   })
   .strict()
 
@@ -94,7 +94,7 @@ export const chatRequestSchema = z
     selectedActivityCount: z.number(),
     totalActivityCount: z.number(),
     dataSource: z.enum(['demo', 'strava']),
-    recentlyAppliedViewSuggestion: recentlyAppliedViewSuggestionSchema.optional(),
+    appliedViewSuggestionContext: appliedViewSuggestionContextSchema.optional(),
   })
   .strict()
   .superRefine((value, context) => {

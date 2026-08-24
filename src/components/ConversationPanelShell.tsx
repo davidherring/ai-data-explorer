@@ -35,10 +35,16 @@ type ConversationPanelShellProps = {
 }
 
 type SuggestionStatus = 'applied' | 'dismissed' | 'ignored'
-type RecentlyAppliedViewSuggestion = {
+type AppliedViewSuggestionContext = {
+  trigger: 'automatic-post-apply-analysis'
   label: string
   changes: ViewSuggestion['changes']
-  appliedStateFingerprint: string
+}
+type PendingAutoFollowUp = {
+  suggestionId: string
+  targetStateFingerprint: string
+  activityDataContextId: string
+  context: AppliedViewSuggestionContext
 }
 
 export function ConversationPanelShell({
@@ -58,8 +64,8 @@ export function ConversationPanelShell({
   const [unavailableSuggestionIds, setUnavailableSuggestionIds] = useState<
     Record<string, true>
   >({})
-  const [recentlyAppliedViewSuggestion, setRecentlyAppliedViewSuggestion] =
-    useState<RecentlyAppliedViewSuggestion | undefined>(undefined)
+  const [pendingAutoFollowUp, setPendingAutoFollowUp] =
+    useState<PendingAutoFollowUp | undefined>(undefined)
   const previousActivityDataContextId = useRef(activityDataContextId)
   const transport = useMemo(
     () => new DefaultChatTransport<UIMessage>({ api: '/api/chat' }),
@@ -71,6 +77,28 @@ export function ConversationPanelShell({
     })
   const isWorking = status === 'submitted' || status === 'streaming'
   const canSubmit = status === 'ready' && composerText.trim().length > 0
+
+  const buildChatRequestBody = useCallback(
+    (options: { appliedViewSuggestionContext?: AppliedViewSuggestionContext } = {}) => ({
+      currentAnalysisState: analysisState,
+      selectedActivities,
+      datasetProfile,
+      selectedActivityCount,
+      totalActivityCount,
+      dataSource,
+      ...(options.appliedViewSuggestionContext !== undefined
+        ? { appliedViewSuggestionContext: options.appliedViewSuggestionContext }
+        : {}),
+    }),
+    [
+      analysisState,
+      dataSource,
+      datasetProfile,
+      selectedActivities,
+      selectedActivityCount,
+      totalActivityCount,
+    ],
+  )
 
   const markPendingSuggestionsAsIgnored = useCallback(() => {
     const suggestions = getValidViewSuggestions(messages)
@@ -108,6 +136,54 @@ export function ConversationPanelShell({
     markPendingSuggestionsAsIgnored()
   }, [activityDataContextId, markPendingSuggestionsAsIgnored])
 
+  useEffect(() => {
+    if (pendingAutoFollowUp === undefined) {
+      return
+    }
+
+    if (pendingAutoFollowUp.activityDataContextId !== activityDataContextId) {
+      setPendingAutoFollowUp(undefined)
+      return
+    }
+
+    if (status !== 'ready') {
+      return
+    }
+
+    if (
+      getAnalysisStateFingerprint(analysisState) !==
+      pendingAutoFollowUp.targetStateFingerprint
+    ) {
+      return
+    }
+
+    const followUp = pendingAutoFollowUp
+    setPendingAutoFollowUp(undefined)
+
+    void sendMessage(
+      {
+        id: `automatic-post-apply-${followUp.suggestionId}`,
+        role: 'user',
+        parts: [],
+        metadata: {
+          internalTrigger: 'automatic-post-apply-analysis',
+        },
+      } as UIMessage,
+      {
+        body: buildChatRequestBody({
+          appliedViewSuggestionContext: followUp.context,
+        }),
+      },
+    )
+  }, [
+    activityDataContextId,
+    analysisState,
+    buildChatRequestBody,
+    pendingAutoFollowUp,
+    sendMessage,
+    status,
+  ])
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -119,31 +195,14 @@ export function ConversationPanelShell({
 
     markPendingSuggestionsAsIgnored()
 
-    const currentStateFingerprint = getAnalysisStateFingerprint(analysisState)
-    const activeAppliedSuggestion =
-      recentlyAppliedViewSuggestion?.appliedStateFingerprint ===
-      currentStateFingerprint
-        ? recentlyAppliedViewSuggestion
-        : undefined
-
     void sendMessage(
       { text },
       {
-        body: {
-          currentAnalysisState: analysisState,
-          selectedActivities,
-          datasetProfile,
-          selectedActivityCount,
-          totalActivityCount,
-          dataSource,
-          ...(activeAppliedSuggestion !== undefined
-            ? { recentlyAppliedViewSuggestion: activeAppliedSuggestion }
-            : {}),
-        },
+        body: buildChatRequestBody(),
       },
     )
     setComposerText('')
-    setRecentlyAppliedViewSuggestion(undefined)
+    setPendingAutoFollowUp(undefined)
   }
 
   function handleNewChat() {
@@ -151,7 +210,7 @@ export function ConversationPanelShell({
     setComposerText('')
     setSuggestionStatuses({})
     setUnavailableSuggestionIds({})
-    setRecentlyAppliedViewSuggestion(undefined)
+    setPendingAutoFollowUp(undefined)
     clearError()
   }
 
@@ -169,10 +228,15 @@ export function ConversationPanelShell({
     }
 
     onApplyViewSuggestion(suggestion, nextAnalysisState)
-    setRecentlyAppliedViewSuggestion({
-      label: suggestion.label,
-      changes: suggestion.changes,
-      appliedStateFingerprint: getAnalysisStateFingerprint(nextAnalysisState),
+    setPendingAutoFollowUp({
+      suggestionId: suggestion.id,
+      targetStateFingerprint: getAnalysisStateFingerprint(nextAnalysisState),
+      activityDataContextId,
+      context: {
+        trigger: 'automatic-post-apply-analysis',
+        label: suggestion.label,
+        changes: suggestion.changes,
+      },
     })
     setSuggestionStatuses((current) => ({
       ...current,
@@ -204,12 +268,15 @@ export function ConversationPanelShell({
       </div>
 
       <div className="conversation-messages" aria-label="Conversation messages">
-        {messages.length === 0 && (
+        {messages.filter((message) => !isHiddenAutomaticFollowUpMessage(message))
+          .length === 0 && (
           <p className="conversation-empty">
             Ask about the current selection or view.
           </p>
         )}
-        {messages.map((message) => (
+        {messages
+          .filter((message) => !isHiddenAutomaticFollowUpMessage(message))
+          .map((message) => (
           <ConversationMessage
             key={message.id}
             message={message}
@@ -249,6 +316,21 @@ export function ConversationPanelShell({
         </button>
       </form>
     </aside>
+  )
+}
+
+function isHiddenAutomaticFollowUpMessage(message: UIMessage): boolean {
+  if (message.role !== 'user') {
+    return false
+  }
+
+  const metadata = message.metadata
+
+  return (
+    metadata !== null &&
+    typeof metadata === 'object' &&
+    'internalTrigger' in metadata &&
+    metadata.internalTrigger === 'automatic-post-apply-analysis'
   )
 }
 

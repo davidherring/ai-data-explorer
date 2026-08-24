@@ -1,4 +1,11 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import type { UIMessage } from 'ai'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { buildDatasetProfile, type DatasetProfile } from '../analysis/aiContext.ts'
@@ -9,7 +16,6 @@ import {
 } from '../state/analysisState.ts'
 import {
   applyViewSuggestion,
-  getAnalysisStateFingerprint,
   type ViewSuggestion,
 } from '../state/viewSuggestions.ts'
 import { ConversationPanelShell } from './ConversationPanelShell.tsx'
@@ -178,6 +184,26 @@ describe('ConversationPanelShell', () => {
 
     expect(screen.getByText('Does this look slower?')).toBeInTheDocument()
     expect(screen.getByText('The selected activities are sparse.')).toBeInTheDocument()
+  })
+
+  it('does not render hidden automatic post-Apply trigger messages', () => {
+    chatState.messages = [
+      {
+        id: 'automatic-post-apply-suggestion-a',
+        role: 'user',
+        parts: [],
+        metadata: {
+          internalTrigger: 'automatic-post-apply-analysis',
+        },
+      } as UIMessage,
+      createMessage('assistant-message', 'assistant', 'Here is the updated analysis.'),
+    ]
+
+    render(createPanel())
+
+    expect(screen.queryByText('You')).not.toBeInTheDocument()
+    expect(screen.queryByText('automatic-post-apply-analysis')).not.toBeInTheDocument()
+    expect(screen.getByText('Here is the updated analysis.')).toBeInTheDocument()
   })
 
   it('renders assistant markdown for emphasis and lists', () => {
@@ -391,9 +417,10 @@ describe('ConversationPanelShell', () => {
     expect(screen.queryByRole('button', { name: 'Dismiss' })).not.toBeInTheDocument()
   })
 
-  it('sends applied suggestion context once when the next submit matches the applied state', () => {
+  it('automatically sends one post-Apply follow-up after applied state reaches props', async () => {
     const suggestion = createSuggestion()
     const appliedState = applyViewSuggestion(defaultAnalysisState, suggestion)
+    const appliedActivities = [createActivity({ id: 'applied-a' })]
     chatState.messages = [
       {
         id: 'assistant-message',
@@ -404,36 +431,48 @@ describe('ConversationPanelShell', () => {
     const { rerender } = render(createPanel())
 
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
-    rerender(createPanel({ analysisState: appliedState }))
-    fireEvent.change(screen.getByLabelText('Ask about the current view'), {
-      target: { value: 'Ok, what do we see?' },
-    })
-    fireEvent.submit(screen.getByRole('button', { name: 'Send' }).closest('form')!)
+    expect(chatState.sendMessage).not.toHaveBeenCalled()
 
+    rerender(
+      createPanel({
+        analysisState: appliedState,
+        selectedActivities: appliedActivities,
+        selectedActivityCount: appliedActivities.length,
+        totalActivityCount: 3,
+      }),
+    )
+
+    await waitFor(() => {
+      expect(chatState.sendMessage).toHaveBeenCalledTimes(1)
+    })
     expect(chatState.sendMessage).toHaveBeenCalledWith(
-      { text: 'Ok, what do we see?' },
+      expect.objectContaining({
+        id: `automatic-post-apply-${suggestion.id}`,
+        role: 'user',
+        parts: [],
+        metadata: { internalTrigger: 'automatic-post-apply-analysis' },
+      }),
       expect.objectContaining({
         body: expect.objectContaining({
-          recentlyAppliedViewSuggestion: {
+          currentAnalysisState: appliedState,
+          selectedActivities: appliedActivities,
+          selectedActivityCount: appliedActivities.length,
+          totalActivityCount: 3,
+          appliedViewSuggestionContext: {
+            trigger: 'automatic-post-apply-analysis',
             label: suggestion.label,
             changes: suggestion.changes,
-            appliedStateFingerprint: getAnalysisStateFingerprint(appliedState),
           },
         }),
       }),
     )
 
-    fireEvent.change(screen.getByLabelText('Ask about the current view'), {
-      target: { value: 'And now?' },
-    })
-    fireEvent.submit(screen.getByRole('button', { name: 'Send' }).closest('form')!)
+    rerender(createPanel({ analysisState: appliedState }))
 
-    expect(chatState.sendMessage.mock.calls[1][1].body).not.toHaveProperty(
-      'recentlyAppliedViewSuggestion',
-    )
+    expect(chatState.sendMessage).toHaveBeenCalledTimes(1)
   })
 
-  it('omits and clears applied suggestion context when current state no longer matches', () => {
+  it('cancels the automatic post-Apply follow-up when a manual submit wins', () => {
     const suggestion = createSuggestion()
     const appliedState = applyViewSuggestion(defaultAnalysisState, suggestion)
     chatState.messages = [
@@ -443,32 +482,46 @@ describe('ConversationPanelShell', () => {
         parts: [createSuggestionToolPart(suggestion)],
       } as UIMessage,
     ]
-    const staleState: AnalysisState = {
-      ...defaultAnalysisState,
-      selection: { ...defaultAnalysisState.selection, years: [2026] },
-    }
     const { rerender } = render(createPanel())
 
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
-    rerender(createPanel({ analysisState: staleState }))
     fireEvent.change(screen.getByLabelText('Ask about the current view'), {
-      target: { value: 'What now?' },
+      target: { value: 'I will ask directly' },
     })
     fireEvent.submit(screen.getByRole('button', { name: 'Send' }).closest('form')!)
 
     expect(chatState.sendMessage.mock.calls[0][1].body).not.toHaveProperty(
-      'recentlyAppliedViewSuggestion',
+      'appliedViewSuggestionContext',
     )
 
     rerender(createPanel({ analysisState: appliedState }))
-    fireEvent.change(screen.getByLabelText('Ask about the current view'), {
-      target: { value: 'Try again' },
-    })
-    fireEvent.submit(screen.getByRole('button', { name: 'Send' }).closest('form')!)
 
-    expect(chatState.sendMessage.mock.calls[1][1].body).not.toHaveProperty(
-      'recentlyAppliedViewSuggestion',
+    expect(chatState.sendMessage).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not send automatic post-Apply follow-up after activity context changes', () => {
+    const suggestion = createSuggestion()
+    const appliedState = applyViewSuggestion(defaultAnalysisState, suggestion)
+    chatState.messages = [
+      {
+        id: 'assistant-message',
+        role: 'assistant',
+        parts: [createSuggestionToolPart(suggestion)],
+      } as UIMessage,
+    ]
+    const { rerender } = render(
+      createPanel({ activityDataContextId: 'demo:a,b,c' }),
     )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
+    rerender(
+      createPanel({
+        analysisState: appliedState,
+        activityDataContextId: 'demo:new-a,new-b',
+      }),
+    )
+
+    expect(chatState.sendMessage).not.toHaveBeenCalled()
   })
 
   it('applies a suggestion patch to the current state after analysis state changes', () => {
@@ -819,7 +872,7 @@ describe('ConversationPanelShell', () => {
     expect(chatState.sendMessage).not.toHaveBeenCalled()
   })
 
-  it('clears pending applied suggestion context for New Chat', () => {
+  it('clears pending automatic post-Apply follow-up for New Chat', () => {
     const suggestion = createSuggestion()
     const appliedState = applyViewSuggestion(defaultAnalysisState, suggestion)
     chatState.messages = [
@@ -832,16 +885,10 @@ describe('ConversationPanelShell', () => {
     const { rerender } = render(createPanel())
 
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
-    rerender(createPanel({ analysisState: appliedState }))
     fireEvent.click(screen.getByRole('button', { name: 'New Chat' }))
-    fireEvent.change(screen.getByLabelText('Ask about the current view'), {
-      target: { value: 'Fresh question' },
-    })
-    fireEvent.submit(screen.getByRole('button', { name: 'Send' }).closest('form')!)
+    rerender(createPanel({ analysisState: appliedState }))
 
-    expect(chatState.sendMessage.mock.calls[0][1].body).not.toHaveProperty(
-      'recentlyAppliedViewSuggestion',
-    )
+    expect(chatState.sendMessage).not.toHaveBeenCalled()
   })
 
   it('shows loading and disables submit while submitted or streaming', () => {

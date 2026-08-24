@@ -89,7 +89,7 @@ export async function streamChatResponse(
 ): Promise<void> {
   const system = buildChatSystemPrompt(chatRequest)
   const messages = await dependencies.convertToModelMessages(
-    stripAssistantToolParts(chatRequest.messages),
+    prepareMessagesForModel(chatRequest.messages),
   )
   const result = dependencies.streamText({
     model: dependencies.createModel(),
@@ -105,17 +105,40 @@ export async function streamChatResponse(
   result.pipeUIMessageStreamToResponse(response)
 }
 
-function stripAssistantToolParts(messages: readonly ChatUIMessage[]): ChatUIMessage[] {
-  return messages.map((message) => {
-    if (message.role !== 'assistant') {
-      return message
+function prepareMessagesForModel(
+  messages: readonly ChatUIMessage[],
+): ChatUIMessage[] {
+  return messages.flatMap((message) => {
+    if (isAutomaticPostApplyTriggerMessage(message)) {
+      return []
     }
 
-    return {
-      ...message,
-      parts: message.parts.filter((part) => !part.type.startsWith('tool-')),
+    if (message.role !== 'assistant') {
+      return [message]
     }
+
+    return [
+      {
+        ...message,
+        parts: message.parts.filter((part) => !part.type.startsWith('tool-')),
+      },
+    ]
   })
+}
+
+function isAutomaticPostApplyTriggerMessage(message: ChatUIMessage): boolean {
+  if (message.role !== 'user') {
+    return false
+  }
+
+  const metadata = message.metadata
+
+  return (
+    metadata !== null &&
+    typeof metadata === 'object' &&
+    'internalTrigger' in metadata &&
+    metadata.internalTrigger === 'automatic-post-apply-analysis'
+  )
 }
 
 async function readJsonBody(request: IncomingMessage): Promise<unknown> {
