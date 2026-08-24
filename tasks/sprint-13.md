@@ -227,3 +227,18 @@ Verification / exit criteria:
 
 - No remaining approval issue is known.
 - If implementation discovers a concrete need to retain `proposedState` for preview/debug, keep it clearly non-authoritative for Apply and document the reason.
+
+## Closeout Notes
+
+- Runtime `ViewSuggestion` now carries `id`, `label`, optional `rationale`, a validated executable `patch`, and display-only `changes`; public/runtime `proposedState` and `sourceStateFingerprint` were removed.
+- Apply patches the current `AnalysisState`, preserves unrelated manual changes, intentionally applies suggestion values for patched fields, never restores old complete states, and still validates the complete result.
+- Suggestion lifecycle is pending, applied, dismissed, or ignored; terminal cards retain full content, manual state exploration does not invalidate pending cards, later manual chat ignores remaining pending cards, New Chat clears state, and Apply failures render safely unavailable.
+- Data-context invalidation uses a compact `activityDataContextId` from source identifier plus deterministic ordered full-source activity IDs, so ordinary filters/views do not expire suggestions while source/data identity changes do.
+- Apply automatically continues analysis after patched state and recomputed `selectedActivities` are authoritative, sends exactly once via a hidden trigger stripped before model conversion, and uses compact `appliedViewSuggestionContext`; old manual-next-turn metadata and applied-state request fingerprinting were removed.
+- A post-Apply prompt regression was found and fixed: the assistant is now told this is an automatic follow-up after the user just accepted the suggestion, and to analyze the newly applied result rather than call it pre-existing or suggest the same change again.
+- Assistant Markdown now supports semantic GFM tables with scoped local horizontal scrolling; raw HTML remains disabled, no `rehype-raw` was added, safe-link handling remains, user messages stay plain text, and suggestion/tool UI remains custom.
+- Payload audit measured approximately 33 KiB for 100 activities, 161 KiB for 500, 320 KiB for 1000, 479 KiB for 1500, 638 KiB for 2000, and 328 KiB for 1000 plus representative history; `MAX_SELECTED_ACTIVITIES_FOR_CHAT = 2000` and `MAX_CHAT_REQUEST_BYTES = 3_000_000` remain unchanged.
+- Manual smoke confirmed patch Apply semantics after manual exploration, terminal lifecycle behavior, ignored pending suggestions on later manual messages and data-context changes, exactly-one automatic follow-up with no visible synthetic user message, updated-state analysis, contained tables, and intact deterministic grounding.
+- Final verification passed: `npm run typecheck`, `npm run lint`, `npm test` (33 files, 416 tests), and `npm run build`; the existing Vite chunk-size warning remains unchanged.
+- Deferred work: durable docs still need alignment with the final Sprint 13 model, plus hover/tooltips, broader visualization and conversation polish, transport redesign only if future evidence justifies it, richer comparison/query capabilities if useful, and persistence/history.
+- Architectural lesson: View Suggestions are now durable user-controlled patches rather than stale complete-state snapshots; manual exploration is preserved, conversation/data-context changes define expiry, and Apply naturally continues analysis against the newly authoritative state.
