@@ -96,6 +96,17 @@ export function AppShell() {
           <h1>Interactive AI Data Explorer</h1>
         </div>
         <div className="header-actions">
+          <ActivityDataSourceControl
+            source={activityDataSource.source}
+            status={activityDataSource.status}
+            activityCount={activityDataSource.activities.length}
+            metadata={activityDataSource.metadata}
+            error={activityDataSource.error}
+            onSourceChange={activityDataSource.setSource}
+            onRefresh={() => {
+              void activityDataSource.refresh()
+            }}
+          />
           <StravaConnectionControl />
         </div>
       </header>
@@ -125,17 +136,6 @@ export function AppShell() {
       </section>
 
       <section className="status-strip" aria-label="Summary and status">
-        <ActivityDataSourceControl
-          source={activityDataSource.source}
-          status={activityDataSource.status}
-          activityCount={activityDataSource.activities.length}
-          metadata={activityDataSource.metadata}
-          error={activityDataSource.error}
-          onSourceChange={activityDataSource.setSource}
-          onRefresh={() => {
-            void activityDataSource.refresh()
-          }}
-        />
         <span>View: {analysisState.view.type}</span>
       </section>
     </main>

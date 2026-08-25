@@ -64,7 +64,117 @@ describe('App shell', () => {
     expect(screen.getByText('Selection ready.')).toBeInTheDocument()
     expect(screen.getByText('View: trend')).toBeInTheDocument()
     expect(screen.getByLabelText('AI conversation panel')).toBeInTheDocument()
-    expect(screen.getByLabelText('Summary and status')).toBeInTheDocument()
+    const header = screen.getByLabelText('Application header')
+    expect(within(header).getByLabelText('Activity data source')).toBeInTheDocument()
+    expect(
+      await within(header).findByText(`${demoActivityCount} activities`),
+    ).toBeInTheDocument()
+    const statusStrip = screen.getByLabelText('Summary and status')
+    expect(statusStrip).toBeInTheDocument()
+    expect(
+      within(statusStrip).queryByLabelText('Activity data source'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows Strava disconnected source status in the header', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input)
+
+        if (url.includes('/api/strava/activities')) {
+          return Response.json({ error: 'not_connected' }, { status: 401 })
+        }
+
+        return Response.json({ connected: false, reason: 'missing_token' })
+      }),
+    )
+
+    render(<App />)
+
+    const header = screen.getByLabelText('Application header')
+    expect(
+      await within(header).findByText(`${demoActivityCount} activities`),
+    ).toBeInTheDocument()
+
+    fireEvent.change(within(header).getByLabelText('Data source'), {
+      target: { value: 'strava' },
+    })
+
+    expect(
+      await within(header).findByText('Strava not connected'),
+    ).toBeInTheDocument()
+  })
+
+  it('shows Strava loading source status in the header', async () => {
+    let resolveActivities!: (response: Response) => void
+    const activitiesResponse = new Promise<Response>((resolve) => {
+      resolveActivities = resolve
+    })
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input)
+
+        if (url.includes('/api/strava/activities')) {
+          return activitiesResponse
+        }
+
+        return Response.json({ connected: false, reason: 'missing_token' })
+      }),
+    )
+
+    render(<App />)
+
+    const header = screen.getByLabelText('Application header')
+    expect(
+      await within(header).findByText(`${demoActivityCount} activities`),
+    ).toBeInTheDocument()
+
+    fireEvent.change(within(header).getByLabelText('Data source'), {
+      target: { value: 'strava' },
+    })
+
+    expect(
+      await within(header).findByText('Loading activities'),
+    ).toBeInTheDocument()
+
+    resolveActivities(Response.json({ error: 'not_connected' }, { status: 401 }))
+
+    expect(
+      await within(header).findByText('Strava not connected'),
+    ).toBeInTheDocument()
+  })
+
+  it('shows Strava load errors in the header', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input)
+
+        if (url.includes('/api/strava/activities')) {
+          return Response.json({ error: 'upstream' }, { status: 502 })
+        }
+
+        return Response.json({ connected: false, reason: 'missing_token' })
+      }),
+    )
+
+    render(<App />)
+
+    const header = screen.getByLabelText('Application header')
+    expect(
+      await within(header).findByText(`${demoActivityCount} activities`),
+    ).toBeInTheDocument()
+
+    fireEvent.change(within(header).getByLabelText('Data source'), {
+      target: { value: 'strava' },
+    })
+
+    expect(
+      await within(header).findByText('Unable to load Strava activities.'),
+    ).toBeInTheDocument()
   })
 
   it('updates selected activity count when a filter control changes', async () => {

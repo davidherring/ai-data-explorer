@@ -89,8 +89,11 @@ select {
 .header-actions {
   display: flex;
   align-items: center;
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
   gap: 10px;
+  justify-content: end;
+  min-width: 0;
 }
 
 .connection-control {
@@ -812,7 +815,8 @@ select {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px 10px;
+  min-width: 0;
 }
 
 .data-source-select {
@@ -821,6 +825,7 @@ select {
   gap: 8px;
   color: #172026;
   font-weight: 700;
+  min-width: 0;
 }
 
 .data-source-select select {
@@ -830,6 +835,11 @@ select {
   padding: 6px 28px 6px 10px;
   color: #172026;
   background: #ffffff;
+}
+
+.data-source-status {
+  color: #53605c;
+  font-size: 0.9rem;
 }
 
 @media (max-width: 820px) {
@@ -843,7 +853,8 @@ select {
   }
 
   .header-actions {
-    flex-wrap: wrap;
+    justify-content: start;
+    width: 100%;
   }
 
   .workspace-layout {

@@ -36,7 +36,9 @@ export function ActivityDataSourceControl({
         </select>
       </label>
 
-      <span>{formatStatus(status, activityCount, metadata, error)}</span>
+      <span className="data-source-status" aria-live="polite">
+        {formatStatus(status, activityCount, metadata, error)}
+      </span>
 
       <button className="secondary-button" type="button" onClick={onRefresh}>
         Refresh
