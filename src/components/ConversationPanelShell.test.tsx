@@ -501,6 +501,7 @@ describe('ConversationPanelShell', () => {
           totalActivityCount: 3,
           appliedViewSuggestionContext: {
             trigger: 'automatic-post-apply-analysis',
+            status: 'applied-successfully',
             label: suggestion.label,
             changes: suggestion.changes,
           },

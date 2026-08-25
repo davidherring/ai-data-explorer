@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   getMetricDefinition,
   getActivityMetric,
-  type MetricDefinition,
 } from '../analysis/activityMetrics.ts'
 import { SelectionStatus } from './SelectionStatus.tsx'
 import type { Activity } from '../data/activity.ts'
@@ -14,7 +13,7 @@ import {
   shouldEncodeActivityYear,
 } from './activityYearEncoding.ts'
 import {
-  addActivityContextLines,
+  formatTrendPointTooltipTitle,
   formatMetricValue,
 } from './chartTooltipText.ts'
 
@@ -157,8 +156,6 @@ export function MetricTrendChart({
           fillOpacity: 0.8,
           stroke: '#ffffff',
           strokeWidth: 1.4,
-          title: (point: TrendPoint) =>
-            formatActivityTitle(point, yMetric, metricDefinition),
           ariaLabel: (point: TrendPoint) =>
             `${point.activity.localDate}, ${metricDefinition.label.toLowerCase()} ${formatMetricValue(
               point.value,
@@ -171,7 +168,7 @@ export function MetricTrendChart({
             x: 'date',
             y: 'value',
             title: (point: TrendPoint) =>
-              formatActivityTitle(point, yMetric, metricDefinition),
+              formatTrendPointTooltipTitle(point, yMetric, metricDefinition),
           }),
         ),
       ],
@@ -223,21 +220,4 @@ function parseLocalCalendarDate(localDate: string): Date {
   const [year, month, day] = localDate.split('-').map(Number)
 
   return new Date(year, month - 1, day)
-}
-
-function formatActivityTitle(
-  point: TrendPoint,
-  yMetric: MetricKey,
-  metricDefinition: MetricDefinition,
-): string {
-  const { activity } = point
-  const lines = [
-    `Date: ${activity.localDate}`,
-    `Activity type: ${activity.sportType}`,
-    `${metricDefinition.label}: ${formatMetricValue(point.value, metricDefinition)}`,
-  ]
-
-  addActivityContextLines(lines, activity, [yMetric])
-
-  return lines.join('\n')
 }

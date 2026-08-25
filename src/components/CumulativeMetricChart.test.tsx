@@ -1,9 +1,11 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
+import { getMetricDefinition } from '../analysis/activityMetrics.ts'
 import type { CumulativeMetricPoint } from '../analysis/cumulativeMetrics.ts'
 import type { DayOfWeek, Activity } from '../data/activity.ts'
 import type { MetricKey } from '../state/analysisState.ts'
 import { CumulativeMetricChart } from './CumulativeMetricChart.tsx'
+import { formatCumulativePointTooltipTitle } from './chartTooltipText.ts'
 
 describe('CumulativeMetricChart', () => {
   afterEach(() => {
@@ -55,13 +57,22 @@ describe('CumulativeMetricChart', () => {
       expect(document.querySelector('.cumulative-chart-container svg')).toBeInTheDocument()
     })
 
-    expect(document.body.textContent).toContain('2025-03-12')
-    expect(document.body.textContent).toContain('Activity Distance: 31.4 mi')
-    expect(document.body.textContent).toContain('Cumulative Distance: 31.4 mi')
-    expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
-    expect(document.body.textContent).toContain('Moving time: 126 min')
-    expect(document.body.textContent).toContain('Activity type: Ride')
-    expect(countTextOccurrences(getPointTitleText('2025-03-12'), 'Distance:')).toBe(2)
+    const tooltipText = formatCumulativeTooltip(
+      createPoint({ activity: activityA, value: 31.44, cumulativeValue: 31.44 }),
+      'distanceMiles',
+    )
+
+    expect(tooltipText).toContain('Date: 2025-03-12')
+    expect(tooltipText).toContain('Activity Distance: 31.4 mi')
+    expect(tooltipText).toContain('Cumulative Distance: 31.4 mi')
+    expect(tooltipText).toContain('Elevation gain: 1,250 ft')
+    expect(tooltipText).toContain('Moving time: 126 min')
+    expect(tooltipText).toContain('Activity type: Ride')
+    expect(countTextOccurrences(tooltipText, 'Distance:')).toBe(2)
+    expect(getChartTitles()).toEqual([])
+    expect(getCircleAriaLabels()).toContain(
+      '2025-03-12, distance 31.4 mi, cumulative distance 31.4 mi',
+    )
   })
 
   it('renders non-default metric formatting and avoids duplicate elevation context', async () => {
@@ -75,13 +86,16 @@ describe('CumulativeMetricChart', () => {
       expect(document.querySelector('.cumulative-chart-container svg')).toBeInTheDocument()
     })
 
-    const titleText = getPointTitleText('2025-03-12')
+    const tooltipText = formatCumulativeTooltip(
+      createPoint({ activity: activityA, value: 1250, cumulativeValue: 1250 }),
+      'elevationGainFeet',
+    )
 
-    expect(titleText).toContain('Activity Elevation gain: 1,250 ft')
-    expect(titleText).toContain('Cumulative Elevation gain: 1,250 ft')
-    expect(titleText).toContain('Distance: 31.4 mi')
-    expect(titleText).toContain('Moving time: 126 min')
-    expect(countTextOccurrences(titleText, 'Elevation gain:')).toBe(2)
+    expect(tooltipText).toContain('Activity Elevation gain: 1,250 ft')
+    expect(tooltipText).toContain('Cumulative Elevation gain: 1,250 ft')
+    expect(tooltipText).toContain('Distance: 31.4 mi')
+    expect(tooltipText).toContain('Moving time: 126 min')
+    expect(countTextOccurrences(tooltipText, 'Elevation gain:')).toBe(2)
   })
 
   it('renders time metric values with context lines', async () => {
@@ -95,13 +109,16 @@ describe('CumulativeMetricChart', () => {
       expect(document.querySelector('.cumulative-chart-container svg')).toBeInTheDocument()
     })
 
-    const titleText = getPointTitleText('2025-03-12')
+    const tooltipText = formatCumulativeTooltip(
+      createPoint({ activity: activityA, value: 125.6, cumulativeValue: 125.6 }),
+      'movingTimeMinutes',
+    )
 
-    expect(titleText).toContain('Activity Moving time: 126 min')
-    expect(countTextOccurrences(titleText, 'Moving time:')).toBe(2)
-    expect(document.body.textContent).toContain('Cumulative Moving time: 126 min')
-    expect(document.body.textContent).toContain('Distance: 31.4 mi')
-    expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
+    expect(tooltipText).toContain('Activity Moving time: 126 min')
+    expect(countTextOccurrences(tooltipText, 'Moving time:')).toBe(2)
+    expect(tooltipText).toContain('Cumulative Moving time: 126 min')
+    expect(tooltipText).toContain('Distance: 31.4 mi')
+    expect(tooltipText).toContain('Elevation gain: 1,250 ft')
   })
 
   it('replaces Plot output when metric and points change', async () => {
@@ -110,7 +127,7 @@ describe('CumulativeMetricChart', () => {
     ])
 
     await waitFor(() => {
-      expect(document.body.textContent).toContain('Activity Distance: 31.4 mi')
+      expect(getCircleAriaLabels().join('\n')).toContain('distance 31.4 mi')
     })
 
     rerender(
@@ -126,10 +143,12 @@ describe('CumulativeMetricChart', () => {
       expect(screen.getByText('Cumulative Elevation gain')).toBeInTheDocument()
     })
 
-    expect(document.body.textContent).toContain(
-      'Activity Elevation gain: 1,250 ft',
+    expect(getCircleAriaLabels().join('\n')).toContain(
+      'elevation gain 1,250 ft',
     )
-    expect(document.body.textContent).not.toContain('Cumulative Distance: 31.4 mi')
+    expect(getCircleAriaLabels().join('\n')).not.toContain(
+      'cumulative distance 31.4 mi',
+    )
     expect(document.querySelectorAll('.cumulative-chart-container svg')).toHaveLength(1)
   })
 })
@@ -167,16 +186,27 @@ function createPoint(
   }
 }
 
-function getPointTitleText(searchText: string): string {
-  const title = Array.from(
+function formatCumulativeTooltip(
+  point: CumulativeMetricPoint,
+  metric: MetricKey,
+): string {
+  return formatCumulativePointTooltipTitle(
+    point,
+    metric,
+    getMetricDefinition(metric),
+  )
+}
+
+function getCircleAriaLabels(): string[] {
+  return Array.from(
+    document.querySelectorAll('.cumulative-chart-container circle[aria-label]'),
+  ).map((circle) => circle.getAttribute('aria-label') ?? '')
+}
+
+function getChartTitles(): string[] {
+  return Array.from(
     document.querySelectorAll('.cumulative-chart-container title'),
-  ).find((titleElement) => titleElement.textContent?.includes(searchText))
-
-  if (!title) {
-    throw new Error(`Expected point title containing ${searchText}`)
-  }
-
-  return title.textContent ?? ''
+  ).map((title) => title.textContent ?? '')
 }
 
 function countTextOccurrences(text: string, searchText: string): number {

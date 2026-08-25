@@ -1,10 +1,12 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
+import { getMetricDefinition } from '../analysis/activityMetrics.ts'
 import type { SeasonalMetricBucket } from '../analysis/seasonalMetrics.ts'
 import type { DayOfWeek, Activity } from '../data/activity.ts'
 import type { MetricKey } from '../state/analysisState.ts'
 import { getSeasonalLineSegmentPoints } from './seasonalLineSegments.ts'
 import { SeasonalMetricChart } from './SeasonalMetricChart.tsx'
+import { formatSeasonalBucketTooltipTitle } from './chartTooltipText.ts'
 
 describe('SeasonalMetricChart', () => {
   afterEach(() => {
@@ -65,10 +67,26 @@ describe('SeasonalMetricChart', () => {
       expect(document.querySelector('.seasonal-chart-container svg')).toBeInTheDocument()
     })
 
-    expect(document.body.textContent).toContain('Year: 2025')
-    expect(document.body.textContent).toContain('Weeks: 3-4')
-    expect(document.body.textContent).toContain('Distance median: 31.4 mi')
-    expect(document.body.textContent).toContain('Sample count: 3 activities')
+    const tooltipText = formatSeasonalTooltip(
+      createBucket({
+        year: 2025,
+        bucketIndex: 2,
+        startWeek: 3,
+        endWeek: 4,
+        value: 31.44,
+        sampleCount: 3,
+      }),
+      'distanceMiles',
+    )
+
+    expect(tooltipText).toContain('Year: 2025')
+    expect(tooltipText).toContain('Weeks: 3-4')
+    expect(tooltipText).toContain('Distance median: 31.4 mi')
+    expect(tooltipText).toContain('Sample count: 3 activities')
+    expect(getChartTitles()).toEqual([])
+    expect(getCircleAriaLabels()).toContain(
+      '2025, Weeks: 3-4, distance 31.4 mi, 3 activities',
+    )
   })
 
   it('keeps sparse buckets visible as points with sparse tooltip text', async () => {
@@ -88,10 +106,23 @@ describe('SeasonalMetricChart', () => {
       expect(document.querySelector('.seasonal-chart-container svg')).toBeInTheDocument()
     })
 
-    expect(document.body.textContent).toContain('Week: 53')
-    expect(document.body.textContent).toContain('Elevation gain median: 1,250 ft')
-    expect(document.body.textContent).toContain('Sample count: 1 activity')
-    expect(document.body.textContent).toContain('Sparse bucket')
+    const tooltipText = formatSeasonalTooltip(
+      createBucket({
+        year: 2025,
+        bucketIndex: 27,
+        startWeek: 53,
+        endWeek: 53,
+        value: 1250,
+        sampleCount: 1,
+        sparse: true,
+      }),
+      'elevationGainFeet',
+    )
+
+    expect(tooltipText).toContain('Week: 53')
+    expect(tooltipText).toContain('Elevation gain median: 1,250 ft')
+    expect(tooltipText).toContain('Sample count: 1 activity')
+    expect(tooltipText).toContain('Sparse bucket')
   })
 
   it('replaces Plot output when metric and buckets change', async () => {
@@ -100,8 +131,8 @@ describe('SeasonalMetricChart', () => {
     ])
 
     await waitFor(() => {
-      expect(document.body.textContent).toContain(
-        'Average speed median: 15.2 mph',
+      expect(getCircleAriaLabels().join('\n')).toContain(
+        'average speed 15.2 mph',
       )
     })
 
@@ -118,9 +149,9 @@ describe('SeasonalMetricChart', () => {
       expect(screen.getByText('Distance by season')).toBeInTheDocument()
     })
 
-    expect(document.body.textContent).toContain('Distance median: 31.4 mi')
-    expect(document.body.textContent).not.toContain(
-      'Average speed median: 15.2 mph',
+    expect(getCircleAriaLabels().join('\n')).toContain('distance 31.4 mi')
+    expect(getCircleAriaLabels().join('\n')).not.toContain(
+      'average speed 15.2 mph',
     )
     expect(document.querySelectorAll('.seasonal-chart-container svg').length).toBeGreaterThan(0)
   })
@@ -203,6 +234,25 @@ function createBucket(
     sampleCount: overrides.sampleCount ?? 2,
     sparse: overrides.sparse ?? false,
   }
+}
+
+function formatSeasonalTooltip(
+  bucket: SeasonalMetricBucket,
+  metric: MetricKey,
+): string {
+  return formatSeasonalBucketTooltipTitle(bucket, getMetricDefinition(metric))
+}
+
+function getCircleAriaLabels(): string[] {
+  return Array.from(
+    document.querySelectorAll('.seasonal-chart-container circle[aria-label]'),
+  ).map((circle) => circle.getAttribute('aria-label') ?? '')
+}
+
+function getChartTitles(): string[] {
+  return Array.from(
+    document.querySelectorAll('.seasonal-chart-container title'),
+  ).map((title) => title.textContent ?? '')
 }
 
 function createActivity(

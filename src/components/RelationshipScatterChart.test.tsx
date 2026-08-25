@@ -4,9 +4,11 @@ import {
   getMetricRelationshipPoints,
   relationshipBetweenMetrics,
 } from '../analysis/metricRelationships.ts'
+import { getMetricDefinition } from '../analysis/activityMetrics.ts'
 import type { DayOfWeek, Activity } from '../data/activity.ts'
 import type { MetricKey } from '../state/analysisState.ts'
 import { RelationshipScatterChart } from './RelationshipScatterChart.tsx'
+import { formatRelationshipPointTooltipTitle } from './chartTooltipText.ts'
 
 describe('RelationshipScatterChart', () => {
   afterEach(() => {
@@ -25,12 +27,22 @@ describe('RelationshipScatterChart', () => {
       expect(document.querySelector('.relationship-chart-container svg')).toBeInTheDocument()
     })
 
-    expect(document.body.textContent).toContain('2025-03-12')
-    expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
-    expect(document.body.textContent).toContain('Average speed: 15.2 mph')
-    expect(document.body.textContent).toContain('Distance: 31.4 mi')
-    expect(document.body.textContent).toContain('Moving time: 126 min')
-    expect(document.body.textContent).toContain('Activity type: Ride')
+    const tooltipText = formatRelationshipTooltip(
+      activityA,
+      'elevationGainFeet',
+      'averageSpeedMph',
+    )
+
+    expect(tooltipText).toContain('Date: 2025-03-12')
+    expect(tooltipText).toContain('Elevation gain: 1,250 ft')
+    expect(tooltipText).toContain('Average speed: 15.2 mph')
+    expect(tooltipText).toContain('Distance: 31.4 mi')
+    expect(tooltipText).toContain('Moving time: 126 min')
+    expect(tooltipText).toContain('Activity type: Ride')
+    expect(getChartTitles()).toEqual([])
+    expect(getCircleAriaLabels()).toContain(
+      '2025-03-12, elevation gain 1,250 ft, average speed 15.2 mph',
+    )
   })
 
   it('shows a year legend when valid plotted points span multiple years', async () => {
@@ -184,11 +196,17 @@ describe('RelationshipScatterChart', () => {
       expect(document.querySelector('svg')).toBeInTheDocument()
     })
 
-    expect(document.body.textContent).toContain('Distance: 31.4 mi')
-    expect(document.body.textContent).toContain('Average speed: 15.2 mph')
-    expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
-    expect(document.body.textContent).toContain('Moving time: 126 min')
-    expect(countTextOccurrences(getPointTitleText('2025-03-12'), 'Distance:')).toBe(1)
+    const tooltipText = formatRelationshipTooltip(
+      activityA,
+      'distanceMiles',
+      'averageSpeedMph',
+    )
+
+    expect(tooltipText).toContain('Distance: 31.4 mi')
+    expect(tooltipText).toContain('Average speed: 15.2 mph')
+    expect(tooltipText).toContain('Elevation gain: 1,250 ft')
+    expect(tooltipText).toContain('Moving time: 126 min')
+    expect(countTextOccurrences(tooltipText, 'Distance:')).toBe(1)
   })
 
   it('renders moving time vs distance with metric formatting', async () => {
@@ -200,10 +218,16 @@ describe('RelationshipScatterChart', () => {
       expect(document.querySelector('svg')).toBeInTheDocument()
     })
 
-    expect(document.body.textContent).toContain('Moving time: 126 min')
-    expect(document.body.textContent).toContain('Distance: 31.4 mi')
-    expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
-    expect(countTextOccurrences(getPointTitleText('2025-03-12'), 'Moving time:')).toBe(1)
+    const tooltipText = formatRelationshipTooltip(
+      activityA,
+      'movingTimeMinutes',
+      'distanceMiles',
+    )
+
+    expect(tooltipText).toContain('Moving time: 126 min')
+    expect(tooltipText).toContain('Distance: 31.4 mi')
+    expect(tooltipText).toContain('Elevation gain: 1,250 ft')
+    expect(countTextOccurrences(tooltipText, 'Moving time:')).toBe(1)
   })
 
   it('renders same-metric pairs and shows the metric once in tooltip', async () => {
@@ -216,7 +240,12 @@ describe('RelationshipScatterChart', () => {
     })
 
     expect(document.body.textContent).toContain('3 activities · Pearson r = 1.00')
-    expect(countTextOccurrences(getPointTitleText('2025-03-12'), 'Distance:')).toBe(1)
+    expect(
+      countTextOccurrences(
+        formatRelationshipTooltip(activityA, 'distanceMiles', 'distanceMiles'),
+        'Distance:',
+      ),
+    ).toBe(1)
   })
 
   it('does not duplicate elevation context when elevation is an active metric', async () => {
@@ -226,9 +255,15 @@ describe('RelationshipScatterChart', () => {
       expect(document.querySelector('svg')).toBeInTheDocument()
     })
 
-    expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
+    const tooltipText = formatRelationshipTooltip(
+      activityA,
+      'distanceMiles',
+      'elevationGainFeet',
+    )
+
+    expect(tooltipText).toContain('Elevation gain: 1,250 ft')
     expect(
-      countTextOccurrences(getPointTitleText('2025-03-12'), 'Elevation gain:'),
+      countTextOccurrences(tooltipText, 'Elevation gain:'),
     ).toBe(1)
   })
 
@@ -249,9 +284,11 @@ describe('RelationshipScatterChart', () => {
       expect(document.querySelector('svg')).toBeInTheDocument()
     })
 
-    expect(document.body.textContent).toContain('2025-03-12')
-    expect(document.body.textContent).not.toContain('2025-04-01')
-    expect(document.body.textContent).not.toContain('Average speed: 99.0 mph')
+    const ariaLabels = getCircleAriaLabels().join('\n')
+
+    expect(ariaLabels).toContain('2025-03-12')
+    expect(ariaLabels).not.toContain('2025-04-01')
+    expect(ariaLabels).not.toContain('average speed 99.0 mph')
   })
 
   it('renders observations when x variance is zero', async () => {
@@ -298,7 +335,9 @@ describe('RelationshipScatterChart', () => {
     const { rerender } = renderChart([activityA, activityB, activityC])
 
     await waitFor(() => {
-      expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
+      expect(getCircleAriaLabels().join('\n')).toContain(
+        'elevation gain 1,250 ft',
+      )
     })
 
     rerender(
@@ -313,7 +352,7 @@ describe('RelationshipScatterChart', () => {
       expect(screen.getByText('Moving time vs Distance')).toBeInTheDocument()
     })
 
-    expect(document.body.textContent).toContain('Moving time: 126 min')
+    expect(getCircleAriaLabels().join('\n')).toContain('moving time 126 min')
     expect(document.querySelectorAll('.relationship-chart-container svg')).toHaveLength(1)
   })
 
@@ -321,16 +360,16 @@ describe('RelationshipScatterChart', () => {
     const { rerender } = renderChart([activityA, activityB, activityC])
 
     await waitFor(() => {
-      expect(document.body.textContent).toContain('2025-03-12')
+      expect(getCircleAriaLabels().join('\n')).toContain('2025-03-12')
     })
 
     rerender(createChartElement([activityD, activityE, activityF]))
 
     await waitFor(() => {
-      expect(document.body.textContent).toContain('2026-07-04')
+      expect(getCircleAriaLabels().join('\n')).toContain('2026-07-04')
     })
 
-    expect(document.body.textContent).not.toContain('2025-03-12')
+    expect(getCircleAriaLabels().join('\n')).not.toContain('2025-03-12')
     expect(document.querySelectorAll('.relationship-chart-container svg')).toHaveLength(1)
   })
 })
@@ -364,16 +403,37 @@ function countTextOccurrences(text: string, searchText: string): number {
   return text.split(searchText).length - 1
 }
 
-function getPointTitleText(searchText: string): string {
-  const title = Array.from(
+function formatRelationshipTooltip(
+  activity: Activity,
+  xMetric: MetricKey,
+  yMetric: MetricKey,
+): string {
+  const xDefinition = getMetricDefinition(xMetric)
+  const yDefinition = getMetricDefinition(yMetric)
+
+  return formatRelationshipPointTooltipTitle(
+    {
+      activity,
+      x: activity[xMetric],
+      y: activity[yMetric],
+    },
+    xMetric,
+    yMetric,
+    xDefinition,
+    yDefinition,
+  )
+}
+
+function getCircleAriaLabels(): string[] {
+  return Array.from(
+    document.querySelectorAll('.relationship-chart-container circle[aria-label]'),
+  ).map((circle) => circle.getAttribute('aria-label') ?? '')
+}
+
+function getChartTitles(): string[] {
+  return Array.from(
     document.querySelectorAll('.relationship-chart-container title'),
-  ).find((titleElement) => titleElement.textContent?.includes(searchText))
-
-  if (!title) {
-    throw new Error(`Expected point title containing ${searchText}`)
-  }
-
-  return title.textContent ?? ''
+  ).map((title) => title.textContent ?? '')
 }
 
 function getLegendSwatchLabels(): string[] {

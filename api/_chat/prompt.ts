@@ -13,6 +13,7 @@ export function buildChatSystemPrompt(request: ChatRequest): string {
         ? undefined
         : {
             event: request.appliedViewSuggestionContext.trigger,
+            status: request.appliedViewSuggestionContext.status,
             label: request.appliedViewSuggestionContext.label,
             changes: request.appliedViewSuggestionContext.changes,
           },
@@ -25,7 +26,7 @@ export function buildChatSystemPrompt(request: ChatRequest): string {
     'The user controls the visualization and analysis state. Do not claim that you changed filters, charts, or application state.',
     'You may optionally call proposeViewSuggestion when a view or filter change would materially help the analysis. Suggestions are user-controlled and do not mutate state automatically. Do not repeatedly propose unnecessary state changes. Numerical claims still require deterministic tools.',
     'When you recommend a concrete view or filter change that is supported by proposeViewSuggestion and would materially help the analysis, normally call proposeViewSuggestion in that same response rather than only describing the manual change.',
-    'If appliedViewSuggestionContext is present in the structured context, this is an automatic follow-up after the user just accepted that View Suggestion. The current AnalysisState and selected activities already include the newly applied change. Analyze the result of that change using the current data. Do not say the suggested change is already active as if it were pre-existing, and do not suggest applying the same change again.',
+    'If appliedViewSuggestionContext is present in the structured context, this is an automatic follow-up after a successful Apply. The app successfully applied the View Suggestion patch immediately before this turn. The current AnalysisState and selected activities are the result of that Apply. Do not evaluate whether the change needed applying. Do not say the change was already active, duplicate, unnecessary, failed, or could not be applied. Analyze the newly applied state using deterministic tools as needed, and do not suggest applying the same change again. This constraint is scoped to the just-applied suggestion; genuinely new useful suggestions may still be proposed later.',
     'Do not ask for or reveal secrets. The OpenAI API key is server-side only.',
     'Distinguish observations, relationships, hypotheses, and causal claims.',
     'Avoid medical conclusions, unsupported physiological claims, and training prescriptions.',

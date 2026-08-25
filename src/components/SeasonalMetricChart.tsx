@@ -2,10 +2,7 @@ import * as Plot from '@observablehq/plot'
 import type { ReactNode } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { SeasonalMetricBucket } from '../analysis/seasonalMetrics.ts'
-import {
-  getMetricDefinition,
-  type MetricDefinition,
-} from '../analysis/activityMetrics.ts'
+import { getMetricDefinition } from '../analysis/activityMetrics.ts'
 import { SelectionStatus } from './SelectionStatus.tsx'
 import {
   getSeasonalLineSegmentPoints,
@@ -13,7 +10,10 @@ import {
 } from './seasonalLineSegments.ts'
 import type { Activity } from '../data/activity.ts'
 import type { MetricKey } from '../state/analysisState.ts'
-import { formatMetricValue } from './chartTooltipText.ts'
+import {
+  formatMetricValue,
+  formatSeasonalBucketTooltipTitle,
+} from './chartTooltipText.ts'
 
 type SeasonalMetricChartProps = {
   activities: Activity[]
@@ -134,8 +134,6 @@ export function SeasonalMetricChart({
           fillOpacity: (bucket: SeasonalMetricBucket) => (bucket.sparse ? 0.56 : 0.86),
           stroke: '#ffffff',
           strokeWidth: 1.4,
-          title: (bucket: SeasonalMetricBucket) =>
-            formatBucketTitle(bucket, metricDefinition),
           ariaLabel: (bucket: SeasonalMetricBucket) =>
             `${bucket.year}, ${formatWeekRange(
               bucket,
@@ -150,7 +148,7 @@ export function SeasonalMetricChart({
             x: 'bucketIndex',
             y: 'value',
             title: (bucket: SeasonalMetricBucket) =>
-              formatBucketTitle(bucket, metricDefinition),
+              formatSeasonalBucketTooltipTitle(bucket, metricDefinition),
           }),
         ),
       ],
@@ -204,27 +202,6 @@ function formatBucketTick(bucketIndex: number): string {
   const endWeek = Math.min(startWeek + 1, 53)
 
   return startWeek === endWeek ? `W${startWeek}` : `W${startWeek}-${endWeek}`
-}
-
-function formatBucketTitle(
-  bucket: SeasonalMetricBucket,
-  metricDefinition: MetricDefinition,
-): string {
-  const lines = [
-    `Year: ${bucket.year}`,
-    `${formatWeekRange(bucket)}`,
-    `${metricDefinition.label} median: ${formatMetricValue(
-      bucket.value,
-      metricDefinition,
-    )}`,
-    `Sample count: ${bucket.sampleCount} ${formatActivityCount(bucket.sampleCount)}`,
-  ]
-
-  if (bucket.sparse) {
-    lines.push('Sparse bucket')
-  }
-
-  return lines.join('\n')
 }
 
 function formatWeekRange(bucket: SeasonalMetricBucket): string {

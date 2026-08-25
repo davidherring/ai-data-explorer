@@ -489,6 +489,7 @@ describe('handleChat', () => {
       selectedActivityCount: selectedActivities.length,
       appliedViewSuggestionContext: {
         trigger: 'automatic-post-apply-analysis',
+        status: 'applied-successfully',
         label: 'Focus on low-elevation activities',
         changes: [
           {
@@ -514,16 +515,23 @@ describe('handleChat', () => {
 
     expect(system).toContain('appliedViewSuggestionContext')
     expect(system).toContain('automatic-post-apply-analysis')
+    expect(system).toContain('applied-successfully')
     expect(system).toContain('Focus on low-elevation activities')
     expect(system).toContain('Elevation gain')
-    expect(system).toContain('automatic follow-up')
-    expect(system).toContain('just accepted that View Suggestion')
+    expect(system).toContain('automatic follow-up after a successful Apply')
     expect(system).toContain(
-      'current AnalysisState and selected activities already include the newly applied change',
+      'successfully applied the View Suggestion patch immediately before this turn',
     )
-    expect(system).toContain('Analyze the result of that change')
     expect(system).toContain(
-      'Do not say the suggested change is already active',
+      'current AnalysisState and selected activities are the result of that Apply',
+    )
+    expect(system).toContain('Do not evaluate whether the change needed applying')
+    expect(system).toContain(
+      'change was already active, duplicate, unnecessary, failed, or could not be applied',
+    )
+    expect(system).toContain('Analyze the newly applied state')
+    expect(system).toContain(
+      'using deterministic tools as needed',
     )
     expect(system).toContain('do not suggest applying the same change again')
     expect(system).not.toContain('appliedStateFingerprint')
@@ -536,6 +544,7 @@ describe('handleChat', () => {
     expect(
       appliedViewSuggestionContextSchema.safeParse({
         trigger: 'automatic-post-apply-analysis',
+        status: 'applied-successfully',
         label: 'Focus on low-elevation activities',
         changes: [
           {
@@ -551,6 +560,7 @@ describe('handleChat', () => {
     expect(
       appliedViewSuggestionContextSchema.safeParse({
         trigger: 'automatic-post-apply-analysis',
+        status: 'applied-successfully',
         label: 'Focus on low-elevation activities',
         changes: [],
         selectedActivities: [{ id: 'private-a' }],
@@ -560,6 +570,15 @@ describe('handleChat', () => {
     expect(
       appliedViewSuggestionContextSchema.safeParse({
         trigger: 'manual-follow-up',
+        status: 'applied-successfully',
+        label: 'Focus on low-elevation activities',
+        changes: [],
+      }).success,
+    ).toBe(false)
+
+    expect(
+      appliedViewSuggestionContextSchema.safeParse({
+        trigger: 'automatic-post-apply-analysis',
         label: 'Focus on low-elevation activities',
         changes: [],
       }).success,
@@ -709,6 +728,7 @@ describe('handleChat', () => {
       ...createValidChatBody({
         appliedViewSuggestionContext: {
           trigger: 'automatic-post-apply-analysis',
+          status: 'applied-successfully',
           label: 'Focus on low-elevation activities',
           changes: [
             {

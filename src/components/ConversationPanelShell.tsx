@@ -38,6 +38,7 @@ type ConversationPanelShellProps = {
 type SuggestionStatus = 'applied' | 'dismissed' | 'ignored'
 type AppliedViewSuggestionContext = {
   trigger: 'automatic-post-apply-analysis'
+  status: 'applied-successfully'
   label: string
   changes: ViewSuggestion['changes']
 }
@@ -235,6 +236,7 @@ export function ConversationPanelShell({
       activityDataContextId,
       context: {
         trigger: 'automatic-post-apply-analysis',
+        status: 'applied-successfully',
         label: suggestion.label,
         changes: suggestion.changes,
       },

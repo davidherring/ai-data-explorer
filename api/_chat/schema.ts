@@ -75,6 +75,7 @@ const uiMessageSchema = z
 export const appliedViewSuggestionContextSchema = z
   .object({
     trigger: z.literal('automatic-post-apply-analysis'),
+    status: z.literal('applied-successfully'),
     label: z.string().min(1),
     changes: z.array(viewSuggestionChangeSchema),
   })

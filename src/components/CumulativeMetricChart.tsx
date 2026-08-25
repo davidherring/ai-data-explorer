@@ -2,15 +2,12 @@ import * as Plot from '@observablehq/plot'
 import type { ReactNode } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import type { CumulativeMetricPoint } from '../analysis/cumulativeMetrics.ts'
-import {
-  getMetricDefinition,
-  type MetricDefinition,
-} from '../analysis/activityMetrics.ts'
+import { getMetricDefinition } from '../analysis/activityMetrics.ts'
 import { SelectionStatus } from './SelectionStatus.tsx'
 import type { Activity } from '../data/activity.ts'
 import type { MetricKey } from '../state/analysisState.ts'
 import {
-  addActivityContextLines,
+  formatCumulativePointTooltipTitle,
   formatMetricValue,
 } from './chartTooltipText.ts'
 
@@ -123,8 +120,6 @@ export function CumulativeMetricChart({
           fillOpacity: 0.86,
           stroke: '#ffffff',
           strokeWidth: 1.4,
-          title: (point: CumulativeMetricPoint) =>
-            formatPointTitle(point, yMetric, metricDefinition),
           ariaLabel: (point: CumulativeMetricPoint) =>
             `${point.localDate}, ${metricDefinition.label.toLowerCase()} ${formatMetricValue(
               point.value,
@@ -140,7 +135,7 @@ export function CumulativeMetricChart({
             x: 'date',
             y: 'cumulativeValue',
             title: (point: CumulativeMetricPoint) =>
-              formatPointTitle(point, yMetric, metricDefinition),
+              formatCumulativePointTooltipTitle(point, yMetric, metricDefinition),
           }),
         ),
       ],
@@ -187,25 +182,4 @@ export function CumulativeMetricChart({
       </div>
     </figure>
   )
-}
-
-function formatPointTitle(
-  point: CumulativeMetricPoint,
-  yMetric: MetricKey,
-  metricDefinition: MetricDefinition,
-): string {
-  const { activity } = point
-  const lines = [
-    `Date: ${point.localDate}`,
-    `Activity type: ${activity.sportType}`,
-    `Activity ${metricDefinition.label}: ${formatMetricValue(point.value, metricDefinition)}`,
-    `Cumulative ${metricDefinition.label}: ${formatMetricValue(
-      point.cumulativeValue,
-      metricDefinition,
-    )}`,
-  ]
-
-  addActivityContextLines(lines, activity, [yMetric])
-
-  return lines.join('\n')
 }

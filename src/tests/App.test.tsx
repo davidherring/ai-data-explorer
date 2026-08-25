@@ -12,9 +12,13 @@ const selectedDemoYear = Math.max(
 const selectedDemoYearActivities = demoActivities.filter(
   (activity) => activity.year === selectedDemoYear,
 )
-const selectedDemoYearActivity = selectedDemoYearActivities[0]
+const selectedDemoYearActivity = selectedDemoYearActivities.find((activity) =>
+  Number.isFinite(activity.averageSpeedMph),
+)
 const selectedDemoYearOtherActivity = demoActivities.find(
-  (activity) => activity.year !== selectedDemoYear,
+  (activity) =>
+    activity.year !== selectedDemoYear &&
+    Number.isFinite(activity.averageSpeedMph),
 )
 const allDemoActivitiesSelectedText = `${demoActivityCount} of ${demoActivityCount} activities selected`
 const selectedDemoYearText = `${selectedDemoYearActivities.length} of ${demoActivityCount} activities selected`
@@ -81,10 +85,10 @@ describe('App shell', () => {
     fireEvent.click(screen.getByLabelText(String(selectedDemoYear)))
 
     expect(screen.getByText(selectedDemoYearText)).toBeInTheDocument()
-    expect(document.body.textContent).toContain(
+    expect(getTrendPointAriaLabels().join('\n')).toContain(
       selectedDemoYearActivity?.localDate,
     )
-    expect(document.body.textContent).not.toContain(
+    expect(getTrendPointAriaLabels().join('\n')).not.toContain(
       selectedDemoYearOtherActivity?.localDate,
     )
   })
@@ -304,6 +308,12 @@ function clearAllYears() {
       name: 'Clear all',
     }),
   )
+}
+
+function getTrendPointAriaLabels(): string[] {
+  return Array.from(
+    document.querySelectorAll('.trend-chart-container circle[aria-label]'),
+  ).map((circle) => circle.getAttribute('aria-label') ?? '')
 }
 
 function openMoreFilters() {

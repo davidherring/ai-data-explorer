@@ -18,7 +18,7 @@ import {
   shouldEncodeActivityYear,
 } from './activityYearEncoding.ts'
 import {
-  addActivityContextLines,
+  formatRelationshipPointTooltipTitle,
   formatMetricValue,
 } from './chartTooltipText.ts'
 
@@ -142,8 +142,6 @@ export function RelationshipScatterChart({
           fillOpacity: 0.82,
           stroke: '#ffffff',
           strokeWidth: 1.4,
-          title: (point: MetricRelationshipPoint) =>
-            formatActivityTitle(point, xMetric, yMetric, xDefinition, yDefinition),
           ariaLabel: (point: MetricRelationshipPoint) =>
             formatPointAriaLabel(
               point,
@@ -159,7 +157,7 @@ export function RelationshipScatterChart({
             x: 'x',
             y: 'y',
             title: (point: MetricRelationshipPoint) =>
-              formatActivityTitle(
+              formatRelationshipPointTooltipTitle(
                 point,
                 xMetric,
                 yMetric,
@@ -215,29 +213,6 @@ export function RelationshipScatterChart({
       </div>
     </figure>
   )
-}
-
-function formatActivityTitle(
-  point: MetricRelationshipPoint,
-  xMetric: MetricKey,
-  yMetric: MetricKey,
-  xDefinition: MetricDefinition,
-  yDefinition: MetricDefinition,
-): string {
-  const { activity } = point
-  const lines = [
-    `Date: ${activity.localDate}`,
-    `Activity type: ${activity.sportType}`,
-    `${xDefinition.label}: ${formatMetricValue(point.x, xDefinition)}`,
-  ]
-
-  if (xMetric !== yMetric) {
-    lines.push(`${yDefinition.label}: ${formatMetricValue(point.y, yDefinition)}`)
-  }
-
-  addActivityContextLines(lines, activity, [xMetric, yMetric])
-
-  return lines.join('\n')
 }
 
 function formatPointAriaLabel(

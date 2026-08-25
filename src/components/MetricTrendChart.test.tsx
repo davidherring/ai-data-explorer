@@ -1,8 +1,10 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { MetricTrendChart } from './MetricTrendChart.tsx'
+import { getMetricDefinition } from '../analysis/activityMetrics.ts'
 import type { DayOfWeek, Activity } from '../data/activity.ts'
 import type { MetricKey } from '../state/analysisState.ts'
+import { formatTrendPointTooltipTitle } from './chartTooltipText.ts'
 
 describe('MetricTrendChart', () => {
   afterEach(() => {
@@ -33,12 +35,18 @@ describe('MetricTrendChart', () => {
       expect(document.querySelector('svg')).toBeInTheDocument()
     })
 
-    expect(document.body.textContent).toContain('2025-03-12')
-    expect(document.body.textContent).toContain('Average speed: 15.2 mph')
-    expect(document.body.textContent).toContain('Distance: 31.4 mi')
-    expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
-    expect(document.body.textContent).toContain('Moving time: 126 min')
-    expect(document.body.textContent).toContain('Activity type: Ride')
+    const tooltipText = formatTrendTooltip(activityA, 'averageSpeedMph')
+
+    expect(tooltipText).toContain('Date: 2025-03-12')
+    expect(tooltipText).toContain('Average speed: 15.2 mph')
+    expect(tooltipText).toContain('Distance: 31.4 mi')
+    expect(tooltipText).toContain('Elevation gain: 1,250 ft')
+    expect(tooltipText).toContain('Moving time: 126 min')
+    expect(tooltipText).toContain('Activity type: Ride')
+    expect(getChartTitles()).toEqual([])
+    expect(getCircleAriaLabels()).toContain(
+      '2025-03-12, average speed 15.2 mph',
+    )
   })
 
   it('shows a year legend when valid plotted points span multiple years', async () => {
@@ -99,10 +107,12 @@ describe('MetricTrendChart', () => {
       expect(document.querySelector('svg')).toBeInTheDocument()
     })
 
-    expect(document.body.textContent).toContain('Distance: 31.4 mi')
-    expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
-    expect(countTextOccurrences(document.body.textContent ?? '', 'Distance:')).toBe(1)
-    expect(document.body.textContent).toContain('Moving time: 126 min')
+    const tooltipText = formatTrendTooltip(activityA, 'distanceMiles')
+
+    expect(tooltipText).toContain('Distance: 31.4 mi')
+    expect(tooltipText).toContain('Elevation gain: 1,250 ft')
+    expect(countTextOccurrences(tooltipText, 'Distance:')).toBe(1)
+    expect(tooltipText).toContain('Moving time: 126 min')
   })
 
   it('renders an elevation trend with whole-number formatting', async () => {
@@ -116,10 +126,12 @@ describe('MetricTrendChart', () => {
       expect(document.querySelector('svg')).toBeInTheDocument()
     })
 
-    expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
-    expect(document.body.textContent).toContain('Distance: 31.4 mi')
-    expect(countTextOccurrences(document.body.textContent ?? '', 'Elevation gain:')).toBe(1)
-    expect(document.body.textContent).toContain('Moving time: 126 min')
+    const tooltipText = formatTrendTooltip(activityA, 'elevationGainFeet')
+
+    expect(tooltipText).toContain('Elevation gain: 1,250 ft')
+    expect(tooltipText).toContain('Distance: 31.4 mi')
+    expect(countTextOccurrences(tooltipText, 'Elevation gain:')).toBe(1)
+    expect(tooltipText).toContain('Moving time: 126 min')
   })
 
   it('renders a time metric trend with whole-number minute formatting', async () => {
@@ -133,8 +145,10 @@ describe('MetricTrendChart', () => {
       expect(document.querySelector('svg')).toBeInTheDocument()
     })
 
-    expect(document.body.textContent).toContain('Moving time: 126 min')
-    expect(countTextOccurrences(document.body.textContent ?? '', 'Moving time:')).toBe(1)
+    const tooltipText = formatTrendTooltip(activityA, 'movingTimeMinutes')
+
+    expect(tooltipText).toContain('Moving time: 126 min')
+    expect(countTextOccurrences(tooltipText, 'Moving time:')).toBe(1)
   })
 
   it('does not plot non-finite active metric values', async () => {
@@ -154,7 +168,7 @@ describe('MetricTrendChart', () => {
       expect(document.querySelector('svg')).toBeInTheDocument()
     })
 
-    expect(document.body.textContent).toContain('2025-03-12')
+    expect(getCircleAriaLabels().join('\n')).toContain('2025-03-12')
     expect(document.body.textContent).not.toContain('2025-04-01')
   })
 
@@ -197,8 +211,8 @@ describe('MetricTrendChart', () => {
       expect(document.querySelector('svg')).toBeInTheDocument()
     })
 
-    expect(document.body.textContent).toContain('2025-06-01')
-    expect(document.body.textContent).toContain('Average speed: 72.4 mph')
+    expect(getCircleAriaLabels().join('\n')).toContain('2025-06-01')
+    expect(getCircleAriaLabels().join('\n')).toContain('average speed 72.4 mph')
     expect(document.body.textContent).not.toContain('2025-06-02')
   })
 
@@ -206,7 +220,9 @@ describe('MetricTrendChart', () => {
     const { rerender } = renderChart([activityA], 'averageSpeedMph')
 
     await waitFor(() => {
-      expect(document.body.textContent).toContain('Average speed: 15.2 mph')
+      expect(getCircleAriaLabels().join('\n')).toContain(
+        'average speed 15.2 mph',
+      )
     })
 
     rerender(
@@ -221,8 +237,10 @@ describe('MetricTrendChart', () => {
       expect(screen.getByText('Distance over calendar time')).toBeInTheDocument()
     })
 
-    expect(document.body.textContent).toContain('Distance: 31.4 mi')
-    expect(document.body.textContent).not.toContain('Average speed: 15.2 mph')
+    expect(getCircleAriaLabels().join('\n')).toContain('distance 31.4 mi')
+    expect(getCircleAriaLabels().join('\n')).not.toContain(
+      'average speed 15.2 mph',
+    )
     expect(document.querySelectorAll('.trend-chart-container svg')).toHaveLength(1)
   })
 
@@ -230,7 +248,7 @@ describe('MetricTrendChart', () => {
     const { rerender } = renderChart([activityA], 'averageSpeedMph')
 
     await waitFor(() => {
-      expect(document.body.textContent).toContain('2025-03-12')
+      expect(getCircleAriaLabels().join('\n')).toContain('2025-03-12')
     })
 
     rerender(
@@ -242,7 +260,7 @@ describe('MetricTrendChart', () => {
     )
 
     await waitFor(() => {
-      expect(document.body.textContent).toContain('2026-07-04')
+      expect(getCircleAriaLabels().join('\n')).toContain('2026-07-04')
     })
 
     expect(document.body.textContent).not.toContain('2025-03-12')
@@ -266,6 +284,31 @@ function renderChart(
 
 function countTextOccurrences(text: string, searchText: string): number {
   return text.split(searchText).length - 1
+}
+
+function formatTrendTooltip(activity: Activity, metric: MetricKey): string {
+  const definition = getMetricDefinition(metric)
+
+  return formatTrendPointTooltipTitle(
+    {
+      activity,
+      value: activity[metric],
+    },
+    metric,
+    definition,
+  )
+}
+
+function getCircleAriaLabels(): string[] {
+  return Array.from(
+    document.querySelectorAll('.trend-chart-container circle[aria-label]'),
+  ).map((circle) => circle.getAttribute('aria-label') ?? '')
+}
+
+function getChartTitles(): string[] {
+  return Array.from(
+    document.querySelectorAll('.trend-chart-container title'),
+  ).map((title) => title.textContent ?? '')
 }
 
 function getLegendSwatchLabels(): string[] {
