@@ -434,8 +434,9 @@ The assistant may optionally propose a dashboard state change.
 A suggestion should be used when a visual or selection change would materially help answer the current question.
 
 The model supplies a constrained patch, not a complete dashboard state.
-The server validates the patch, applies it to the submitted `AnalysisState`,
-constructs a complete `proposedState`, and returns only a validated suggestion.
+The server validates the patch against the submitted `AnalysisState` and returns
+only validated suggestion data. The executable patch is retained for Apply;
+`changes` is display-only and should not be used to reconstruct behavior.
 
 Conceptually:
 
@@ -443,9 +444,9 @@ Conceptually:
 type AnalysisSuggestion = {
   id: string;
   label: string;
-  proposedState: AnalysisState;
   rationale?: string;
-  sourceStateFingerprint: string;
+  patch: ViewSuggestionPatch;
+  changes: ViewSuggestionChange[];
 };
 ```
 
@@ -469,28 +470,84 @@ claims.
 
 When the user selects View Suggestion:
 
-the proposed state is applied;
+the validated patch is applied to the current `AnalysisState`;
+unrelated current state is preserved;
 the dashboard updates.
 
-Apply is allowed only when the suggestion's source-state fingerprint still
-matches the current `AnalysisState`. If the user has changed the view or filters
-since the suggestion was generated, the suggestion is treated as stale and must
-not be merged or applied.
+No old complete `proposedState` is installed, and Apply is not controlled by a
+full-state fingerprint stale gate. If the user manually changed fields that are
+not included in the suggestion patch, those changes remain. If the patch includes
+a field the user also changed manually, the explicit suggestion value replaces
+the current value for that field.
+
+View Suggestion cards have four lifecycle states:
+
+pending;
+applied;
+dismissed;
+ignored.
+
+Ordinary manual view/filter exploration preserves pending suggestions. A later
+manual user message marks still-pending suggestions ignored before the request
+is sent. Source/data-context identity changes also invalidate pending
+suggestions by marking them ignored. Applied and dismissed cards remain visible
+as conversation history.
+
+After Apply, the client waits until the updated current `AnalysisState` and
+selected activities are reflected in props, then sends one hidden automatic
+follow-up request. This request includes compact applied-suggestion context
+stating that the user just accepted the change. It does not add a visible
+synthetic user message, and the hidden trigger is stripped before conversion to
+model messages.
 
 Conceptually:
 
 ```ts
-type SuggestionAcceptedEvent = {
-  suggestionId: string;
-  previousState: AnalysisState;
-  appliedState: AnalysisState;
+type AppliedViewSuggestionContext = {
+  trigger: 'automatic-post-apply-analysis';
+  label: string;
+  changes: ViewSuggestionChange[];
 };
 ```
 
-This event is a future conversation-continuity concept. Sprint 11 does not add a
-synthetic transcript event for Apply or Dismiss.
+Current `AnalysisState` and `selectedActivities` remain authoritative for the
+automatic follow-up. Prior assistant tool parts continue to be stripped from
+model-visible history so old selection-sensitive results do not masquerade as
+current evidence.
 
-Its main purpose is conversational continuity and debugging.
+## 15.1 Markdown Rendering
+
+Assistant Markdown supports paragraphs, emphasis, lists, inline code, safe
+links, and GFM tables. Tables render semantically and scroll horizontally within
+the assistant message when wide.
+
+User messages remain plain text. Raw HTML is not enabled. Link handling remains
+restricted to approved safe schemes and protected link attributes.
+
+## 15.2 Request Size And Public Endpoint Posture
+
+Current `/api/chat` request measurements:
+
+- about 100 selected activities: 33 KiB;
+- 500: 161 KiB;
+- 1000: 320 KiB;
+- 1500: 479 KiB;
+- 2000: 638 KiB;
+- about 1000 plus representative message history: 328 KiB.
+
+`selectedActivities` dominate request size. The current 2000 selected-activity
+cap and 3 MB request-body guard remain in place. Current evidence does not
+justify broader transport architecture yet.
+
+`/api/chat` is public, strictly validates request shape, and enforces size/count
+guards. This is not a claim that the endpoint is abuse-proof. Sprint 14 keeps a
+document-and-observe public-usage posture rather than adding new authentication
+or rate-limit infrastructure.
+
+Normal visitors start from the bundled demo source. That fixture contains 1000
+sanitized normalized activities, with original IDs replaced by demo IDs and no
+raw/private/location Strava data bundled. Users may still connect their own
+Strava account through OAuth.
 
 ## 16. Suggestions Are Optional
 

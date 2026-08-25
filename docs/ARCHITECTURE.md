@@ -161,11 +161,15 @@ Suggestion acceptance:
 
 User clicks View Suggestion
       ↓
-Proposed AnalysisState applied
+Suggestion patch applied to current AnalysisState
       ↓
 Visualization rerenders
       ↓
-Compact one-turn applied-suggestion context may be sent with the next chat turn
+Client waits for updated current state and selected activities
+      ↓
+Hidden automatic follow-up request sends compact applied-suggestion context
+      ↓
+Hidden trigger is stripped before model-message conversion
 
 Selection years are source-aware. The static default state is source-independent,
 but when a source first reaches ready state the app selects all available years.
@@ -393,14 +397,24 @@ This separation allows the application to preserve useful state while controllin
 
 ## 15. View Suggestion Architecture
 
-A View Suggestion contains a validated typed proposed state plus the fingerprint
-of the exact source `AnalysisState`.
+A View Suggestion contains validated typed suggestion data:
+
+```ts
+type ViewSuggestion = {
+  id: string;
+  label: string;
+  rationale?: string;
+  patch: ViewSuggestionPatch;
+  changes: ViewSuggestionChange[];
+};
+```
 
 The model does not author a complete `AnalysisState` and must not directly mutate
 application state. It calls `proposeViewSuggestion` with a constrained patch. The
 server applies that patch to the submitted current state, restores fixed view
-configuration fields, validates the resulting state, and returns only valid
-structured suggestion data.
+configuration fields, validates the resulting state internally, and returns only
+valid structured suggestion data. The returned `patch` is executable; `changes`
+is display-only.
 
 Supported first-version patches cover view metric changes and selected activity
 filters: years, days of week, absolute date range, recurring date range,
@@ -409,13 +423,33 @@ with explicit values, not `null`. `comparison`, `grouping`, and arbitrary query
 language are not supported.
 
 The frontend receives the suggestion and renders Apply/Dismiss controls. Apply
-compares the source-state fingerprint with the current `AnalysisState` before
-calling:
+applies the validated patch to the current `AnalysisState`:
 
-setAnalysisState(suggestion.proposedState);
+```ts
+setAnalysisState(applyViewSuggestion(currentState, suggestion));
+```
 
-Stale suggestions are not merged or reconciled. The current implementation does
-not add synthetic Apply/Dismiss transcript events.
+Unrelated current state is preserved. If the user manually changed a field that
+the suggestion patch also contains, Apply intentionally uses the suggestion value
+for that patched field. No old complete `proposedState` is installed, and Apply
+is not gated by a full-state fingerprint comparison.
+
+Suggestion cards can be pending, applied, dismissed, or ignored. Ordinary manual
+view/filter exploration preserves pending suggestions. Later manual user
+messages mark remaining pending suggestions ignored before sending the request.
+Source/data-context identity changes also mark pending suggestions ignored.
+
+The current implementation does not add visible synthetic Apply/Dismiss
+transcript messages. Applying a suggestion schedules one hidden automatic
+post-Apply analysis turn after the patched state and selected activities are
+current. The hidden internal trigger is stripped before model-message conversion;
+the server receives only compact `appliedViewSuggestionContext` explaining that
+the user just accepted the suggestion.
+
+Assistant Markdown rendering supports GFM tables. Tables render as semantic HTML
+and scroll horizontally inside the assistant message when wide. User messages
+remain plain text, raw HTML is disabled, and safe-link handling remains
+restricted to approved schemes.
 
 
 ## 16. Visualization Layer
@@ -649,15 +683,43 @@ API secrets.
 
 A portfolio reviewer should be able to understand the product without connecting a personal Strava account.
 
-Possible approaches:
+Current demo mode is the default source for normal visitors. It uses a bundled
+sanitized normalized activity snapshot with:
 
-demo mode using synthetic/sanitized data;
-deployed instance preloaded with safe demo data;
-optional Strava connection for users who want their own data.
+- 1000 activities;
+- 849 Ride activities;
+- 151 Walk activities.
 
-The exact approach can be chosen during implementation.
+Original activity IDs are replaced with deterministic demo IDs. The committed
+fixture includes normalized Activity fields only and excludes raw Strava
+payloads, private metadata, route geometry, coordinates, and location fields.
+This describes exactly what was removed and replaced; it is not a formal
+anonymity claim.
 
-The project should not require a reviewer to create a Strava developer application.
+Optional Strava connection remains available for users who want their own data.
+The project should not require a reviewer to create a Strava developer
+application.
+
+## 26.1 Public Usage And Payload Posture
+
+Visitors can use demo mode immediately and can initiate Strava OAuth for their
+own account. `/api/chat` remains public with strict validation and request
+size/count guards. Sprint 14 does not add new authentication or rate-limit
+infrastructure; the public posture is document-and-observe.
+
+Current request-size measurements:
+
+- about 100 selected activities: 33 KiB;
+- 500: 161 KiB;
+- 1000: 320 KiB;
+- 1500: 479 KiB;
+- 2000: 638 KiB;
+- about 1000 plus representative message history: 328 KiB.
+
+`selectedActivities` dominate request size. The current 2000 selected-activity
+cap and 3 MB request-body guard remain. Current evidence does not justify a
+broader transport architecture, but this should be revisited if usage or dataset
+size changes.
 
 
 ## 27. Observability

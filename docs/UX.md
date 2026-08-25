@@ -321,17 +321,21 @@ The button should not interrupt the user's reading or automatically change the w
 
 If the user chooses the suggestion:
 
-the proposed analysis state is applied;
+the validated suggestion patch is applied to the current analysis state;
+unrelated current view/filter state is preserved;
 the visualization updates.
 
-If the user changes the view or filters after the suggestion was generated,
-Apply should become unavailable and the UI should ask for a new suggestion.
+Manual view/filter exploration does not invalidate a pending suggestion. If the
+user later sends a manual chat message, still-pending suggestions are marked
+ignored before that request is sent. If the underlying source/data context
+changes, pending suggestions are also marked ignored.
 
 The user may ignore the suggestion and continue the conversation instead.
 
 ## 13. AI suggestion structure
 
-A suggestion should contain enough structured information to reproduce the proposed view.
+A suggestion should contain enough structured information to apply a constrained
+change to the current state.
 
 Conceptually:
 
@@ -339,8 +343,8 @@ type AnalysisSuggestion = {
   id: string;
   label: string;
   rationale?: string;
-  proposedState: AnalysisState;
-  sourceStateFingerprint: string;
+  patch: ViewSuggestionPatch;
+  changes: ViewSuggestionChange[];
 };
 
 The visible UI should show:
@@ -349,7 +353,13 @@ View Suggestion
 Apply
 Dismiss
 
-The underlying structured state preserves exactly what will change.
+The `patch` is executable and validated. `changes` is display-only and should
+not be used to reconstruct behavior. No old complete `proposedState` is
+installed, and Apply is not controlled by a full-state fingerprint stale gate.
+
+Cards can be pending, applied, dismissed, or ignored. Applied, dismissed, and
+ignored cards remain in the transcript as historical context with their original
+label, rationale, and changes, but no action buttons.
 
 The first version supports constrained view metric changes and selected activity
 filters. Required selection fields such as `years`, `daysOfWeek`, and
@@ -373,8 +383,14 @@ Tool results
 Optional analysis suggestion
 
 Dashboard changes made between messages do not need to be stored as transcript
-events. Sprint 11 Apply/Dismiss actions update local UI state but do not create
+events. Apply/Dismiss actions update local UI state but do not create visible
 synthetic transcript messages.
+
+After Apply, the app automatically continues analysis once the updated current
+state and selected activities are available. This automatic follow-up is sent
+with a hidden internal trigger and compact context saying the user just accepted
+the suggestion. The hidden trigger is not shown in the transcript and is stripped
+before model-message conversion.
 
 ## 15. Conversation lifecycle
 
@@ -449,13 +465,24 @@ Examples:
 
 The UX should make analytical uncertainty feel normal rather than like an error state.
 
-## 19. Portfolio UX standard
+## 19. Assistant Markdown
+
+Assistant messages may render Markdown for readability, including paragraphs,
+emphasis, ordered and unordered lists, inline code, safe links, and GFM tables.
+Tables render as semantic tables and scroll horizontally inside the assistant
+message when they are wide.
+
+User messages remain plain text. Raw HTML is disabled, and link handling remains
+restricted to approved safe schemes.
+
+## 20. Portfolio UX standard
 
 The deployed application should be understandable within a few minutes.
 
 A reviewer should be able to:
 
 understand what the project does;
+start with the default sanitized demo source;
 manipulate the data manually;
 see the visualization change;
 ask the AI a question;
