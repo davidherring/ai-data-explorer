@@ -176,3 +176,19 @@ Verification / exit criteria:
 - JSON fixture size should be monitored, but approximately 1,000 normalized activities is acceptable for the current portfolio goal if build output remains reasonable.
 - Native Plot tips may need manual browser verification because automated jsdom tests cannot fully exercise hover/touch behavior.
 - Public `/api/chat` remains intentionally public in Sprint 14; revisit only if traffic or abuse evidence changes.
+
+## Closeout Notes
+
+- Added Plot-native hover tooltips across Trend, Relationship, Seasonal, and Cumulative while preserving existing chart marks, legends, year coloring, empty states, responsive behavior, ResizeObserver lifecycle, ARIA labels, and analytical semantics.
+- Trend and Relationship tooltips inspect individual activities; Seasonal tooltips describe aggregate biweekly buckets; Cumulative tooltips distinguish per-activity values from cumulative values.
+- Smoke testing found duplicate browser-native SVG `<title>` tooltips; point/bucket title channels were removed so Plot-native tips are the only visual tooltip.
+- Replaced the 12-item synthetic Demo fixture with a bundled sanitized real-data JSON snapshot from 2,980 normalized source activities; the final Demo contains 1,000 activities: 849 `Ride` and 151 `Walk`.
+- Demo IDs are deterministic `demo-activity-0001` through `demo-activity-1000`; only normalized `Activity` fields were retained, `EBikeRide` and all other activity types were excluded, and no route/location/raw/private fields were committed.
+- Demo remains the default source and now supports meaningful Trend, Relationship, Seasonal, Cumulative, grouped-comparison, AI-analysis, and View Suggestion use immediately for normal visitors.
+- Durable docs now reflect Sprint 13 patch-based View Suggestion Apply behavior, pending/applied/dismissed/ignored lifecycle, automatic post-Apply analysis, safe assistant Markdown with GFM tables, current payload measurements, and the document-and-observe public `/api/chat` posture.
+- Strava OAuth remains available; `/api/chat` remains public with existing strict validation, 2,000 selected-activity cap, and 3 MB request guard; no new auth, origin-check, or rate-limit infrastructure was added.
+- A post-Apply regression fix added explicit successful-Apply context so automatic follow-up analyzes the newly applied state rather than describing it as pre-existing, duplicate, unnecessary, failed, or unapplied; manual smoke indicates the fix is working, but wording should continue to be observed.
+- Manual smoke passed for Demo default loading, all four tooltip types, mobile layout, View Suggestion Apply semantics, automatic post-Apply analysis, GFM tables, Sprint 12 controls/responsiveness, and Sprint 13 conversation lifecycle.
+- Final verification passed: `npm run typecheck`, `npm run lint`, `npm test` (33 files, 418 tests), and `npm run build`; the existing Vite chunk-size warning remains unchanged.
+- Deferred work: final product hardening/release audit, any accessibility/performance issues found during hardening, broader transport/rate-limit architecture only if future evidence justifies it, and richer analytical capabilities only if later justified.
+- Product lesson: a portfolio demo becomes much more useful when it runs immediately on realistic deterministic data and lets users inspect underlying chart observations directly, without changing the analytical model or human/AI collaboration architecture.
