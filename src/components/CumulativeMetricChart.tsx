@@ -9,6 +9,10 @@ import {
 import { SelectionStatus } from './SelectionStatus.tsx'
 import type { Activity } from '../data/activity.ts'
 import type { MetricKey } from '../state/analysisState.ts'
+import {
+  addActivityContextLines,
+  formatMetricValue,
+} from './chartTooltipText.ts'
 
 type CumulativeMetricChartProps = {
   activities: Activity[]
@@ -130,6 +134,15 @@ export function CumulativeMetricChart({
               metricDefinition,
             )}`,
         }),
+        Plot.tip(
+          points,
+          Plot.pointer({
+            x: 'date',
+            y: 'cumulativeValue',
+            title: (point: CumulativeMetricPoint) =>
+              formatPointTitle(point, yMetric, metricDefinition),
+          }),
+        ),
       ],
     })
 
@@ -183,42 +196,16 @@ function formatPointTitle(
 ): string {
   const { activity } = point
   const lines = [
-    point.localDate,
-    `${metricDefinition.label}: ${formatMetricValue(point.value, metricDefinition)}`,
+    `Date: ${point.localDate}`,
+    `Activity type: ${activity.sportType}`,
+    `Activity ${metricDefinition.label}: ${formatMetricValue(point.value, metricDefinition)}`,
     `Cumulative ${metricDefinition.label}: ${formatMetricValue(
       point.cumulativeValue,
       metricDefinition,
     )}`,
   ]
 
-  if (yMetric !== 'distanceMiles') {
-    const distanceDefinition = getMetricDefinition('distanceMiles')
-    lines.push(
-      `${distanceDefinition.label}: ${formatMetricValue(
-        activity.distanceMiles,
-        distanceDefinition,
-      )}`,
-    )
-  }
-
-  if (yMetric !== 'elevationGainFeet') {
-    const elevationDefinition = getMetricDefinition('elevationGainFeet')
-    lines.push(
-      `${elevationDefinition.label}: ${formatMetricValue(
-        activity.elevationGainFeet,
-        elevationDefinition,
-      )}`,
-    )
-  }
-
-  lines.push(`Sport type: ${activity.sportType}`)
+  addActivityContextLines(lines, activity, [yMetric])
 
   return lines.join('\n')
-}
-
-function formatMetricValue(
-  value: number,
-  metricDefinition: MetricDefinition,
-): string {
-  return `${metricDefinition.format(value)} ${metricDefinition.unit}`
 }

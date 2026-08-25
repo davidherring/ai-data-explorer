@@ -29,7 +29,8 @@ describe('RelationshipScatterChart', () => {
     expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
     expect(document.body.textContent).toContain('Average speed: 15.2 mph')
     expect(document.body.textContent).toContain('Distance: 31.4 mi')
-    expect(document.body.textContent).toContain('Sport type: Ride')
+    expect(document.body.textContent).toContain('Moving time: 126 min')
+    expect(document.body.textContent).toContain('Activity type: Ride')
   })
 
   it('shows a year legend when valid plotted points span multiple years', async () => {
@@ -186,6 +187,7 @@ describe('RelationshipScatterChart', () => {
     expect(document.body.textContent).toContain('Distance: 31.4 mi')
     expect(document.body.textContent).toContain('Average speed: 15.2 mph')
     expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
+    expect(document.body.textContent).toContain('Moving time: 126 min')
     expect(countTextOccurrences(getPointTitleText('2025-03-12'), 'Distance:')).toBe(1)
   })
 
@@ -201,6 +203,7 @@ describe('RelationshipScatterChart', () => {
     expect(document.body.textContent).toContain('Moving time: 126 min')
     expect(document.body.textContent).toContain('Distance: 31.4 mi')
     expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
+    expect(countTextOccurrences(getPointTitleText('2025-03-12'), 'Moving time:')).toBe(1)
   })
 
   it('renders same-metric pairs and shows the metric once in tooltip', async () => {

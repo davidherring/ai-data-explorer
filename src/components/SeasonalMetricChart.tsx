@@ -13,6 +13,7 @@ import {
 } from './seasonalLineSegments.ts'
 import type { Activity } from '../data/activity.ts'
 import type { MetricKey } from '../state/analysisState.ts'
+import { formatMetricValue } from './chartTooltipText.ts'
 
 type SeasonalMetricChartProps = {
   activities: Activity[]
@@ -141,8 +142,17 @@ export function SeasonalMetricChart({
             )}, ${metricDefinition.label.toLowerCase()} ${formatMetricValue(
               bucket.value,
               metricDefinition,
-            )}, ${bucket.sampleCount} ${formatRideCount(bucket.sampleCount)}`,
+            )}, ${bucket.sampleCount} ${formatActivityCount(bucket.sampleCount)}`,
         }),
+        Plot.tip(
+          buckets,
+          Plot.pointer({
+            x: 'bucketIndex',
+            y: 'value',
+            title: (bucket: SeasonalMetricBucket) =>
+              formatBucketTitle(bucket, metricDefinition),
+          }),
+        ),
       ],
     })
 
@@ -203,11 +213,11 @@ function formatBucketTitle(
   const lines = [
     `Year: ${bucket.year}`,
     `${formatWeekRange(bucket)}`,
-    `${metricDefinition.label}: ${formatMetricValue(
+    `${metricDefinition.label} median: ${formatMetricValue(
       bucket.value,
       metricDefinition,
     )}`,
-    `Sample count: ${bucket.sampleCount} ${formatRideCount(bucket.sampleCount)}`,
+    `Sample count: ${bucket.sampleCount} ${formatActivityCount(bucket.sampleCount)}`,
   ]
 
   if (bucket.sparse) {
@@ -225,13 +235,6 @@ function formatWeekRange(bucket: SeasonalMetricBucket): string {
   return `Weeks: ${bucket.startWeek}-${bucket.endWeek}`
 }
 
-function formatRideCount(sampleCount: number): string {
+function formatActivityCount(sampleCount: number): string {
   return sampleCount === 1 ? 'activity' : 'activities'
-}
-
-function formatMetricValue(
-  value: number,
-  metricDefinition: MetricDefinition,
-): string {
-  return `${metricDefinition.format(value)} ${metricDefinition.unit}`
 }

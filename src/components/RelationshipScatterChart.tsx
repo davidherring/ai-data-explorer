@@ -17,6 +17,10 @@ import {
   formatActivityYear,
   shouldEncodeActivityYear,
 } from './activityYearEncoding.ts'
+import {
+  addActivityContextLines,
+  formatMetricValue,
+} from './chartTooltipText.ts'
 
 type RelationshipScatterChartProps = {
   activities: Activity[]
@@ -139,7 +143,7 @@ export function RelationshipScatterChart({
           stroke: '#ffffff',
           strokeWidth: 1.4,
           title: (point: MetricRelationshipPoint) =>
-            formatRideTitle(point, xMetric, yMetric, xDefinition, yDefinition),
+            formatActivityTitle(point, xMetric, yMetric, xDefinition, yDefinition),
           ariaLabel: (point: MetricRelationshipPoint) =>
             formatPointAriaLabel(
               point,
@@ -149,6 +153,21 @@ export function RelationshipScatterChart({
               yDefinition,
             ),
         }),
+        Plot.tip(
+          points,
+          Plot.pointer({
+            x: 'x',
+            y: 'y',
+            title: (point: MetricRelationshipPoint) =>
+              formatActivityTitle(
+                point,
+                xMetric,
+                yMetric,
+                xDefinition,
+                yDefinition,
+              ),
+          }),
+        ),
       ],
     })
 
@@ -198,7 +217,7 @@ export function RelationshipScatterChart({
   )
 }
 
-function formatRideTitle(
+function formatActivityTitle(
   point: MetricRelationshipPoint,
   xMetric: MetricKey,
   yMetric: MetricKey,
@@ -207,7 +226,8 @@ function formatRideTitle(
 ): string {
   const { activity } = point
   const lines = [
-    activity.localDate,
+    `Date: ${activity.localDate}`,
+    `Activity type: ${activity.sportType}`,
     `${xDefinition.label}: ${formatMetricValue(point.x, xDefinition)}`,
   ]
 
@@ -215,9 +235,7 @@ function formatRideTitle(
     lines.push(`${yDefinition.label}: ${formatMetricValue(point.y, yDefinition)}`)
   }
 
-  addContextLines(lines, activity, xMetric, yMetric)
-
-  lines.push(`Sport type: ${activity.sportType}`)
+  addActivityContextLines(lines, activity, [xMetric, yMetric])
 
   return lines.join('\n')
 }
@@ -245,33 +263,6 @@ function formatPointAriaLabel(
   return `${point.activity.localDate}, ${metricParts.join(', ')}`
 }
 
-function addContextLines(
-  lines: string[],
-  activity: Activity,
-  xMetric: MetricKey,
-  yMetric: MetricKey,
-): void {
-  if (xMetric !== 'distanceMiles' && yMetric !== 'distanceMiles') {
-    const distanceDefinition = getMetricDefinition('distanceMiles')
-    lines.push(
-      `${distanceDefinition.label}: ${formatMetricValue(
-        activity.distanceMiles,
-        distanceDefinition,
-      )}`,
-    )
-  }
-
-  if (xMetric !== 'elevationGainFeet' && yMetric !== 'elevationGainFeet') {
-    const elevationDefinition = getMetricDefinition('elevationGainFeet')
-    lines.push(
-      `${elevationDefinition.label}: ${formatMetricValue(
-        activity.elevationGainFeet,
-        elevationDefinition,
-      )}`,
-    )
-  }
-}
-
 function formatNoValidPairsMessage(
   xMetric: MetricKey,
   yMetric: MetricKey,
@@ -283,11 +274,4 @@ function formatNoValidPairsMessage(
   }
 
   return `No activities have valid ${xDefinition.label.toLowerCase()} and ${yDefinition.label.toLowerCase()} values for the current selection.`
-}
-
-function formatMetricValue(
-  value: number,
-  metricDefinition: MetricDefinition,
-): string {
-  return `${metricDefinition.format(value)} ${metricDefinition.unit}`
 }

@@ -67,7 +67,7 @@ describe('SeasonalMetricChart', () => {
 
     expect(document.body.textContent).toContain('Year: 2025')
     expect(document.body.textContent).toContain('Weeks: 3-4')
-    expect(document.body.textContent).toContain('Distance: 31.4 mi')
+    expect(document.body.textContent).toContain('Distance median: 31.4 mi')
     expect(document.body.textContent).toContain('Sample count: 3 activities')
   })
 
@@ -89,7 +89,7 @@ describe('SeasonalMetricChart', () => {
     })
 
     expect(document.body.textContent).toContain('Week: 53')
-    expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
+    expect(document.body.textContent).toContain('Elevation gain median: 1,250 ft')
     expect(document.body.textContent).toContain('Sample count: 1 activity')
     expect(document.body.textContent).toContain('Sparse bucket')
   })
@@ -100,7 +100,9 @@ describe('SeasonalMetricChart', () => {
     ])
 
     await waitFor(() => {
-      expect(document.body.textContent).toContain('Average speed: 15.2 mph')
+      expect(document.body.textContent).toContain(
+        'Average speed median: 15.2 mph',
+      )
     })
 
     rerender(
@@ -116,8 +118,10 @@ describe('SeasonalMetricChart', () => {
       expect(screen.getByText('Distance by season')).toBeInTheDocument()
     })
 
-    expect(document.body.textContent).toContain('Distance: 31.4 mi')
-    expect(document.body.textContent).not.toContain('Average speed: 15.2 mph')
+    expect(document.body.textContent).toContain('Distance median: 31.4 mi')
+    expect(document.body.textContent).not.toContain(
+      'Average speed median: 15.2 mph',
+    )
     expect(document.querySelectorAll('.seasonal-chart-container svg').length).toBeGreaterThan(0)
   })
 })

@@ -37,7 +37,8 @@ describe('MetricTrendChart', () => {
     expect(document.body.textContent).toContain('Average speed: 15.2 mph')
     expect(document.body.textContent).toContain('Distance: 31.4 mi')
     expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
-    expect(document.body.textContent).toContain('Sport type: Ride')
+    expect(document.body.textContent).toContain('Moving time: 126 min')
+    expect(document.body.textContent).toContain('Activity type: Ride')
   })
 
   it('shows a year legend when valid plotted points span multiple years', async () => {
@@ -101,6 +102,7 @@ describe('MetricTrendChart', () => {
     expect(document.body.textContent).toContain('Distance: 31.4 mi')
     expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
     expect(countTextOccurrences(document.body.textContent ?? '', 'Distance:')).toBe(1)
+    expect(document.body.textContent).toContain('Moving time: 126 min')
   })
 
   it('renders an elevation trend with whole-number formatting', async () => {
@@ -117,6 +119,7 @@ describe('MetricTrendChart', () => {
     expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
     expect(document.body.textContent).toContain('Distance: 31.4 mi')
     expect(countTextOccurrences(document.body.textContent ?? '', 'Elevation gain:')).toBe(1)
+    expect(document.body.textContent).toContain('Moving time: 126 min')
   })
 
   it('renders a time metric trend with whole-number minute formatting', async () => {
@@ -131,6 +134,7 @@ describe('MetricTrendChart', () => {
     })
 
     expect(document.body.textContent).toContain('Moving time: 126 min')
+    expect(countTextOccurrences(document.body.textContent ?? '', 'Moving time:')).toBe(1)
   })
 
   it('does not plot non-finite active metric values', async () => {

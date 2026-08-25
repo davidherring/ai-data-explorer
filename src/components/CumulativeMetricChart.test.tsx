@@ -56,11 +56,12 @@ describe('CumulativeMetricChart', () => {
     })
 
     expect(document.body.textContent).toContain('2025-03-12')
-    expect(document.body.textContent).toContain('Distance: 31.4 mi')
+    expect(document.body.textContent).toContain('Activity Distance: 31.4 mi')
     expect(document.body.textContent).toContain('Cumulative Distance: 31.4 mi')
     expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
-    expect(document.body.textContent).toContain('Sport type: Ride')
-    expect(getPointTitleText('2025-03-12')).not.toContain('\nDistance: 31.4 mi\nDistance:')
+    expect(document.body.textContent).toContain('Moving time: 126 min')
+    expect(document.body.textContent).toContain('Activity type: Ride')
+    expect(countTextOccurrences(getPointTitleText('2025-03-12'), 'Distance:')).toBe(2)
   })
 
   it('renders non-default metric formatting and avoids duplicate elevation context', async () => {
@@ -76,12 +77,11 @@ describe('CumulativeMetricChart', () => {
 
     const titleText = getPointTitleText('2025-03-12')
 
-    expect(titleText).toContain('Elevation gain: 1,250 ft')
+    expect(titleText).toContain('Activity Elevation gain: 1,250 ft')
     expect(titleText).toContain('Cumulative Elevation gain: 1,250 ft')
     expect(titleText).toContain('Distance: 31.4 mi')
-    expect(titleText).not.toContain(
-      '\nElevation gain: 1,250 ft\nElevation gain:',
-    )
+    expect(titleText).toContain('Moving time: 126 min')
+    expect(countTextOccurrences(titleText, 'Elevation gain:')).toBe(2)
   })
 
   it('renders time metric values with context lines', async () => {
@@ -95,7 +95,10 @@ describe('CumulativeMetricChart', () => {
       expect(document.querySelector('.cumulative-chart-container svg')).toBeInTheDocument()
     })
 
-    expect(document.body.textContent).toContain('Moving time: 126 min')
+    const titleText = getPointTitleText('2025-03-12')
+
+    expect(titleText).toContain('Activity Moving time: 126 min')
+    expect(countTextOccurrences(titleText, 'Moving time:')).toBe(2)
     expect(document.body.textContent).toContain('Cumulative Moving time: 126 min')
     expect(document.body.textContent).toContain('Distance: 31.4 mi')
     expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
@@ -107,7 +110,7 @@ describe('CumulativeMetricChart', () => {
     ])
 
     await waitFor(() => {
-      expect(document.body.textContent).toContain('Distance: 31.4 mi')
+      expect(document.body.textContent).toContain('Activity Distance: 31.4 mi')
     })
 
     rerender(
@@ -123,7 +126,9 @@ describe('CumulativeMetricChart', () => {
       expect(screen.getByText('Cumulative Elevation gain')).toBeInTheDocument()
     })
 
-    expect(document.body.textContent).toContain('Elevation gain: 1,250 ft')
+    expect(document.body.textContent).toContain(
+      'Activity Elevation gain: 1,250 ft',
+    )
     expect(document.body.textContent).not.toContain('Cumulative Distance: 31.4 mi')
     expect(document.querySelectorAll('.cumulative-chart-container svg')).toHaveLength(1)
   })
@@ -172,6 +177,10 @@ function getPointTitleText(searchText: string): string {
   }
 
   return title.textContent ?? ''
+}
+
+function countTextOccurrences(text: string, searchText: string): number {
+  return text.split(searchText).length - 1
 }
 
 function parseLocalCalendarDate(localDate: string): Date {

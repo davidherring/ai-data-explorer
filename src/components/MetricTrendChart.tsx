@@ -13,6 +13,10 @@ import {
   formatActivityYear,
   shouldEncodeActivityYear,
 } from './activityYearEncoding.ts'
+import {
+  addActivityContextLines,
+  formatMetricValue,
+} from './chartTooltipText.ts'
 
 type MetricTrendChartProps = {
   activities: Activity[]
@@ -154,13 +158,22 @@ export function MetricTrendChart({
           stroke: '#ffffff',
           strokeWidth: 1.4,
           title: (point: TrendPoint) =>
-            formatRideTitle(point, yMetric, metricDefinition),
+            formatActivityTitle(point, yMetric, metricDefinition),
           ariaLabel: (point: TrendPoint) =>
             `${point.activity.localDate}, ${metricDefinition.label.toLowerCase()} ${formatMetricValue(
               point.value,
               metricDefinition,
             )}`,
         }),
+        Plot.tip(
+          points,
+          Plot.pointer({
+            x: 'date',
+            y: 'value',
+            title: (point: TrendPoint) =>
+              formatActivityTitle(point, yMetric, metricDefinition),
+          }),
+        ),
       ],
     })
 
@@ -212,45 +225,19 @@ function parseLocalCalendarDate(localDate: string): Date {
   return new Date(year, month - 1, day)
 }
 
-function formatRideTitle(
+function formatActivityTitle(
   point: TrendPoint,
   yMetric: MetricKey,
   metricDefinition: MetricDefinition,
 ): string {
   const { activity } = point
   const lines = [
-    activity.localDate,
+    `Date: ${activity.localDate}`,
+    `Activity type: ${activity.sportType}`,
     `${metricDefinition.label}: ${formatMetricValue(point.value, metricDefinition)}`,
   ]
 
-  if (yMetric !== 'distanceMiles') {
-    const distanceDefinition = getMetricDefinition('distanceMiles')
-    lines.push(
-      `${distanceDefinition.label}: ${formatMetricValue(
-        activity.distanceMiles,
-        distanceDefinition,
-      )}`,
-    )
-  }
-
-  if (yMetric !== 'elevationGainFeet') {
-    const elevationDefinition = getMetricDefinition('elevationGainFeet')
-    lines.push(
-      `${elevationDefinition.label}: ${formatMetricValue(
-        activity.elevationGainFeet,
-        elevationDefinition,
-      )}`,
-    )
-  }
-
-  lines.push(`Sport type: ${activity.sportType}`)
+  addActivityContextLines(lines, activity, [yMetric])
 
   return lines.join('\n')
-}
-
-function formatMetricValue(
-  value: number,
-  metricDefinition: MetricDefinition,
-): string {
-  return `${metricDefinition.format(value)} ${metricDefinition.unit}`
 }
