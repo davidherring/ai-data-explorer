@@ -70,8 +70,7 @@ The basic analytical unit is a selection of activities.
 A selection is defined using flexible filters such as:
 
 - year or date range;
-- weekday/weekend;
-- day of week;
+- explicit days of week;
 - distance range;
 - elevation range;
 - activity type;
@@ -184,10 +183,11 @@ The application should support a continuously updating dataset rather than rely 
 The user should be able to manually filter activities by at least:
 
 - date/year;
-- weekday/weekend;
-- day of week;
+- explicit days of week;
 - distance;
 - elevation.
+
+Weekday/weekend comparison remains available through deterministic grouped comparison rather than as a separate manual day-mode selector.
 
 The design should make additional filters possible later.
 
@@ -256,8 +256,10 @@ Example:
 
 Applying the suggestion updates the dashboard only after the user accepts it.
 
-Sprint 11 does not create a synthetic transcript event when a suggestion is
-applied or dismissed.
+After a successful Apply, the dashboard updates from the suggestion patch and
+the assistant automatically continues analysis once the current state and
+selected activities reflect that change. No visible synthetic user message is
+added for Apply or Dismiss.
 
 ---
 
@@ -307,12 +309,17 @@ The product should not require this information to function.
 
 ## 7. Analytical Tool Layer
 
-The initial tool layer should support capabilities such as:
+The implemented MVP tool layer supports:
 
 - `summarizeSelection`
-- `compareSelections`
-- `calculateTrend`
 - `relationshipBetweenMetrics`
+- `compareGroups`
+- `calculateTrend`
+- `proposeViewSuggestion`
+
+Future candidate tools may include:
+
+- `compareSelections`
 - `findSimilarActivities`
 - `summarizeRecentVsHistorical`
 

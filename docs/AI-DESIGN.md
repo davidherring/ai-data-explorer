@@ -227,7 +227,7 @@ filtering;
 aggregation;
 summary statistics;
 trend calculations;
-selection comparisons;
+grouped comparisons;
 relationships between metrics;
 identifying similar activities;
 recent-vs-historical analysis.
@@ -241,9 +241,9 @@ observability;
 prompt efficiency;
 separation of responsibilities.
 
-## 9. Initial Analysis Tools
+## 9. Implemented Analysis Tools
 
-The MVP tool layer should include a small set of broadly useful analytical capabilities.
+The MVP tool layer includes a small set of broadly useful analytical capabilities.
 
 ### 9.1 summarizeSelection
 
@@ -270,40 +270,7 @@ type SelectionSummary = {
 
 The exact fields should depend on metric availability.
 
-### 9.2 compareSelections
-
-Purpose:
-
-Compare two arbitrary selections.
-
-The comparison should not be limited to time periods.
-
-Possible outputs include:
-
-activity counts;
-mean/median differences;
-percent differences where meaningful;
-distribution summaries;
-major differences in activity composition.
-
-### 9.3 calculateTrend
-
-Purpose:
-
-Measure how a metric changes over time within a selection.
-
-Potential outputs:
-
-direction;
-magnitude;
-time window;
-sample count;
-regression or smoothed trend information;
-warnings when the sample is sparse.
-
-The tool should avoid presenting unstable trends as authoritative.
-
-### 9.4 relationshipBetweenMetrics
+### 9.2 relationshipBetweenMetrics
 
 Purpose:
 
@@ -323,7 +290,77 @@ range information;
 possible clusters/outliers;
 warnings about causal interpretation.
 
-### 9.5 findSimilarActivities
+### 9.3 compareGroups
+
+Purpose:
+
+Compare groups within the currently selected activities.
+
+Supported grouping includes:
+
+year;
+month;
+weekday/weekend;
+day of week.
+
+The tool returns structured group summaries, pairwise deltas where appropriate,
+composition differences, and warnings for sparse or missing groups.
+
+### 9.4 calculateTrend
+
+Purpose:
+
+Measure how a metric changes over time within a selection.
+
+Potential outputs:
+
+direction;
+magnitude;
+time window;
+sample count;
+regression evidence;
+warnings when the sample is sparse or has large gaps.
+
+The tool should avoid presenting unstable trends as authoritative. It does not
+provide p-values, statistical significance, practical-significance thresholds,
+forecasting, or causal interpretation.
+
+### 9.5 proposeViewSuggestion
+
+Purpose:
+
+Return a validated, user-controlled view or filter suggestion when changing the
+workspace would materially help the analysis.
+
+The model supplies only a constrained patch. The server validates the patch
+against the submitted `AnalysisState` and returns structured suggestion data for
+the client to render.
+
+### 9.6 Future candidate tools
+
+Future deterministic tools may include:
+
+compareSelections;
+findSimilarActivities;
+summarizeRecentVsHistorical.
+
+#### compareSelections
+
+Purpose:
+
+Compare two arbitrary selections.
+
+The comparison should not be limited to time periods.
+
+Possible outputs include:
+
+activity counts;
+mean/median differences;
+percent differences where meaningful;
+distribution summaries;
+major differences in activity composition.
+
+#### findSimilarActivities
 
 Purpose:
 
@@ -338,7 +375,7 @@ day type.
 
 The MVP should avoid complex route matching unless it becomes easy to support.
 
-### 9.6 summarizeRecentVsHistorical
+#### summarizeRecentVsHistorical
 
 Purpose:
 
@@ -496,7 +533,8 @@ as conversation history.
 After Apply, the client waits until the updated current `AnalysisState` and
 selected activities are reflected in props, then sends one hidden automatic
 follow-up request. This request includes compact applied-suggestion context
-stating that the user just accepted the change. It does not add a visible
+stating that the app successfully applied the patch immediately before this
+turn and that current state/data reflect the result. It does not add a visible
 synthetic user message, and the hidden trigger is stripped before conversion to
 model messages.
 
@@ -505,6 +543,7 @@ Conceptually:
 ```ts
 type AppliedViewSuggestionContext = {
   trigger: 'automatic-post-apply-analysis';
+  status: 'applied-successfully';
   label: string;
   changes: ViewSuggestionChange[];
 };

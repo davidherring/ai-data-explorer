@@ -312,12 +312,17 @@ summarizeSelection
 deterministic function:
 summarizeSelection(...)
 
-Initial tools may include:
+Implemented MVP tools:
 
 summarizeSelection
-compareSelections
-calculateTrend
 relationshipBetweenMetrics
+compareGroups
+calculateTrend
+proposeViewSuggestion
+
+Future candidate tools may include:
+
+compareSelections
 findSimilarActivities
 summarizeRecentVsHistorical
 
@@ -444,7 +449,8 @@ transcript messages. Applying a suggestion schedules one hidden automatic
 post-Apply analysis turn after the patched state and selected activities are
 current. The hidden internal trigger is stripped before model-message conversion;
 the server receives only compact `appliedViewSuggestionContext` explaining that
-the user just accepted the suggestion.
+the app successfully applied the suggestion patch immediately before this turn
+and that current state/data reflect that result.
 
 Assistant Markdown rendering supports GFM tables. Tables render as semantic HTML
 and scroll horizontally inside the assistant message when wide. User messages
