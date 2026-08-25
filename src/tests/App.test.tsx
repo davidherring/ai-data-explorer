@@ -2,6 +2,23 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { App } from '../App.tsx'
 import { reconcileSelectedYears } from '../state/yearSelection.ts'
+import { loadDemoActivities } from '../data/demoDataset.ts'
+
+const demoActivities = loadDemoActivities()
+const demoActivityCount = demoActivities.length
+const selectedDemoYear = Math.max(
+  ...Array.from(new Set(demoActivities.map((activity) => activity.year))),
+)
+const selectedDemoYearActivities = demoActivities.filter(
+  (activity) => activity.year === selectedDemoYear,
+)
+const selectedDemoYearActivity = selectedDemoYearActivities[0]
+const selectedDemoYearOtherActivity = demoActivities.find(
+  (activity) => activity.year !== selectedDemoYear,
+)
+const allDemoActivitiesSelectedText = `${demoActivityCount} of ${demoActivityCount} activities selected`
+const selectedDemoYearText = `${selectedDemoYearActivities.length} of ${demoActivityCount} activities selected`
+const emptyDemoSelectionText = `0 of ${demoActivityCount} activities selected`
 
 afterEach(() => {
   cleanup()
@@ -25,7 +42,7 @@ describe('App shell', () => {
     expect(screen.getByLabelText('Analysis workspace')).toBeInTheDocument()
     expect(screen.getByText('Selection / analysis controls')).toBeInTheDocument()
     expect(
-      await screen.findByText('12 of 12 activities selected'),
+      await screen.findByText(allDemoActivitiesSelectedText),
     ).toBeInTheDocument()
     expect(
       screen.getByLabelText('Average speed over calendar time'),
@@ -57,15 +74,19 @@ describe('App shell', () => {
     render(<App />)
 
     expect(
-      await screen.findByText('12 of 12 activities selected'),
+      await screen.findByText(allDemoActivitiesSelectedText),
     ).toBeInTheDocument()
 
     clearAllYears()
-    fireEvent.click(screen.getByLabelText('2025'))
+    fireEvent.click(screen.getByLabelText(String(selectedDemoYear)))
 
-    expect(screen.getByText('3 of 12 activities selected')).toBeInTheDocument()
-    expect(document.body.textContent).toContain('2025-05-21')
-    expect(document.body.textContent).not.toContain('2024-02-07')
+    expect(screen.getByText(selectedDemoYearText)).toBeInTheDocument()
+    expect(document.body.textContent).toContain(
+      selectedDemoYearActivity?.localDate,
+    )
+    expect(document.body.textContent).not.toContain(
+      selectedDemoYearOtherActivity?.localDate,
+    )
   })
 
   it('updates the Trend chart when the metric selector changes', async () => {
@@ -103,18 +124,18 @@ describe('App shell', () => {
     render(<App />)
 
     expect(
-      await screen.findByText('12 of 12 activities selected'),
+      await screen.findByText(allDemoActivitiesSelectedText),
     ).toBeInTheDocument()
     clearAllYears()
-    fireEvent.click(screen.getByLabelText('2025'))
-    expect(screen.getByText('3 of 12 activities selected')).toBeInTheDocument()
+    fireEvent.click(screen.getByLabelText(String(selectedDemoYear)))
+    expect(screen.getByText(selectedDemoYearText)).toBeInTheDocument()
     openMoreFilters()
 
     fireEvent.change(screen.getByLabelText('Start'), {
       target: { value: '2030-01-01' },
     })
 
-    expect(screen.getByText('0 of 12 activities selected')).toBeInTheDocument()
+    expect(screen.getByText(emptyDemoSelectionText)).toBeInTheDocument()
     expect(
       screen.getByText('No activities match the current filters.'),
     ).toBeInTheDocument()
@@ -131,7 +152,7 @@ describe('App shell', () => {
     render(<App />)
 
     expect(
-      await screen.findByText('12 of 12 activities selected'),
+      await screen.findByText(allDemoActivitiesSelectedText),
     ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Relationship' }))
@@ -150,7 +171,7 @@ describe('App shell', () => {
     expect(screen.getByLabelText('Relationship Y metric')).toHaveValue(
       'averageSpeedMph',
     )
-    expect(screen.getByText('12 of 12 activities selected')).toBeInTheDocument()
+    expect(screen.getByText(allDemoActivitiesSelectedText)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Relationship' })).toHaveAttribute(
       'aria-pressed',
       'true',
@@ -178,7 +199,7 @@ describe('App shell', () => {
     render(<App />)
 
     expect(
-      await screen.findByText('12 of 12 activities selected'),
+      await screen.findByText(allDemoActivitiesSelectedText),
     ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Relationship' }))
@@ -214,14 +235,14 @@ describe('App shell', () => {
     render(<App />)
 
     expect(
-      await screen.findByText('12 of 12 activities selected'),
+      await screen.findByText(allDemoActivitiesSelectedText),
     ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Relationship' }))
     clearAllYears()
-    fireEvent.click(screen.getByLabelText('2025'))
+    fireEvent.click(screen.getByLabelText(String(selectedDemoYear)))
 
-    expect(screen.getByText('3 of 12 activities selected')).toBeInTheDocument()
+    expect(screen.getByText(selectedDemoYearText)).toBeInTheDocument()
     expect(screen.getByText('View: relationship')).toBeInTheDocument()
     expect(
       screen.getByLabelText('Elevation gain vs Average speed'),
