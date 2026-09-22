@@ -525,13 +525,22 @@ describe('handleChat', () => {
     expect(system).toContain(
       'current AnalysisState and selected activities are the result of that Apply',
     )
+    expect(system).toContain('Start from the premise that Apply succeeded')
     expect(system).toContain('Do not evaluate whether the change needed applying')
     expect(system).toContain(
-      'change was already active, duplicate, unnecessary, failed, or could not be applied',
+      'Do not perform duplicate/no-op reasoning about the just-applied suggestion',
     )
-    expect(system).toContain('Analyze the newly applied state')
     expect(system).toContain(
-      'using deterministic tools as needed',
+      'Do not say the requested or suggested configuration is already current or already active',
+    )
+    expect(system).toContain(
+      'Apply just made it current',
+    )
+    expect(system).toContain(
+      'change was duplicate, unnecessary, failed, unapplied, or could not be applied',
+    )
+    expect(system).toContain(
+      'analyze what the newly applied view or filters show using deterministic tools as needed',
     )
     expect(system).toContain('do not suggest applying the same change again')
     expect(system).not.toContain('appliedStateFingerprint')
